@@ -1,0 +1,99 @@
+@{
+    Layout = "_LogbookLayout";
+    ViewData["KioskTab"] = "Equipment";
+}
+
+<div class="logbook-card logbook-card--equipment">
+    <div class="logbook-panel logbook-panel-left">
+        <h1 class="logbook-title" id="logbookTitle">Identify yourself</h1>
+        <p class="logbook-subtitle" id="logbookSubtitle">Please fill in your details to continue</p>
+
+        <p class="logbook-equip-error" id="logbookIdentifyError" style="display:none;"></p>
+
+        <div class="logbook-idle" id="logbookIdle">
+            <div class="logbook-idle-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="5" width="20" height="14" rx="2" stroke="#ffffff" stroke-width="1.6"/>
+                    <circle cx="8" cy="11" r="2" stroke="#ffffff" stroke-width="1.6"/>
+                    <path d="M4.5 16c0.5-2 2-3 3.5-3s3 1 3.5 3" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M14 10h5M14 13h5" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <a href="#" class="logbook-mode-link" id="logbookModeLink">No RFID? <span>Use Manual attendance</span></a>
+        </div>
+
+        <div class="logbook-manual" id="logbookManual" style="display:none;">
+            <input type="text" class="logbook-lrn-input" id="logbookLrnInput"
+                   placeholder="LRN:" maxlength="12" inputmode="numeric" />
+            <div class="logbook-confirm-box" id="logbookConfirmBox" style="display:none;">
+                <p class="logbook-confirm-label">is this you?</p>
+                <p class="logbook-confirm-name" id="logbookConfirmName">&nbsp;</p>
+                <button type="button" class="logbook-confirm-btn" id="logbookConfirmBtn">Confirm</button>
+            </div>
+            <a href="#" class="logbook-mode-link" id="logbookModeLinkBack">Have RFID? <span>Use RFID attendance</span></a>
+        </div>
+
+        <!-- Shown once a student has been identified (RFID tap or manual
+             Confirm) - idle/manual above are hidden in favor of this,
+             until "Start over" resets everything. -->
+        <div class="logbook-idle" id="logbookIdentified" style="display:none;">
+            <div class="logbook-idle-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 13l4 4L19 7" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <p class="logbook-confirm-name" id="logbookIdentifiedName">&nbsp;</p>
+            <a href="#" class="logbook-mode-link" id="logbookStartOverLink">Not you? <span>Start over</span></a>
+        </div>
+
+        <!-- Same always-focused invisible catcher as the Attendance tab
+             (see Views/Logbook/Index.cshtml) - a tap works at any time
+             without clicking anything first. -->
+        <input type="text" id="logbookRfidCatcher" class="logbook-rfid-catcher" autocomplete="off" />
+    </div>
+
+    <div class="logbook-divider"></div>
+
+    <div class="logbook-panel logbook-panel-right">
+        <h2 class="logbook-status-title">Equipment</h2>
+        <p class="logbook-equip-error" id="logbookEquipError" style="display:none;"></p>
+        <!-- Filled in by logbook-equipment.js once a student is identified:
+             a "Your Borrowed Items" section (only when they actually have
+             something out, with a Return action) and an "Available
+             Equipment" section (always, with a Borrow action) - see chat,
+             this used to be two separate Borrow/Return nav sub-pages. -->
+        <div id="logbookEquipRoot">
+            <p class="logbook-equip-hint" id="logbookEquipHint">Identify yourself to start.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Staff-verification gate for Return (see chat) - same PIN-panel
+     classes as the kiosk Admin tab's own gate in _LogbookLayout.cshtml,
+     just a separate overlay instance since it confirms a return instead
+     of unlocking the admin area. Always present now (not just when a
+     "Return" sub-page is active) since Return can show up as soon as an
+     identified student turns out to have something borrowed. -->
+<div class="kiosk-admin-overlay" id="equipReturnPinOverlay" style="display:none;">
+        <div class="kiosk-admin-panel" role="dialog" aria-modal="true">
+            <div class="kiosk-admin-header">
+                <h2 class="kiosk-admin-title">Staff Verification</h2>
+                <button type="button" class="kiosk-admin-close" id="equipReturnPinClose" aria-label="Close" title="Close">&times;</button>
+            </div>
+            <div class="kiosk-admin-body">
+                <p class="kiosk-admin-sub">Ask a staff member to confirm this return</p>
+                <div class="kiosk-admin-field">
+                    <label for="equipReturnPinInput">PIN <span class="kiosk-admin-req" aria-hidden="true">*</span></label>
+                    <input type="password" class="kiosk-admin-pin-input" id="equipReturnPinInput"
+                           maxlength="4" inputmode="numeric" data-pin-dots="4" autocomplete="off" />
+                </div>
+                <p class="kiosk-admin-error" id="equipReturnPinError" style="display:none;">Incorrect PIN. Try again.</p>
+                <div class="kiosk-admin-actions">
+                    <button type="button" class="kiosk-admin-cancel" id="equipReturnPinCancel">Cancel</button>
+                    <button type="button" class="kiosk-admin-confirm" id="equipReturnPinConfirm">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script src="~/js/logbook-equipment.js" asp-append-version="true"></script>

@@ -1,0 +1,52 @@
+@{
+    Layout = "_LogbookLayout";
+    ViewData["KioskTab"] = "Attendance";
+}
+
+<div class="logbook-card">
+    <div class="logbook-panel logbook-panel-left">
+        <h1 class="logbook-title" id="logbookTitle">RFID Attendance</h1>
+        <p class="logbook-subtitle" id="logbookSubtitle">Please tap your RFID to record attendance</p>
+
+        <div class="logbook-idle" id="logbookIdle">
+            <div class="logbook-idle-icon">
+                <svg width="58" height="58" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="5" width="20" height="14" rx="2" stroke="#ffffff" stroke-width="1.6"/>
+                    <circle cx="8" cy="11" r="2" stroke="#ffffff" stroke-width="1.6"/>
+                    <path d="M4.5 16c0.5-2 2-3 3.5-3s3 1 3.5 3" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M14 10h5M14 13h5" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <a href="#" class="logbook-mode-link" id="logbookModeLink">No RFID? <span>Manual attendance</span></a>
+        </div>
+
+        <div class="logbook-manual" id="logbookManual" style="display:none;">
+            <input type="text" class="logbook-lrn-input" id="logbookLrnInput"
+                   placeholder="12-Digit LRN" maxlength="12" inputmode="numeric" />
+            <button type="button" class="logbook-search-btn" id="logbookSearchBtn">Search</button>
+            <div class="logbook-confirm-box" id="logbookConfirmBox" style="display:none;">
+                <p class="logbook-confirm-label">is this you?</p>
+                <p class="logbook-confirm-name" id="logbookConfirmName">&nbsp;</p>
+                <button type="button" class="logbook-confirm-btn" id="logbookConfirmBtn">Confirm</button>
+            </div>
+            <a href="#" class="logbook-mode-link" id="logbookModeLinkBack">Have RFID? <span>Use RFID attendance</span></a>
+        </div>
+
+        <!-- Always-focused, invisible input that silently catches RFID
+             reader keystrokes (the reader types the card's UID + Enter
+             wherever focus is, same trick as Register Student's scan
+             field) so a tap works at any time without clicking anything. -->
+        <input type="text" id="logbookRfidCatcher" class="logbook-rfid-catcher" autocomplete="off" />
+    </div>
+
+    <div class="logbook-divider"></div>
+
+    <div class="logbook-panel logbook-panel-right">
+        <h2 class="logbook-status-title">Status</h2>
+        <div class="logbook-status-box" id="logbookStatusBox">
+            <p class="logbook-no-activity" id="logbookNoActivity">No Activity...</p>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/logbook.js" asp-append-version="true"></script>

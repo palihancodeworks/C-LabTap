@@ -1,0 +1,442 @@
+@{
+    Layout = null;
+}
+<div class="stat-filter-row">
+    <div class="stat-cards attendance-stat-cards">
+        <div class="stat-card">
+            <div class="stat-card-title">Entries Today</div>
+            <div class="stat-card-row">
+                <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                    <path d="M10 17l5-5-5-5" />
+                    <path d="M15 12H3" />
+                </svg>
+                <span class="stat-card-value" id="statEntriesToday">0</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-title">Active Occupants</div>
+            <div class="stat-card-row">
+                <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                <span class="stat-card-value" id="statActiveOccupants">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-bar filter-bar--stacked fbar" id="attFbar">
+        <div class="fbar-top">
+            <div class="search-combo">
+                <input type="text" placeholder="Search name or LRN" id="attendanceSearch" autocomplete="off" />
+                
+            </div>
+            <div class="fbar-more-wrap">
+                <button type="button" class="fbar-more" id="attFbarMore" aria-expanded="false" aria-controls="attFbarPanel">
+                    <svg class="fbar-more-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4-2v-4.5L4 5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                    <span>Filters</span>
+                    <span class="fbar-badge" id="attFbarBadge" hidden>0</span>
+                </button>
+                <div class="fbar-panel" id="attFbarPanel" role="group" aria-label="More filters" hidden>
+                    <div class="fbar-panel-grid">
+                        <div class="filter-field attendance-date-filter">
+                            <label>Date Start</label>
+                            <div class="date-filter-input">
+                                <span class="date-filter-placeholder" aria-hidden="true">Choose date</span>
+                                <input type="date" id="filterDateStart" />
+                            </div>
+                        </div>
+                        <div class="filter-field attendance-date-filter">
+                            <label>Date End</label>
+                            <div class="date-filter-input">
+                                <span class="date-filter-placeholder" aria-hidden="true">Choose date</span>
+                                <input type="date" id="filterDateEnd" />
+                            </div>
+                        </div>
+                        <div class="filter-field attendance-section-filter">
+                            <label>Section</label>
+                            <select id="filterSection">
+                                <option value="All">All</option>
+                            </select>
+                        </div>
+                        <div class="filter-field attendance-gender-filter">
+                            <label for="filterGender">Gender</label>
+                            <select id="filterGender">
+                                <option value="All">All</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="filter-field attendance-method-filter">
+                            <label>Method</label>
+                            <div class="toggle-group toggle-group--sliding" id="filterMethod" data-value="All">
+                                <span class="toggle-slider"></span>
+                                <button type="button" class="toggle-option active" data-value="All">All</button>
+                                <button type="button" class="toggle-option" data-value="RFID">RFID</button>
+                                <button type="button" class="toggle-option" data-value="Manual">Manual</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="fbar-reset" id="attendanceClear" aria-label="Clear all filters" title="Clear all filters"><img src="@Url.Content("~/images/icons/clear.icon.png")" alt="" class="fbar-reset-icon" /><span class="fbar-reset-label">Clear</span></button>
+        </div>
+        <div class="fbar-quick">
+            <div class="filter-field fbar-seg">
+                <label>Category</label>
+                <div class="toggle-group toggle-group--sliding" id="filterCategory" data-value="All">
+                    <span class="toggle-slider"></span>
+                    <button type="button" class="toggle-option active" data-value="All">All</button>
+                    <button type="button" class="toggle-option" data-value="Regular">Regular</button>
+                    <button type="button" class="toggle-option" data-value="STE">STE</button>
+                </div>
+            </div>
+            <div class="filter-field fbar-seg">
+                <label>Grade</label>
+                <div class="toggle-group toggle-group--sliding" id="filterGrade" data-value="All">
+                    <span class="toggle-slider"></span>
+                    <button type="button" class="toggle-option active" data-value="All">All</button>
+                    <button type="button" class="toggle-option" data-value="7">7</button>
+                    <button type="button" class="toggle-option" data-value="8">8</button>
+                    <button type="button" class="toggle-option" data-value="9">9</button>
+                    <button type="button" class="toggle-option" data-value="10">10</button>
+                </div>
+            </div>
+                                <div class="filter-field fbar-seg attendance-status-filter">
+                            <label>Status</label>
+                            <div class="toggle-group toggle-group--sliding" id="filterStatus" data-value="All">
+                                <span class="toggle-slider"></span>
+                                <button type="button" class="toggle-option active" data-value="All">All</button>
+                                <button type="button" class="toggle-option" data-value="time_in">Time In</button>
+                                <button type="button" class="toggle-option" data-value="time_out">Time Out</button>
+                            </div>
+                        </div>
+            <button type="button" class="btn-apply" id="attendanceApply">Apply filters</button>
+        </div>
+        <div class="fbar-foot">
+            <div class="fbar-chips fbar-chips--slot" id="attFbarChips" aria-label="Applied filters"></div>
+        </div>
+    </div>
+</div>
+
+<div class="table-scroll">
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>LRN</th>
+            <th>Grade &amp; Section</th>
+            <th>Gender</th>
+            <th>Method</th>
+            <th>Status</th>
+            <th>Timestamp</th>
+        </tr>
+    </thead>
+    <tbody id="attendanceRows">
+        <!-- Populated once attendance records exist.
+             Grade & Section column format: section name immediately
+             followed by the grade number, no space/separator -
+             e.g. "Pearl10" (section "Pearl", grade 10).
+             Timestamp column: a full timestamp (date + time
+             together), not time-only - e.g. "11/08/2026 8:07 AM". -->
+    </tbody>
+</table>
+</div>
+<div class="table-empty" id="attendanceEmpty" style="display: none;">No attendance records yet.</div>
+<div class="pagination" id="attendancePagination"></div>
+
+<script>
+    (function () {
+        var clearBtn = document.getElementById("attendanceClear");
+        var searchInput = document.getElementById("attendanceSearch");
+        var applyBtn = document.getElementById("attendanceApply");
+        var dateStart = document.getElementById("filterDateStart");
+        var dateEnd = document.getElementById("filterDateEnd");
+        // Default the range to today only (see chat: the table was
+        // showing every attendance record ever logged until a date was
+        // picked) - still fully overridable via the date pickers above.
+        function todayInputValue() {
+            var now = new Date();
+            var mm = String(now.getMonth() + 1).padStart(2, "0");
+            var dd = String(now.getDate()).padStart(2, "0");
+            return now.getFullYear() + "-" + mm + "-" + dd;
+        }
+        dateStart.value = todayInputValue();
+        dateEnd.value = todayInputValue();
+        [dateStart, dateEnd].forEach(function (dateInput) {
+            var dateContainer = dateInput.parentElement;
+            function updateDatePlaceholder() {
+                dateContainer.classList.toggle("has-value", Boolean(dateInput.value));
+            }
+            dateInput.addEventListener("input", updateDatePlaceholder);
+            dateInput.addEventListener("change", updateDatePlaceholder);
+            updateDatePlaceholder();
+        });
+        var gradeSelect = document.getElementById("filterGrade"); // segmented group (7-10), value in dataset.value
+        var categoryGroup = document.getElementById("filterCategory");
+        var fbar = null; // shared filter bar (popover + applied chips)
+        var genderSelect = document.getElementById("filterGender");
+        var sectionSelect = document.getElementById("filterSection");
+        var methodGroup = document.getElementById("filterMethod");
+        var statusGroup = document.getElementById("filterStatus");
+
+        // On a direct/hard page load (not the AJAX nav-swap), this
+        // inline script runs while the page is still being parsed -
+        // admin.js's own <script> tag sits further down the page (see
+        // _AdminLayout.cshtml, intentionally after the body-render point for
+        // load performance), so window.CLabTapToggleGroup doesn't
+        // exist yet at this exact point. The old `if
+        // (window.CLabTapToggleGroup)` guard just silently did
+        // nothing in that case (no console error - it's a deliberate
+        // guard, not a crash), which is why the slider never got
+        // positioned on first load, only after navigating away and
+        // back (by then admin.js was already loaded from the earlier
+        // page load). Deferring to DOMContentLoaded when the document
+        // is still loading fixes that; the AJAX nav-swap case (where
+        // the document is already "complete" and admin.js has long
+        // since loaded) still runs immediately, same as before.
+        function initToggleGroups() {
+            if (window.CLabTapToggleGroup) {
+                window.CLabTapToggleGroup.init(methodGroup);
+                window.CLabTapToggleGroup.init(statusGroup);
+                window.CLabTapToggleGroup.init(gradeSelect);
+                window.CLabTapToggleGroup.init(categoryGroup);
+            }
+            initAttendanceFilterBar();
+        }
+
+        // "Filters" popover + chips for whatever is applied (shared
+        // component, see admin.js CLabTapFilterBar). loadAttendance()
+        // calls fbar.refresh() so the chips always match the request.
+        function initAttendanceFilterBar() {
+            if (fbar || !window.CLabTapFilterBar) return;
+            var FB = window.CLabTapFilterBar;
+            fbar = FB.init({
+                moreBtn: document.getElementById("attFbarMore"),
+                panel: document.getElementById("attFbarPanel"),
+                chipsEl: document.getElementById("attFbarChips"),
+                badge: document.getElementById("attFbarBadge"),
+                panelApplyBtn: document.getElementById("attFbarPanelApply"),
+                panelClearBtn: document.getElementById("attFbarPanelClear"),
+                onApply: function () { if (applyBtn) applyBtn.click(); },
+                onClearAll: function () { if (clearBtn) clearBtn.click(); },
+                onChange: function () { currentPage = 1; loadAttendance(); },
+                controls: [
+                    FB.fromGroup(categoryGroup, "Category", false),
+                    FB.fromGroup(gradeSelect, "Grade", false),
+                    FB.fromDate(dateStart, "From", true, todayInputValue),
+                    FB.fromDate(dateEnd, "To", true, todayInputValue),
+                    FB.fromSelect(sectionSelect, "Section", true),
+                    FB.fromSelect(genderSelect, "Gender", true),
+                    FB.fromGroup(methodGroup, "Method", true),
+                    FB.fromGroup(statusGroup, "Status", true, { time_in: "Time In", time_out: "Time Out" })
+                ]
+            });
+            fbar.refresh();
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initToggleGroups);
+        } else {
+            initToggleGroups();
+        }
+        var rowsBody = document.getElementById("attendanceRows");
+        var emptyMsg = document.getElementById("attendanceEmpty");
+        var paginationEl = document.getElementById("attendancePagination");
+        var entriesTodayEl = document.getElementById("statEntriesToday");
+        var activeOccupantsEl = document.getElementById("statActiveOccupants");
+
+        var attendanceTable = rowsBody.closest("table");
+        // Row count flexes with the actual screen (see chat: more rows on a
+        // tall screen, fewer on a short one) instead of one fixed number -
+        // still never lets the page itself scroll (admin.css "html, body
+        // { overflow: hidden }"); CLabTapRowFit.watch below keeps this in
+        // sync with the viewport and reloads when it changes.
+        var PAGE_SIZE = 8;
+        var currentPage = 1;
+
+        function escapeHtml(value) {
+            return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+                return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+            });
+        }
+
+        // Fills the Section dropdown with the sections that actually exist
+        // (instead of a hardcoded list), so it never drifts out of sync
+        // with what's registered.
+        function loadFilterOptions() {
+            fetch("/Attendance/FilterOptions", { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    var sections = (data && data.sections) || [];
+                    sections.forEach(function (name) {
+                        var opt = document.createElement("option");
+                        opt.value = name;
+                        opt.textContent = name;
+                        sectionSelect.appendChild(opt);
+                    });
+                })
+                .catch(function () {
+                    // Section filter just stays at "All" if this fails.
+                });
+        }
+
+        function buildQuery() {
+            var params = new URLSearchParams();
+            if (searchInput.value.trim()) params.append("search", searchInput.value.trim());
+            if (dateStart.value) params.append("dateStart", dateStart.value);
+            if (dateEnd.value) params.append("dateEnd", dateEnd.value);
+            if (gradeSelect.dataset.value && gradeSelect.dataset.value !== "All") params.append("grade", gradeSelect.dataset.value);
+            if (categoryGroup.dataset.value && categoryGroup.dataset.value !== "All") params.append("category", categoryGroup.dataset.value);
+            if (sectionSelect.value && sectionSelect.value !== "All") params.append("section", sectionSelect.value);
+            if (genderSelect && genderSelect.value && genderSelect.value !== "All") params.append("gender", genderSelect.value);
+            if (methodGroup.dataset.value && methodGroup.dataset.value !== "All") params.append("method", methodGroup.dataset.value);
+            if (statusGroup.dataset.value && statusGroup.dataset.value !== "All") params.append("status", statusGroup.dataset.value);
+            params.append("page", currentPage);
+            params.append("pageSize", PAGE_SIZE);
+            return params.toString();
+        }
+
+        // Small "STE" / "Regular" tag shown after Grade & Section.
+        function categoryTag(category) {
+            if (!category) return "";
+            return '<span class="cat-tag cat-tag--' + (category === "STE" ? "ste" : "regular") + '">' + escapeHtml(category) + "</span>";
+        }
+
+        function renderRows(records) {
+            rowsBody.innerHTML = "";
+            if (!records || records.length === 0) {
+                emptyMsg.style.display = "";
+                return;
+            }
+            emptyMsg.style.display = "none";
+            records.forEach(function (rec) {
+                var row = document.createElement("tr");
+                row.innerHTML =
+                    "<td>" + escapeHtml(rec.fullName) + "</td>" +
+                    "<td>" + escapeHtml(rec.lrn) + "</td>" +
+                    '<td><span class="gs-text">' + escapeHtml(rec.gradeSection) + "</span>" + categoryTag(rec.classCategory) + "</td>" +
+                    "<td>" + escapeHtml(rec.gender || "\u2014") + "</td>" +
+                    "<td>" + escapeHtml(rec.method) + "</td>" +
+                    "<td>" + escapeHtml(rec.status) + "</td>" +
+                    "<td>" + escapeHtml(rec.timestamp) + "</td>";
+                rowsBody.appendChild(row);
+            });
+            window.CLabTapStagger.apply(rowsBody.children);
+        }
+
+        // The two header stat cards - independent of the table's own
+        // filters, always "as of today" (see AttendanceController.Stats).
+        function loadStats() {
+            fetch("/Attendance/Stats", { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (entriesTodayEl) entriesTodayEl.textContent = data.entriesToday;
+                    if (activeOccupantsEl) activeOccupantsEl.textContent = data.activeOccupants;
+                })
+                .catch(function () {
+                    // Leave whatever is already showing.
+                });
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadAttendance();
+        }
+
+        function loadAttendance() {
+            if (fbar) fbar.refresh();
+            fetch("/Attendance/List?" + buildQuery(), { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    currentPage = data.page || 1;
+                    renderRows(data.rows);
+                    window.CLabTapPagination.render(paginationEl, data, goToPage);
+                    // Real rows are now in the tbody - recheck against
+                    // their genuine height, not the throwaway probe row
+                    // CLabTapRowFit had to measure before any data had
+                    // loaded (see chat: "still has scrollbar").
+                    if (rowFitController) rowFitController.recheck();
+                })
+                .catch(function () {
+                    // Leave whatever is already showing; a failed refresh
+                    // shouldn't wipe out the current table.
+                });
+        }
+
+        if (applyBtn) {
+            applyBtn.addEventListener("click", function () {
+                currentPage = 1;
+                loadAttendance();
+            });
+        }
+
+        if (clearBtn && searchInput) {
+            clearBtn.addEventListener("click", function () {
+                searchInput.value = "";
+                // "Clear filters" goes back to the same today-only default
+                // as a fresh page load, not an unfiltered all-time view.
+                dateStart.value = todayInputValue();
+                dateEnd.value = todayInputValue();
+                dateStart.dispatchEvent(new Event("input", { bubbles: true }));
+                dateEnd.dispatchEvent(new Event("input", { bubbles: true }));
+                sectionSelect.value = "All";
+                if (genderSelect) genderSelect.value = "All";
+                if (window.CLabTapToggleGroup) {
+                    window.CLabTapToggleGroup.reset(methodGroup);
+                    window.CLabTapToggleGroup.reset(statusGroup);
+                    window.CLabTapToggleGroup.reset(gradeSelect);
+                    window.CLabTapToggleGroup.reset(categoryGroup);
+                }
+                currentPage = 1;
+                loadAttendance();
+            });
+        }
+
+        // Live search as you type, debounced so it doesn't fire a request
+        // on every keystroke.
+        var searchTimer = null;
+        if (searchInput) {
+            searchInput.addEventListener("input", function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function () {
+                    currentPage = 1;
+                    loadAttendance();
+                }, 300);
+            });
+        }
+
+        loadFilterOptions();
+        // On a direct/hard page load this inline script runs while admin.js
+        // (further down the page, after the body - see the toggle-group
+        // init above for the same load-order issue) hasn't executed yet,
+        // so window.CLabTapRowFit doesn't exist at this exact point - a
+        // plain `if (window.CLabTapRowFit)` guard would just silently skip
+        // straight to the fallback loadAttendance() call and never attach the
+        // watcher, leaving the row count stuck at 8 forever
+        // (see chat). Deferring to DOMContentLoaded (same pattern as
+        // initToggleGroups) fixes that; the AJAX nav-swap case (document
+        // already "complete", admin.js long since loaded) still runs
+        // immediately.
+        var rowFitController = null;
+        function initRowFit() {
+            if (window.CLabTapRowFit) {
+                rowFitController = window.CLabTapRowFit.watch(attendanceTable, { minRows: 4, fallbackRows: 8 }, function (rows) {
+                    PAGE_SIZE = rows;
+                    currentPage = 1;
+                    loadAttendance();
+                });
+            } else {
+                loadAttendance();
+            }
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initRowFit);
+        } else {
+            initRowFit();
+        }
+        loadStats();
+    })();
+</script>

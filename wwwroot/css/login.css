@@ -1,0 +1,283 @@
+/* =========================================================
+   C-LABTAP Login / Logged-Out screen
+   Matches the approved login mockup: split card over the
+   campus photo, green brand panel + white form panel.
+   ========================================================= */
+
+.login-body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Dark overlay over the campus photo (see chat - the bright photo
+     was competing with the login card for attention) so the card
+     reads as the clear focal point instead of fighting the background. */
+  background: linear-gradient(rgba(10, 26, 20, 0.5), rgba(10, 26, 20, 0.5)), url("/images/aamnhs-bg.jpg") center / cover no-repeat;
+  font-family: "Public Sans", sans-serif;
+}
+
+.login-card {
+  display: flex;
+  width: 100%;
+  max-width: 720px;
+  margin: 24px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25);
+}
+
+/* ---- Left: branding panel ---- */
+.login-left {
+  flex: 0 0 42%;
+  background: var(--green-darker);
+  color: #ffffff;
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.login-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.login-logo {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.login-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.login-brand-line {
+  font-family: "Public Sans", sans-serif;
+  font-weight: 800;
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  color: var(--gold);
+}
+
+.login-school-name {
+  font-family: "Fraunces", serif;
+  font-weight: 700;
+  font-size: 1.9rem;
+  line-height: 1.2;
+  margin: 0 0 14px;
+  color: #ffffff;
+}
+
+.login-tagline {
+  font-family: "Public Sans", sans-serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #E7EFEC;
+  margin: 0;
+}
+
+/* ---- Right: form panel ---- */
+.login-right {
+  flex: 1;
+  background: #ffffff;
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.login-title {
+  font-family: "Public Sans", sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: var(--text-dark);
+  margin: 0 0 4px;
+}
+
+.login-subtitle {
+  font-family: "Public Sans", sans-serif;
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: var(--grey-sub);
+  margin: 0 0 16px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-error {
+  background: #FDECEC;
+  color: #B3261E;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 0 0 14px;
+}
+
+.login-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 6px;
+}
+
+.login-input {
+  background: var(--grey-panel);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-family: "Public Sans", sans-serif;
+  font-weight: 400;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.login-input:focus {
+  outline: 2px solid var(--green-dark);
+  outline-offset: 1px;
+}
+
+.login-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: var(--green-dark);
+  color: #ffffff;
+  border: none;
+  border-radius: 50px;
+  padding: 11px 0;
+  font-family: "Public Sans", sans-serif;
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+  margin-top: 2px;
+}
+
+.login-btn:hover {
+  background: var(--green-darker);
+}
+
+/* Shake on the Log-In button when the server comes back
+   with a login error (wrong username/password) - see LoggedOut.cshtml
+   (loginError != null adds this class on that page load), rather than
+   just a quiet red error line nobody notices. */
+@keyframes clabtapLoginShake {
+  0%, 100% { transform: none; }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+.login-btn--shake {
+  animation: clabtapLoginShake 0.4s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-btn--shake {
+    animation: none;
+  }
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--grey-sub);
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 12px 0;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--grey-border, #E2E2E2);
+}
+
+.login-divider span {
+  padding: 0 10px;
+}
+
+.login-btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  background: #ffffff;
+  border: 1.5px solid var(--grey-border, #E2E2E2);
+  border-radius: 50px;
+  padding: 10px 0;
+  font-family: "Public Sans", sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.login-btn-google:hover {
+  background: var(--grey-panel);
+}
+
+.login-forgot {
+  display: block;
+  text-align: center;
+  margin-top: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-decoration: none;
+}
+
+.login-forgot:hover {
+  text-decoration: underline;
+}
+
+.login-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--grey-border);
+  font-size: 0.75rem;
+  color: var(--grey-sub);
+}
+
+.login-footer svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .login-card {
+    flex-direction: column;
+    max-width: 420px;
+  }
+
+  .login-left,
+  .login-right {
+    flex: none;
+  }
+}

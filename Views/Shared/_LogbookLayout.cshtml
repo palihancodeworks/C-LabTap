@@ -1,0 +1,187 @@
+@inject C_LabTap.Services.SupabaseService Supabase
+@{
+    // Branding settings (logo + background) - see SettingsController's
+    // Branding panel. Falls back to the default AAMNHS assets if
+    // nothing's been uploaded.
+    string brandLogoUrl = await C_LabTap.Models.BrandingHelper.GetLogoUrlAsync(Supabase);
+    string brandBgUrl = await C_LabTap.Models.BrandingHelper.GetBackgroundUrlAsync(Supabase);
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - C-LABTAP</title>
+    <link rel="icon" type="image/x-icon" href="~/C-LabTap.icon.ico" asp-append-version="true" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700&family=Poppins:wght@700&family=Public+Sans:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/logbook.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="kiosk-shell" style="background: linear-gradient(rgba(10, 30, 22, 0.55), rgba(10, 30, 22, 0.65)), url('@brandBgUrl') center/cover no-repeat fixed;">
+        <div class="kiosk-topline">
+            <div class="kiosk-brand-label">C-LABTAP</div>
+            <div class="kiosk-clock">
+                <div class="kiosk-time" id="kioskTime">--:--:-- --</div>
+                <div class="kiosk-date" id="kioskDate">LOADING...</div>
+            </div>
+        </div>
+
+        @{
+            var kioskTab = ViewData["KioskTab"] as string;
+        }
+        <div class="kiosk-navwrap">
+            <div class="kiosk-seal">
+                <img src="@Url.Content(brandLogoUrl)" alt="AAMNHS logo" />
+            </div>
+            <nav class="kiosk-tabs">
+                <a class="kiosk-tab kiosk-tab-attendance @(kioskTab == "Attendance" ? "active" : "")"
+                   asp-controller="Logbook" asp-action="Index">Attendance</a>
+                <a class="kiosk-tab kiosk-tab-equipment @(kioskTab == "Equipment" ? "active" : "")"
+                   asp-controller="Logbook" asp-action="Equipment">Equipment</a>
+                <a class="kiosk-tab kiosk-tab-admin" href="#" id="kioskAdminTab">Admin</a>
+            </nav>
+        </div>
+
+        <main class="kiosk-main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Admin PIN gate: tapping "Admin" above shows this instead of
+         navigating straight in, so a student can't just tap their way
+         into the admin area. Checked server-side against the hash in
+         Supabase's settings table (key "admin_pin_hash"). -->
+    <div class="kiosk-admin-overlay" id="kioskAdminOverlay" style="display:none;">
+        <div class="kiosk-admin-panel" role="dialog" aria-modal="true">
+            <div class="kiosk-admin-header">
+                <h2 class="kiosk-admin-title">Admin Access</h2>
+                <button type="button" class="kiosk-admin-close" id="kioskAdminClose" aria-label="Close" title="Close">&times;</button>
+            </div>
+            <div class="kiosk-admin-body">
+                <p class="kiosk-admin-sub">Enter the admin PIN to continue</p>
+                <div class="kiosk-admin-field">
+                    <label for="kioskAdminPinInput">PIN <span class="kiosk-admin-req" aria-hidden="true">*</span></label>
+                    <input type="password" class="kiosk-admin-pin-input" id="kioskAdminPinInput"
+                           maxlength="4" inputmode="numeric" data-pin-dots="4" autocomplete="off" />
+                </div>
+                <p class="kiosk-admin-error" id="kioskAdminError" style="display:none;">Incorrect PIN. Try again.</p>
+                <div class="kiosk-admin-actions">
+                    <button type="button" class="kiosk-admin-cancel" id="kioskAdminCancel">Cancel</button>
+                    <button type="button" class="kiosk-admin-confirm" id="kioskAdminConfirm">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/password-toggle.js" asp-append-version="true"></script>
+    <script src="~/js/pin-dots.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            var timeEl = document.getElementById("kioskTime");
+            var dateEl = document.getElementById("kioskDate");
+            var dayNames = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+            var monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+
+            function pad(n) { return n < 10 ? "0" + n : "" + n; }
+
+            function tick() {
+                var now = new Date();
+                var h = now.getHours();
+                var ampm = h >= 12 ? "PM" : "AM";
+                var h12 = h % 12 || 12;
+                timeEl.textContent = pad(h12) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds()) + " " + ampm;
+                dateEl.textContent = dayNames[now.getDay()] + ", " + monthNames[now.getMonth()] + " " + now.getDate() + ", " + now.getFullYear();
+            }
+
+            tick();
+            setInterval(tick, 1000);
+        })();
+
+        (function () {
+            var adminTab = document.getElementById("kioskAdminTab");
+            var overlay = document.getElementById("kioskAdminOverlay");
+            var pinInput = document.getElementById("kioskAdminPinInput");
+            var errorMsg = document.getElementById("kioskAdminError");
+            var cancelBtn = document.getElementById("kioskAdminCancel");
+            var confirmBtn = document.getElementById("kioskAdminConfirm");
+            var closeBtn = document.getElementById("kioskAdminClose");
+            if (closeBtn) closeBtn.addEventListener("click", function () { cancelBtn.click(); });
+
+            if (!adminTab || !overlay) return;
+
+            // The Logbook page keeps an invisible always-focused input
+            // (#logbookRfidCatcher) that steals focus back every ~50ms
+            // while idle, so an RFID tap is caught instantly. That fight
+            // for focus is exactly what stopped PIN typing from landing
+            // here - disable the catcher for as long as this panel is up.
+            function setRfidCatcherEnabled(enabled) {
+                var catcher = document.getElementById("logbookRfidCatcher");
+                if (catcher) catcher.disabled = !enabled;
+            }
+
+            function openPanel() {
+                errorMsg.style.display = "none";
+                errorMsg.textContent = "Incorrect PIN. Try again.";
+                pinInput.value = "";
+                setRfidCatcherEnabled(false);
+                overlay.style.display = "flex";
+                pinInput.focus();
+            }
+
+            function closePanel() {
+                overlay.style.display = "none";
+                setRfidCatcherEnabled(true);
+            }
+
+            function submitPin() {
+                var pin = pinInput.value.trim();
+                if (!pin) return;
+
+                confirmBtn.disabled = true;
+                var body = new URLSearchParams();
+                body.append("pin", pin);
+
+                fetch("/Logbook/VerifyAdminPin", { method: "POST", body: body })
+                    .then(function (res) { return res.json(); })
+                    .then(function (result) {
+                        confirmBtn.disabled = false;
+                        if (result.ok) {
+                            window.location.href = "/Attendance";
+                        } else {
+                            errorMsg.textContent = result.message || "Incorrect PIN. Try again.";
+                            errorMsg.style.display = "block";
+                            pinInput.value = "";
+                            pinInput.focus();
+                        }
+                    })
+                    .catch(function () {
+                        confirmBtn.disabled = false;
+                        errorMsg.textContent = "Could not verify PIN right now. Try again.";
+                        errorMsg.style.display = "block";
+                    });
+            }
+
+            adminTab.addEventListener("click", function (e) {
+                e.preventDefault();
+                openPanel();
+            });
+
+            cancelBtn.addEventListener("click", closePanel);
+
+            confirmBtn.addEventListener("click", submitPin);
+
+            pinInput.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    submitPin();
+                } else if (e.key === "Escape") {
+                    closePanel();
+                }
+            });
+        })();
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

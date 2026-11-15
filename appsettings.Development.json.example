@@ -1,0 +1,20 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "Supabase": {
+    "Url": "https://YOUR-PROJECT.supabase.co",
+    "ServiceRoleKey": "YOUR_SUPABASE_SERVICE_ROLE_KEY"
+  },
+  "Google": {
+    "ClientId": "YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+    "ClientSecret": "YOUR_GOOGLE_OAUTH_CLIENT_SECRET"
+  },
+  "Email": {
+    "GmailAddress": "your-sender@gmail.com",
+    "AppPassword": "YOUR_GMAIL_APP_PASSWORD"
+  }
+}

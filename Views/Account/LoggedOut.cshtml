@@ -1,0 +1,133 @@
+@inject C_LabTap.Services.SupabaseService Supabase
+@{
+    ViewData["Title"] = "Log In";
+    Layout = null;
+    // Branding settings (logo + background) - see SettingsController's
+    // Branding panel. Falls back to the default AAMNHS assets if
+    // nothing's been uploaded.
+    string brandLogoUrl = await C_LabTap.Models.BrandingHelper.GetLogoUrlAsync(Supabase);
+    string brandBgUrl = await C_LabTap.Models.BrandingHelper.GetBackgroundUrlAsync(Supabase);
+}
+<!-- Real login (see AccountController.Login) - checks username/password
+     against staff_accounts. Visuals match the approved login mockup. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - C-LABTAP</title>
+    <link rel="icon" type="image/x-icon" href="~/C-LabTap.icon.ico" asp-append-version="true" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=Public+Sans:ital,wght@0,400;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+</head>
+<body class="login-body" style="background: linear-gradient(rgba(10, 26, 20, 0.5), rgba(10, 26, 20, 0.5)), url('@brandBgUrl') center / cover no-repeat;">
+    <div class="login-card">
+        <div class="login-left">
+            <div class="login-brand-row">
+                <img src="@Url.Content(brandLogoUrl)" alt="AAMNHS logo" class="login-logo" />
+                <div class="login-brand-text">
+                    <span class="login-brand-line">C-LABTAP</span>
+                    <span class="login-brand-line">COMPUTER LABORATORY LOGBOOK</span>
+                </div>
+            </div>
+            <h1 class="login-school-name">Aurelio Arago Memorial National High School</h1>
+            <p class="login-tagline">Junior High School Computer Laboratory RFID-based entry, exit and equipment borrowing records</p>
+        </div>
+
+        <div class="login-right">
+            <h2 class="login-title">C-LabTap Admin</h2>
+            <p class="login-subtitle">Computer Laboratory Logbook System</p>
+
+            @{
+                var loginError = TempData["LoginError"] as string;
+            }
+            @if (!string.IsNullOrEmpty(loginError))
+            {
+                <p class="login-error">@loginError</p>
+            }
+            <form class="login-form" method="post" asp-controller="Account" asp-action="Login">
+                <label class="login-label" for="username">Username (Gmail address)</label>
+                <input class="login-input" type="text" id="username" name="username" autocomplete="username" autofocus />
+
+                <label class="login-label" for="password">Password</label>
+                <input class="login-input" type="password" id="password" name="password" autocomplete="current-password" />
+
+                <button type="submit" class="login-btn @(loginError != null ? "login-btn--shake" : "")">Log in</button>
+            </form>
+
+            <div class="login-divider"><span>or</span></div>
+
+            <a class="login-btn-google" asp-controller="Account" asp-action="GoogleLogin">
+                <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+                    <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/>
+                    <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+                    <path fill="#4CAF50" d="M24 44c5.5 0 10.5-2.1 14.3-5.6l-6.6-5.6C29.6 34.7 27 35.5 24 35.5c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.6 39.7 16.3 44 24 44z"/>
+                    <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.6 5.6C41.4 36 44 30.6 44 24c0-1.3-.1-2.7-.4-3.5z"/>
+                </svg>
+                <span>Sign in with Google</span>
+            </a>
+
+            <a href="#" class="login-forgot" id="openForgotPasswordBtn">Forgot password?</a>
+
+            <div class="login-footer">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.6" />
+                    <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                </svg>
+                Authorized laboratory personnel only
+            </div>
+        </div>
+    </div>
+    <div class="reg-overlay" id="forgotPasswordOverlay" style="display:none;">
+        <div class="regf-card regf-card--compact regf-card--password" role="dialog" aria-modal="true" aria-labelledby="forgotPasswordTitle">
+            <div class="regf-header">
+                <div class="regf-head-main regf-head-title-row">
+                    <h2 class="regf-title" id="forgotPasswordTitle">Reset Password</h2>
+                </div>
+                <button type="button" class="regf-close" id="forgotPasswordClose" aria-label="Close" title="Close (Esc)">&times;</button>
+            </div>
+            <form class="regf-body" id="forgotPasswordForm" novalidate autocomplete="off">
+                <div class="regf-message" id="forgotPasswordMsg" role="alert" aria-live="assertive" hidden></div>
+                <div class="regf-row" id="fpStep1Row">
+                    <div class="regf-field regf-grow">
+                        <label for="fpUsername">Username (Gmail address) <span class="regf-req" aria-hidden="true">*</span></label>
+                        <input type="text" class="regf-input" id="fpUsername" autocomplete="username" />
+                    </div>
+                </div>
+                <div id="fpStep2" hidden>
+                    <div class="regf-row">
+                        <div class="regf-field regf-grow">
+                            <label for="fpOtp">Code emailed to you <span class="regf-req" aria-hidden="true">*</span></label>
+                            <input type="text" class="regf-input" id="fpOtp" inputmode="numeric" maxlength="6" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="regf-row">
+                        <div class="regf-field regf-grow">
+                            <label for="fpNew">New Password <span class="regf-req" aria-hidden="true">*</span></label>
+                            <input type="password" class="regf-input" id="fpNew" autocomplete="new-password" />
+                        </div>
+                    </div>
+                    <div class="regf-row">
+                        <div class="regf-field regf-grow">
+                            <label for="fpConfirm">Confirm New Password <span class="regf-req" aria-hidden="true">*</span></label>
+                            <input type="password" class="regf-input" id="fpConfirm" autocomplete="new-password" />
+                        </div>
+                    </div>
+                </div>
+                <div class="regf-actions">
+                    <p class="regf-submit-hint" aria-live="polite"></p>
+                    <button type="button" class="regf-btn regf-btn-outline" id="forgotPasswordCancelBtn">Cancel</button>
+                    <button type="button" class="regf-btn regf-btn-primary" id="forgotPasswordSendBtn">Send code</button>
+                    <button type="button" class="regf-btn regf-btn-primary" id="forgotPasswordResetBtn" hidden>Reset Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script src="~/js/password-toggle.js" asp-append-version="true"></script>
+<script src="~/js/forgot-password.js" asp-append-version="true"></script>
+</body>
+</html>

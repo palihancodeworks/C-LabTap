@@ -1,0 +1,960 @@
+/* =========================================================
+   C-LABTAP Logbook (kiosk) page
+   Standalone - does NOT reuse admin.css's sidebar shell.
+   ========================================================= */
+:root {
+  --lb-green-dark: #1F4D3C;
+  --lb-green-darker: #173A2D;
+  --lb-header-bg: #082213;
+  --lb-gold: #B88939;
+  --lb-text-dark: #333333;
+  --lb-grey-sub: #979797;
+  --lb-grey-border: #D9D9D9;
+  --lb-green-timein: #31BC00;
+  --lb-red-timeout: #F70000;
+  --lb-red: #F70000;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: "Public Sans", sans-serif;
+  font-weight: 700;
+  color: #ffffff;
+  /* Dark fallback matching the kiosk background's own overlay tint (see
+     .kiosk-shell's inline gradient in _LogbookLayout.cshtml) - without
+     this, switching between Attendance and Equipment (plain full page
+     navigations, not an AJAX swap like the admin side) showed a flash
+     of the browser's default white background for an instant before
+     the background photo painted in (see chat - "bg glitters" when
+     changing tabs). Now that gap is dark instead of a stark white flash. */
+  background: #0A1A14;
+}
+
+a { text-decoration: none; color: inherit; }
+button { font-family: inherit; }
+
+.kiosk-shell {
+  min-height: 100vh;
+  background: linear-gradient(rgba(10, 30, 22, 0.55), rgba(10, 30, 22, 0.65)),
+              url("/images/aamnhs-bg.jpg") center/cover no-repeat fixed;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------------- Top line: brand label + clock, above everything ---------------- */
+.kiosk-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 32px 0;
+}
+
+.kiosk-brand-label {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: var(--lb-gold);
+}
+
+.kiosk-clock {
+  text-align: right;
+  flex-shrink: 0;
+  margin-top: 14px;
+}
+
+.kiosk-time {
+  font-family: "Poppins", sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.kiosk-date {
+  font-family: "Poppins", sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #ffffff;
+  margin-top: 2px;
+}
+
+/* ---------------- Tab bar + seal, overlapping the card below ---------------- */
+.kiosk-navwrap {
+  position: relative;
+  width: 68%;
+  max-width: 700px;
+  margin: 30px auto -25px;
+  z-index: 2;
+}
+.kiosk-seal {
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+}
+
+.kiosk-seal img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.kiosk-tabs {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  background: var(--lb-header-bg);
+  border: 2px solid var(--lb-gold);
+  border-radius: 50px;
+  padding: 10px 0px 10px 120px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* .kiosk-tab (defined below) sets padding: 6px 4px at the same
+   specificity and wins by source order, which silently cancelled this
+   padding-right - doubling the class keeps the gap. */
+.kiosk-tab.kiosk-tab-admin {
+  margin-left: auto;
+  padding-right: 42px;
+}
+
+.kiosk-tab {
+  display: flex;
+  align-items: center;
+  padding: 6px 4px;
+  border-radius: 100px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #CFE0D8;
+}
+
+/* Generic active pill - any tab OTHER than Attendance (so Equipment,
+   once it's a real tab - see chat). Plain white rounded pill, no special
+   positioning. */
+.kiosk-tab.active {
+  background: #ffffff;
+  color: #000000;
+  border-radius: 100px;
+  padding: 6px 18px;
+}
+
+/* Attendance specifically sits right next to the round seal, so its
+   active pill extends backward underneath it instead of using the
+   generic pill above - this used to be .kiosk-tab.active itself, which
+   broke the moment a SECOND tab (Equipment) could also become active:
+   that same backward-extend would have shoved Equipment's pill into
+   the seal too. Scoped to .kiosk-tab-attendance only now, and placed
+   after the generic rule so its more specific selector wins. */
+.kiosk-tab-attendance.active {
+  width: 100px;
+  margin-left: -120px;   /* extend the SAME rounded box left, under the seal */
+  padding-left: 124px;   /* pushes the "Attendance" text back to its original spot */
+  padding-right: 6px;
+  box-sizing: content-box;
+}/* ---------------- Responsive nav (small screens) ----------------
+   Everything above assumes a wide kiosk/tablet screen. Below ~600px the
+   seal, gaps, and paddings are all scaled down together so the row keeps
+   fitting Attendance + Equipment (+ Borrow/Return) + Admin without
+   Admin getting pushed outside the bar (see chat). */
+@media (max-width: 600px) {
+  .kiosk-navwrap {
+    width: 96%;
+    max-width: none;
+  }
+  .kiosk-seal {
+    width: 64px;
+    height: 64px;
+  }
+  .kiosk-seal img {
+    width: 56px;
+    height: 56px;
+  }
+  .kiosk-tabs {
+    gap: 2px;
+    padding: 6px 0 6px 66px;
+  }
+  .kiosk-tab {
+    font-size: 0.62rem;
+    padding: 4px 1px;
+  }
+  .kiosk-tab.active {
+    padding: 4px 6px;
+  }
+  .kiosk-tab-attendance.active {
+    width: 52px;
+    margin-left: -66px;
+    padding-left: 70px;
+    padding-right: 2px;
+  }
+  .kiosk-tab-admin {
+    padding-right: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .kiosk-tabs {
+    gap: 2px;
+    padding: 5px 0 5px 58px;
+  }
+  .kiosk-seal {
+    width: 54px;
+    height: 54px;
+  }
+  .kiosk-seal img {
+    width: 48px;
+    height: 48px;
+  }
+  .kiosk-tab {
+    font-size: 0.58rem;
+  }
+  .kiosk-tab.active {
+    padding: 3px 6px;
+  }
+  .kiosk-tab-attendance.active {
+    width: 44px;
+    margin-left: -58px;
+    padding-left: 61px;
+    padding-right: 2px;
+  }
+  .kiosk-tab-admin {
+    padding-right: 10px;
+  }
+}
+
+/* ---------------- Main / card ---------------- */
+.kiosk-main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0 0 40px;
+}
+
+.logbook-card {
+  background: #ffffff;
+  border-radius: 18px;
+  width: 88%;
+  max-width: 9                                                                                                               00px;
+  min-height: 480px;
+  display: grid;
+  grid-template-columns: 0.9fr auto 1.2fr;
+  align-content: stretch; /* so the row (and the panels in it) fill the
+                              card's full min-height instead of just
+                              hugging their own content height */
+  padding: 80px 36px 40px;
+  gap: 28px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  color: var(--lb-text-dark);
+  position: relative;
+  z-index: 1;
+}
+
+.logbook-panel { min-width: 0; }
+
+/* Equipment gives most of the card to the item list, not the identify
+   side (see chat - "give most the space for selecting items and
+   borrowing items") - Attendance keeps the plain even 1fr/1fr split
+   above, this only overrides it on the Equipment page. */
+.logbook-card--equipment {
+  grid-template-columns: 0.7fr auto 1.3fr;
+}
+
+.logbook-divider {
+  width: 1px;
+  background: var(--lb-grey-border);
+}
+
+.logbook-title {
+  font-family: "Fraunces", serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+  text-align: center;
+}
+
+.logbook-subtitle {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--lb-grey-sub);
+  margin: 0 0 32px;
+  text-align: center;
+}
+
+/* ---------------- Idle state ---------------- */
+.logbook-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 0 10px;
+}
+
+.logbook-idle.is-locked,
+.logbook-manual.is-locked {
+  opacity: 0.45;
+  filter: grayscale(40%);
+  pointer-events: none;
+}
+
+.logbook-lrn-input:disabled {
+  background: #F0F1F2;
+  cursor: not-allowed;
+}
+
+.logbook-idle-icon {
+  width: 134px;
+  height: 134px;
+  border-radius: 50%;
+  background: #A9B8B1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  animation: lb-pulse-ring 2s ease-out infinite;
+}
+
+@keyframes lb-pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(31, 77, 60, 0.4); }
+  70% { box-shadow: 0 0 0 22px rgba(31, 77, 60, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(31, 77, 60, 0); }
+}
+
+.logbook-mode-link {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--lb-grey-sub);
+  margin-top: 34px;
+  text-align: center;
+}
+
+.logbook-mode-link span {
+  color: var(--lb-gold);
+  text-decoration: underline;
+}
+
+/* ---------------- Manual entry state ---------------- */
+.logbook-manual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.logbook-lrn-input {
+  width: 100%;
+  max-width: 220px;
+  border: 1.5px solid var(--lb-grey-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: center;
+  color: var(--lb-text-dark);
+  margin-bottom: 22px;
+}
+
+.logbook-search-btn {
+  background: var(--lb-green-dark);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 28px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 18px;
+}
+
+.logbook-search-btn:hover { background: var(--lb-green-darker); }
+
+.logbook-search-btn:disabled {
+  background: var(--lb-grey-sub);
+  cursor: not-allowed;
+}
+
+.logbook-confirm-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.logbook-confirm-label {
+  font-size: 0.78rem;
+  color: var(--lb-grey-sub);
+  margin: 0 0 14px;
+}
+
+.logbook-confirm-name {
+  background: #F0F1F2;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 700;
+  margin: 0 0 24px;
+}
+
+.logbook-confirm-btn {
+  background: var(--lb-green-dark);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 28px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.logbook-confirm-btn:hover { background: var(--lb-green-darker); }
+
+.logbook-rfid-catcher {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+}
+
+/* ---------------- Status panel ---------------- */
+.logbook-status-title {
+  font-family: "Fraunces", serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 28px;
+}
+
+.logbook-status-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+}
+
+.logbook-no-activity {
+  color: var(--lb-grey-sub);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.logbook-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1.5px solid var(--lb-grey-border);
+  border-radius: 14px;
+  padding: 22px 28px;
+}
+
+.logbook-result-icon {
+  margin-bottom: 10px;
+}
+
+.logbook-result-title {
+  font-family: "Fraunces", serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.logbook-result-title .accent-in { color: var(--lb-green-timein); }
+.logbook-result-title .accent-out { color: var(--lb-red); }
+
+.logbook-result-name {
+  border: 1.5px solid var(--lb-red);
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.logbook-result-sub {
+  font-size: 0.92rem;
+  color: var(--lb-grey-sub);
+  font-weight: 600;
+  text-align: center;
+  max-width: 260px;
+  margin: 0;
+}
+
+/* ---------------- Equipment tab: item list + action ---------------- */
+/* Right panel of Equipment (Borrow: everything available; Return:
+   whatever the identified student currently has out) - a scrollable
+   checklist instead of the Attendance right panel's plain status box,
+   since this side is interactive rather than a read-only feed. */
+.logbook-equip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.logbook-equip-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1.5px solid var(--lb-grey-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.logbook-equip-group.is-selected {
+  border-color: var(--lb-green-dark);
+  background: #EEF6F2;
+}
+
+.logbook-equip-item-text { display: flex; flex-direction: column; min-width: 0; }
+.logbook-equip-item-name { font-weight: 700; font-size: 0.88rem; }
+.logbook-equip-item-code { font-size: 0.74rem; color: var(--lb-grey-sub); }
+
+.logbook-equip-stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.logbook-equip-stepper-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid var(--lb-green-dark);
+  background: #ffffff;
+  color: var(--lb-green-dark);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logbook-equip-stepper-btn:hover:not(:disabled) {
+  background: var(--lb-green-dark);
+  color: #ffffff;
+}
+
+.logbook-equip-stepper-btn:disabled {
+  border-color: var(--lb-grey-border);
+  color: var(--lb-grey-sub);
+  cursor: not-allowed;
+}
+
+.logbook-equip-stepper-qty {
+  min-width: 18px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.logbook-equip-empty {
+  color: var(--lb-grey-sub);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* One of two sections now shown together on the Equipment right panel
+   (see chat - used to be separate Borrow/Return nav sub-pages). "Your
+   Borrowed Items" only renders when the student actually has something
+   out; "Available Equipment" always does. */
+.logbook-equip-section + .logbook-equip-section {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--lb-grey-border);
+}
+
+.logbook-equip-section-title {
+  font-family: "Fraunces", serif;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+
+.logbook-equip-hint {
+  color: var(--lb-grey-sub);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.logbook-equip-action-btn {
+  display: block;
+  width: 100%;
+  background: var(--lb-green-dark);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 0;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.logbook-equip-action-btn:hover { background: var(--lb-green-darker); }
+
+.logbook-equip-action-btn:disabled {
+  background: var(--lb-grey-sub);
+  cursor: not-allowed;
+}
+
+.logbook-equip-error {
+  color: var(--lb-red);
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 0 0 10px;
+  text-align: center;
+}
+
+/* Success state after Borrow/Return completes - a small receipt-style
+   card (see chat - "like it has a card of borrowed item when
+   finished") instead of a plain one-line message, shown briefly before
+   auto-reset. */
+.logbook-equip-finish-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 0 10px;
+}
+
+.logbook-equip-finish-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--lb-green-dark);
+  color: #ffffff;
+  font-size: 1.6rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.logbook-equip-finish-title {
+  font-family: "Fraunces", serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+
+.logbook-equip-finish-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 260px;
+}
+
+.logbook-equip-finish-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  border-bottom: 1px solid var(--lb-grey-border);
+}
+
+.logbook-equip-finish-item:last-child { border-bottom: none; }
+
+.logbook-equip-finish-qty { color: var(--lb-grey-sub); }
+
+/* Running "cart" summary on the Return side (see chat) - a small boxed
+   list of what's picked so far via the stepper, shown between the item
+   list and the Return Selected button. */
+.logbook-equip-cart {
+  border: 1.5px solid var(--lb-grey-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.logbook-equip-cart.is-empty {
+  opacity: 0.6;
+}
+
+.logbook-equip-cart-title {
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--lb-grey-sub);
+  margin: 0 0 8px;
+}
+
+.logbook-equip-cart-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.logbook-equip-cart-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.logbook-equip-cart-qty { color: var(--lb-green-dark); }
+
+.logbook-equip-cart-empty {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--lb-grey-sub);
+}
+
+@media (max-width: 720px) {
+  .logbook-card {
+    grid-template-columns: 1fr;
+  }
+  .logbook-divider {
+    width: 100%;
+    height: 1px;
+  }
+}
+
+/* ---------------- Admin PIN gate ---------------- */
+.kiosk-admin-overlay {
+  position: fixed;
+  inset: 0;
+  /* Neutral black, not green: the kiosk photo behind it is already
+     green, so a green tint just looked muddy. */
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+/* PIN modals on the kiosk (Admin tab gate + Staff Verification for
+   Return) are styled to match the admin side's modals (.regf-card in
+   admin.css): green header with a close button, labelled pill input,
+   outline Cancel + gold primary button, same fonts/colors/shadow. */
+.kiosk-admin-panel {
+  background: #ffffff;
+  color: var(--lb-text-dark);
+  width: 360px;
+  max-width: 92vw;
+  border: 1px solid var(--lb-grey-border);
+  border-radius: 14px;
+  box-shadow: 0 18px 50px rgba(15, 46, 32, 0.28);
+  overflow: hidden;
+  text-align: left;
+  animation: kiosk-pin-pop 0.18s ease-out;
+}
+
+@keyframes kiosk-pin-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.kiosk-admin-header {
+  background: linear-gradient(160deg, var(--lb-green-darker), var(--lb-green-dark) 55%, #2A6049);
+  color: #ffffff;
+  padding: 18px 20px 16px 22px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kiosk-admin-title {
+  margin: 0;
+  font-family: "Public Sans", sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: #ffffff;
+}
+
+.kiosk-admin-close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.kiosk-admin-close:hover { background: rgba(255, 255, 255, 0.25); }
+.kiosk-admin-close:focus-visible { outline: 2px solid #FFECB2; outline-offset: 2px; }
+
+.kiosk-admin-body {
+  padding: 16px 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kiosk-admin-sub {
+  font-weight: 400;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--lb-grey-sub);
+  margin: 0;
+}
+
+.kiosk-admin-field label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--lb-text-dark);
+  margin: 0 0 5px 4px;
+}
+.kiosk-admin-req { color: var(--lb-red); }
+
+.kiosk-admin-pin-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 16px;
+  border: 1.5px solid #CFCFCF;
+  border-radius: 999px;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--lb-text-dark);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.kiosk-admin-pin-input:hover { border-color: #A9A9A9; }
+.kiosk-admin-pin-input:focus {
+  outline: none;
+  border-color: #48977B;
+  box-shadow: 0 0 0 3px rgba(72, 151, 123, 0.18);
+}
+
+/* Password show/hide eye toggle (see wwwroot/js/password-toggle.js) -
+   same class names as admin.css's version so the one shared script
+   works on this page too. */
+.pwd-wrap { position: relative; display: block; width: 100%; }
+.pwd-wrap input { padding-right: 38px; }
+.pwd-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lb-grey-sub);
+  cursor: pointer;
+}
+.pwd-toggle:hover { color: var(--lb-text-dark); }
+.pwd-toggle svg { width: 18px; height: 18px; display: block; }
+
+/* PIN-entry meter (see wwwroot/js/pin-dots.js) - small dash segments
+   that light up as digits are typed, same pattern as admin.css's
+   version, scoped with this page's --lb-* variables. */
+.pin-meter { display: flex; gap: 6px; margin: 9px 2px 6px; }
+.pin-meter i {
+  flex: 1 1 0;
+  height: 5px;
+  border-radius: 3px;
+  background: transparent;
+  border: 1px solid var(--lb-grey-border);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.pin-meter i.on { background: var(--lb-gold); border-color: var(--lb-gold); }
+.pin-meter.is-full i { background: var(--lb-green-dark); border-color: var(--lb-green-dark); }
+
+/* PIN inputs: centered, larger, more spaced-out digits - same as
+   admin.css's version. */
+input[data-pin-dots] {
+  text-align: center !important;
+  font-size: 1.5rem !important;
+  letter-spacing: 10px !important;
+  font-weight: 700 !important;
+}
+
+.kiosk-admin-error {
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+  background: #FDECEA;
+  color: #8C1D16;
+  border: 1px solid #F3C2BD;
+}
+
+.kiosk-admin-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.kiosk-admin-cancel,
+.kiosk-admin-confirm {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.05s ease;
+}
+.kiosk-admin-cancel:active,
+.kiosk-admin-confirm:active { transform: translateY(1px); }
+
+.kiosk-admin-cancel {
+  background: #ffffff;
+  border: 1.5px solid #CFCFCF;
+  color: var(--lb-text-dark);
+}
+.kiosk-admin-cancel:hover {
+  border-color: var(--lb-green-dark);
+  color: var(--lb-green-dark);
+  background: #F3F8F5;
+}
+
+.kiosk-admin-confirm {
+  background: var(--lb-gold);
+  border: 1.5px solid var(--lb-gold);
+  color: #ffffff;
+}
+.kiosk-admin-confirm:hover {
+  background: #A67B30;
+  border-color: #A67B30;
+}
+
+.kiosk-admin-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

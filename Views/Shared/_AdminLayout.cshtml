@@ -1,0 +1,340 @@
+@using System.Security.Claims
+@inject C_LabTap.Services.SupabaseService Supabase
+@{
+    string active = ViewData["Active"] as string ?? "";
+    Func<string, string> navClass = (page) => page == active ? "nav-link active" : "nav-link";
+    // Branding settings (logo) - see SettingsController's Branding panel.
+    // Falls back to the default AAMNHS logo if nothing's been uploaded.
+    string brandLogoUrl = await C_LabTap.Models.BrandingHelper.GetLogoUrlAsync(Supabase);
+
+    // Who's actually signed in (see AccountController.Login's claims) -
+    // powers the sidebar profile row below.
+    string staffName = User.FindFirst(ClaimTypes.Name)?.Value ?? "Account";
+    string staffRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Staff";
+
+    // Whether this account already has a Google sign-in linked (see
+    // staff_google_accounts) - decides whether the profile menu offers
+    // to link one or says it's already connected.
+    bool googleLinked = false;
+    string? googleLinkedEmail = null;
+    string? googlePictureUrl = null;
+    if (long.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var staffIdForLink))
+    {
+        var googleLinkRows = await Supabase.GetAsync(
+            "staff_google_accounts", $"select=google_email,google_name,picture_url&staff_account_id=eq.{staffIdForLink}&limit=1");
+        googleLinked = googleLinkRows.Count > 0;
+        if (googleLinked)
+        {
+            googleLinkedEmail = googleLinkRows[0]["google_email"]?.ToString();
+            googlePictureUrl = googleLinkRows[0]["picture_url"]?.ToString();
+            // The Google account's display name becomes the sidebar name
+            // once it's linked, since that's the identity being signed in
+            // with - falls back to the staff_accounts name otherwise.
+            var googleDisplayName = googleLinkRows[0]["google_name"]?.ToString();
+            if (!string.IsNullOrWhiteSpace(googleDisplayName)) staffName = googleDisplayName;
+        }
+    }
+
+    // Computed after the Google-name override above, so the initials
+    // (shown when there's no profile photo) match whichever name ends
+    // up on screen.
+    string staffInitials = string.Join("", staffName
+        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        .Where(p => p.Length > 0)
+        .Take(2)
+        .Select(p => char.ToUpperInvariant(p[0])));
+    if (staffInitials.Length == 0) staffInitials = "A";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - C-LABTAP</title>
+    <link rel="icon" type="image/x-icon" href="~/C-LabTap.icon.ico" asp-append-version="true" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700&family=Poppins:wght@700&family=Public+Sans:wght@400;700;800&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body data-role="@staffRole">
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <img src="@Url.Content(brandLogoUrl)" alt="AAMNHS logo" />
+                <div class="brand-name">AAMNHS</div>
+            </div>
+
+            <ul class="sidebar-nav">
+                <div class="nav-indicator"></div>
+                @{
+                    // Label here is the single source of truth for the topbar's
+                    // page title (see .topbar-page-title below) - both the
+                    // server-rendered first load AND admin.js's AJAX nav-swap read
+                    // it for the active page, via the data-title attribute on each
+                    // link below.
+                    var navItems = new[]
+                    {
+                        new { Key = "Attendance", Label = "Attendance", Controller = "Attendance", Icon = "attendance.png", IconActive = "attendance-active.png" },
+                        new { Key = "ItemLending", Label = "Item Lending", Controller = "ItemLending", Icon = "item-lending.png", IconActive = "item-lending-active.png" },
+                        new { Key = "RegisterStudent", Label = "Register Student", Controller = "RegisterStudent", Icon = "register-student.png", IconActive = "register-student-active.png" },
+                        new { Key = "RegisterItem", Label = "Register item", Controller = "RegisterItem", Icon = "register-item.png", IconActive = "register-item-active.png" },
+                        new { Key = "Report", Label = "Report", Controller = "Report", Icon = "report.png", IconActive = "report-active.png" },
+                        new { Key = "Settings", Label = "More", Controller = "Settings", Icon = "more.png", IconActive = "more-active.png" },
+                    };
+                    var activeItem = navItems.FirstOrDefault(n => n.Key == active);
+                    // Settings ("More") is Admin-only (see chat and
+                    // SettingsController.OnActionExecuting) - Staff never
+                    // even sees the link, on top of the server bouncing
+                    // them if they type the URL directly.
+                    var visibleNavItems = staffRole == "Admin" ? navItems : navItems.Where(n => n.Key != "Settings");
+                }
+                @foreach (var item in visibleNavItems)
+                {
+                    string iconUrl = Url.Content("~/images/icons/" + item.Icon);
+                    <li>
+                        <a class="@navClass(item.Key)" data-page="@item.Key"
+                           data-title="@item.Label"
+                           asp-controller="@item.Controller" asp-action="Index">
+                            <span class="nav-icon">
+                                <span class="nav-icon-img" style="-webkit-mask-image:url('@iconUrl'); mask-image:url('@iconUrl');"></span>
+                            </span>
+                            <span class="nav-text">@item.Label</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-profile" id="sidebarProfile">
+                    <button type="button" class="sidebar-profile-trigger" id="sidebarProfileTrigger" aria-haspopup="true" aria-expanded="false" aria-controls="sidebarProfileMenu">
+                        @if (!string.IsNullOrEmpty(googlePictureUrl))
+                        {
+                            <img class="sidebar-profile-avatar sidebar-profile-avatar--photo" src="@googlePictureUrl" alt="" aria-hidden="true" referrerpolicy="no-referrer" />
+                        }
+                        else
+                        {
+                            <span class="sidebar-profile-avatar" aria-hidden="true">@staffInitials</span>
+                        }
+                        <span class="sidebar-profile-text">
+                            <span class="sidebar-profile-name">@staffName</span>
+                            <span class="sidebar-profile-role">@staffRole</span>
+                        </span>
+                        <svg class="sidebar-profile-caret" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <div class="sidebar-profile-menu" id="sidebarProfileMenu" role="menu" hidden>
+                        <button type="button" class="sidebar-profile-menu-item" id="openChangePasswordBtn" role="menuitem">
+                            Change Password
+                        </button>
+                        <button type="button" class="sidebar-profile-menu-item" id="openChangePinBtn" role="menuitem">
+                            Change PIN
+                        </button>
+                        @if (googleLinked)
+                        {
+                            <div class="sidebar-profile-menu-item sidebar-profile-menu-item--static sidebar-profile-menu-item--google" role="menuitem">
+                                <span class="sidebar-profile-menu-item-label">Google account linked</span>
+                                <span class="sidebar-profile-menu-item-email">@googleLinkedEmail</span>
+                            </div>
+                            <button type="button" class="sidebar-profile-menu-item" id="openGoogleUnlinkBtn" role="menuitem">
+                                Unlink Google Account
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="sidebar-profile-menu-item" id="openGoogleLinkBtn" role="menuitem">
+                                Link Google Account
+                            </button>
+                        }
+                        <a class="sidebar-profile-menu-item sidebar-profile-menu-item--danger" role="menuitem" asp-controller="Account" asp-action="Logout">
+                            Log Out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <div class="main-col">
+            <div class="topbar">
+                <h1 class="topbar-page-title" id="topbarPageTitle">@(activeItem?.Label ?? ViewData["Title"])</h1>
+                <a class="btn-logbook" asp-controller="Logbook" asp-action="Index">
+                    <span class="btn-logbook-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 3a1.5 1.5 0 0 1 1.5 1.5v3.76a4.5 4.5 0 0 1 0 7.48v3.76a1.5 1.5 0 0 1-3 0v-3.76a4.5 4.5 0 0 1 0-7.48V4.5A1.5 1.5 0 0 1 12 3Z" fill="currentColor"/>
+                            <path d="M6.5 9a5.5 5.5 0 0 0 0 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <path d="M3.5 7a9 9 0 0 0 0 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+                            <path d="M17.5 9a5.5 5.5 0 0 1 0 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <path d="M20.5 7a9 9 0 0 1 0 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+                        </svg>
+                    </span>
+                    <span>Open Logbook</span>
+                </a>
+            </div>
+            <div id="main-content">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+
+    <div class="reg-overlay" id="changePasswordOverlay" style="display:none;">
+        <div class="regf-card regf-card--compact regf-card--password" role="dialog" aria-modal="true" aria-labelledby="changePasswordTitle">
+            <div class="regf-header">
+                <div class="regf-head-main regf-head-title-row">
+                    <h2 class="regf-title" id="changePasswordTitle">Change Password</h2>
+                </div>
+                <button type="button" class="regf-close" id="changePasswordClose" aria-label="Close" title="Close (Esc)">&times;</button>
+            </div>
+            <form class="regf-body" id="changePasswordForm" novalidate autocomplete="off">
+                <div class="regf-message" id="changePasswordMsg" role="alert" aria-live="assertive" hidden></div>
+                <div class="regf-row" id="cpStep1Row">
+                    <div class="regf-field regf-grow">
+                        <label for="cpCurrent">Current Password <span class="regf-req" aria-hidden="true">*</span></label>
+                        <input type="password" class="regf-input" id="cpCurrent" autocomplete="current-password" />
+                    </div>
+                </div>
+                <div id="cpStep2" hidden>
+                    <div class="regf-row">
+                        <div class="regf-field regf-grow">
+                            <label for="cpNew">New Password <span class="regf-req" aria-hidden="true">*</span></label>
+                            <input type="password" class="regf-input" id="cpNew" autocomplete="new-password" />
+                        </div>
+                    </div>
+                    <div class="regf-row">
+                        <div class="regf-field regf-grow">
+                            <label for="cpConfirm">Confirm New Password <span class="regf-req" aria-hidden="true">*</span></label>
+                            <input type="password" class="regf-input" id="cpConfirm" autocomplete="new-password" />
+                        </div>
+                    </div>
+                    <div class="regf-row regf-row--otp">
+                        <div class="regf-field regf-grow">
+                            <label for="cpOtp">Code emailed to you <span class="regf-req" aria-hidden="true">*</span></label>
+                            <input type="text" class="regf-input" id="cpOtp" inputmode="numeric" maxlength="6" autocomplete="off" />
+                        </div>
+                        <button type="button" class="regf-btn regf-btn-outline regf-otp-send-btn" id="changePasswordSendOtpBtn">Send code</button>
+                    </div>
+                </div>
+                <div class="regf-actions">
+                    <p class="regf-submit-hint" aria-live="polite"></p>
+                    <button type="button" class="regf-btn regf-btn-outline" id="changePasswordCancelBtn">Cancel</button>
+                    <button type="button" class="regf-btn regf-btn-primary" id="changePasswordVerifyBtn">Verify</button>
+                    <button type="button" class="regf-btn regf-btn-primary" id="changePasswordSubmitBtn" hidden>Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="reg-overlay" id="changePinOverlay" style="display:none;">
+        <div class="regf-card regf-card--compact regf-card--pin" role="dialog" aria-modal="true" aria-labelledby="changePinTitle">
+            <div class="regf-header">
+                <div class="regf-head-main regf-head-title-row">
+                    <h2 class="regf-title" id="changePinTitle">Change PIN</h2>
+                </div>
+                <button type="button" class="regf-close" id="changePinClose" aria-label="Close" title="Close (Esc)">&times;</button>
+            </div>
+            <form class="regf-body" id="changePinForm" novalidate autocomplete="off">
+                <div class="regf-message" id="changePinMsg" role="alert" aria-live="assertive" hidden></div>
+                <div class="regf-row" id="cpiStep1Row">
+                    <div class="regf-field regf-grow">
+                        <label for="cpiCurrent">Current PIN <span class="regf-req" aria-hidden="true">*</span></label>
+                        <input type="password" class="regf-input" id="cpiCurrent" inputmode="numeric" maxlength="4" data-pin-dots="4" autocomplete="off" />
+                        <button type="button" class="regf-link-btn" id="changePinForgotBtn">Forgot PIN?</button>
+                    </div>
+                </div>
+                <div id="cpiStep2" hidden>
+                    <div class="regf-row regf-row--pins">
+                        <div class="regf-field">
+                            <label for="cpiNew">New</label>
+                            <input type="password" class="regf-input" id="cpiNew" inputmode="numeric" minlength="4" maxlength="4" data-pin-dots="4" autocomplete="off" />
+                        </div>
+                        <div class="regf-field">
+                            <label for="cpiConfirm">Confirm</label>
+                            <input type="password" class="regf-input" id="cpiConfirm" inputmode="numeric" minlength="4" maxlength="4" data-pin-dots="4" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="regf-row regf-row--otp">
+                        <div class="regf-field regf-grow">
+                            <label for="cpiOtp">Code emailed to you <span class="regf-req" aria-hidden="true">*</span></label>
+                            <input type="text" class="regf-input" id="cpiOtp" inputmode="numeric" maxlength="6" autocomplete="off" />
+                        </div>
+                        <button type="button" class="regf-btn regf-btn-outline regf-otp-send-btn" id="changePinSendOtpBtn">Send code</button>
+                    </div>
+                </div>
+                <div class="regf-actions">
+                    <p class="regf-submit-hint" aria-live="polite"></p>
+                    <button type="button" class="regf-btn regf-btn-outline" id="changePinCancelBtn">Cancel</button>
+                    <button type="button" class="regf-btn regf-btn-primary" id="changePinVerifyBtn">Verify</button>
+                    <button type="button" class="regf-btn regf-btn-primary" id="changePinSubmitBtn" hidden>Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="reg-overlay" id="googleLinkOverlay" style="display:none;">
+        <div class="regf-card regf-card--compact" role="dialog" aria-modal="true" aria-labelledby="googleLinkTitle">
+            <div class="regf-header">
+                <div class="regf-head-main regf-head-title-row">
+                    <h2 class="regf-title" id="googleLinkTitle">Link Google Account</h2>
+                </div>
+                <button type="button" class="regf-close" id="googleLinkClose" aria-label="Close" title="Close (Esc)">&times;</button>
+            </div>
+            <form class="regf-body" id="googleLinkForm" novalidate autocomplete="off">
+                <div class="regf-message" id="googleLinkMsg" role="alert" aria-live="assertive" hidden></div>
+                <p class="settings-preview-caption">We'll email a code to confirm it's you before sending you to Google.</p>
+                <div class="regf-row regf-row--otp">
+                    <div class="regf-field regf-grow">
+                        <label for="glOtp">Code emailed to you <span class="regf-req" aria-hidden="true">*</span></label>
+                        <input type="text" class="regf-input" id="glOtp" inputmode="numeric" maxlength="6" autocomplete="off" />
+                    </div>
+                    <button type="button" class="regf-btn regf-btn-outline regf-otp-send-btn" id="googleLinkSendOtpBtn">Send code</button>
+                </div>
+                <div class="regf-actions">
+                    <p class="regf-submit-hint" aria-live="polite"></p>
+                    <button type="button" class="regf-btn regf-btn-outline" id="googleLinkCancelBtn">Cancel</button>
+                    <button type="button" class="regf-btn regf-btn-primary" id="googleLinkSubmitBtn">Continue to Google</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="reg-overlay" id="googleUnlinkOverlay" style="display:none;">
+        <div class="regf-card regf-card--compact" role="dialog" aria-modal="true" aria-labelledby="googleUnlinkTitle">
+            <div class="regf-header">
+                <div class="regf-head-main regf-head-title-row">
+                    <h2 class="regf-title" id="googleUnlinkTitle">Unlink Google Account</h2>
+                </div>
+                <button type="button" class="regf-close" id="googleUnlinkClose" aria-label="Close" title="Close (Esc)">&times;</button>
+            </div>
+            <form class="regf-body" id="googleUnlinkForm" novalidate autocomplete="off">
+                <div class="regf-message" id="googleUnlinkMsg" role="alert" aria-live="assertive" hidden></div>
+                <p class="settings-preview-caption">We'll email a code to confirm it's you before removing the linked account.</p>
+                <div class="regf-row regf-row--otp">
+                    <div class="regf-field regf-grow">
+                        <label for="guOtp">Code emailed to you <span class="regf-req" aria-hidden="true">*</span></label>
+                        <input type="text" class="regf-input" id="guOtp" inputmode="numeric" maxlength="6" autocomplete="off" />
+                    </div>
+                    <button type="button" class="regf-btn regf-btn-outline regf-otp-send-btn" id="googleUnlinkSendOtpBtn">Send code</button>
+                </div>
+                <div class="regf-actions">
+                    <p class="regf-submit-hint" aria-live="polite"></p>
+                    <button type="button" class="regf-btn regf-btn-outline" id="googleUnlinkCancelBtn">Cancel</button>
+                    <button type="button" class="regf-btn regf-btn-primary" id="googleUnlinkSubmitBtn">Unlink</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+    <script src="~/js/password-toggle.js" asp-append-version="true"></script>
+    <script src="~/js/pin-dots.js" asp-append-version="true"></script>
+    <!-- Report page's charts (Chart.js) and its "Export to Excel" button
+         (SheetJS/xlsx, builds the .xlsx entirely client-side - no server
+         package needed) - loaded here in the outer layout, not inside
+         Report's own _Content.cshtml partial, because a <script src>
+         inserted via innerHTML (admin.js's AJAX page-swap) never
+         executes; the layout itself is never swapped, so this runs once
+         and both libraries are already on window by the time Report's
+         own inline script runs, on a direct load or a nav-swap alike. -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

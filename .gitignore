@@ -1,0 +1,21 @@
+## .NET build output
+bin/
+obj/
+*.user
+*.suo
+
+## Local secrets - never commit real Supabase/Google/Gmail credentials.
+## appsettings.json (no secrets) is tracked; this one holds the real
+## values and is uploaded to the server separately, never via git.
+appsettings.Development.json
+appsettings.Production.json
+appsettings.*.local.json
+
+## Editor/OS noise
+.vs/
+.vscode/*
+!.vscode/launch.json
+.DS_Store
+
+## Scratch notes, not part of the app
+Claude outputs/

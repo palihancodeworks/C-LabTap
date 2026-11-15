@@ -1,0 +1,1894 @@
+@{
+    Layout = null;
+}
+<div class="stat-filter-row">
+    <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-card-title">Students Not Linked</div>
+            <div class="stat-card-row">
+                <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M16 8l2.5 2.5L16 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="stat-card-value" id="statNotLinked">&mdash;</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-title">Total Students Registered</div>
+            <div class="stat-card-row">
+                <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M15 7a3 3 0 1 1 1.4 5.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M16 14c2.8.5 5 2.8 5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                <span class="stat-card-value" id="statTotalRegistered">&mdash;</span>
+            </div>
+        </div>
+    </div>
+    <!-- Shared filter bar (same layout on Attendance and Item Lending):
+         search + "Filters" popover + Apply, quick Category / Grade
+         segmented filters, and chips for whatever is applied. -->
+    <div class="filter-bar filter-bar--stacked fbar" id="regFbar">
+        <div class="fbar-top">
+            <div class="search-combo">
+                <input type="text" placeholder="Search name or LRN" id="regFilterSearch" autocomplete="off" />
+                
+            </div>
+            <div class="fbar-more-wrap">
+                <button type="button" class="fbar-more" id="regFbarMore" aria-expanded="false" aria-controls="regFbarPanel">
+                    <svg class="fbar-more-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4-2v-4.5L4 5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                    <span>Filters</span>
+                    <span class="fbar-badge" id="regFbarBadge" hidden>0</span>
+                </button>
+                <div class="fbar-panel" id="regFbarPanel" role="group" aria-label="More filters" hidden>
+                    <div class="fbar-panel-grid">
+                        <div class="filter-field reg-date-filter">
+                            <label>Date Start</label>
+                            <div class="date-filter-input">
+                                <span class="date-filter-placeholder" aria-hidden="true">Choose date</span>
+                                <input type="date" id="regFilterDateStart" />
+                            </div>
+                        </div>
+                        <div class="filter-field reg-date-filter">
+                            <label>Date End</label>
+                            <div class="date-filter-input">
+                                <span class="date-filter-placeholder" aria-hidden="true">Choose date</span>
+                                <input type="date" id="regFilterDateEnd" />
+                            </div>
+                        </div>
+                        <div class="filter-field reg-date-filter reg-removed-filter is-hidden">
+                            <label>Date Removed</label>
+                            <div class="date-filter-input">
+                                <span class="date-filter-placeholder" aria-hidden="true">Choose date</span>
+                                <input type="date" id="regFilterRemoved" />
+                            </div>
+                        </div>
+                        <div class="filter-field reg-section-filter">
+                            <label>Section</label>
+                            <select id="regFilterSection">
+                                <option value="">All</option>
+                            </select>
+                        </div>
+                        <div class="filter-field reg-gender-filter">
+                            <label for="regFilterGender">Gender</label>
+                            <select id="regFilterGender">
+                                <option value="">All</option>
+                                <option>Male</option>
+                                <option>Female</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="fbar-reset" id="regFilterClear" aria-label="Clear all filters" title="Clear all filters"><img src="@Url.Content("~/images/icons/clear.icon.png")" alt="" class="fbar-reset-icon" /><span class="fbar-reset-label">Clear</span></button>
+        </div>
+        <div class="fbar-quick">
+            <div class="filter-field fbar-seg">
+                <label>Category</label>
+                <div class="toggle-group toggle-group--sliding" id="regFilterCategory" data-value="All">
+                    <span class="toggle-slider"></span>
+                    <button type="button" class="toggle-option active" data-value="All">All</button>
+                    <button type="button" class="toggle-option" data-value="Regular">Regular</button>
+                    <button type="button" class="toggle-option" data-value="STE">STE</button>
+                </div>
+            </div>
+            <div class="filter-field fbar-seg">
+                <label>Grade</label>
+                <div class="toggle-group toggle-group--sliding" id="regFilterGrade" data-value="All">
+                    <span class="toggle-slider"></span>
+                    <button type="button" class="toggle-option active" data-value="All">All</button>
+                    <button type="button" class="toggle-option" data-value="7">7</button>
+                    <button type="button" class="toggle-option" data-value="8">8</button>
+                    <button type="button" class="toggle-option" data-value="9">9</button>
+                    <button type="button" class="toggle-option" data-value="10">10</button>
+                </div>
+            </div>
+                                <div class="filter-field fbar-seg reg-rfid-filter">
+                            <label>RFID</label>
+                            <div class="toggle-group toggle-group--sliding" id="regFilterRfid" data-value="All">
+                                <span class="toggle-slider"></span>
+                                <button type="button" class="toggle-option active" data-value="All">All</button>
+                                <button type="button" class="toggle-option" data-value="Linked">Linked</button>
+                                <button type="button" class="toggle-option" data-value="NotLinked">Not Linked</button>
+                            </div>
+                        </div>
+            <button type="button" class="btn-apply" id="regFilterApply">Apply filters</button>
+        </div>
+        <div class="fbar-foot">
+            <div class="fbar-chips fbar-chips--slot" id="regFbarChips" aria-label="Applied filters"></div>
+        </div>
+    </div>
+</div>
+
+<div class="reg-overlay" id="regOverlay" style="display:none;">
+<div class="regf-card" role="dialog" aria-modal="true" aria-labelledby="regFormTitle">
+    <div class="regf-header">
+        <div class="regf-head-main">
+            <h2 class="regf-title" id="regFormTitle">Register Student</h2>
+            <p class="regf-subtitle" id="regFormSubtitle">Fill in the student's details, then link their RFID fob.</p>
+            <div class="regf-idcard" id="regIdCard" data-empty="true" aria-hidden="true">
+                <span class="regf-idcard-avatar" id="regPrevAvatar">?</span>
+                <span class="regf-idcard-text">
+                    <span class="regf-idcard-name" id="regPrevName">New student</span>
+                    <span class="regf-idcard-meta" id="regPrevMeta">Details appear here as you type</span>
+                </span>
+            </div>
+        </div>
+        <button type="button" class="regf-close" id="regOverlayClose" aria-label="Close form" title="Close (Esc)">&times;</button>
+    </div>
+
+    <form class="regf-body" id="regForm" novalidate autocomplete="off">
+        <div class="regf-message" id="regFormMsg" role="alert" aria-live="assertive" hidden></div>
+
+        <div class="regf-step" id="regStep1"><span class="regf-step-num" aria-hidden="true">1</span><span class="regf-step-title">Identity</span></div>
+
+        <div class="regf-row">
+            <div class="regf-field regf-grow">
+                <div class="regf-label-row">
+                    <label for="regName">Full Name <span class="regf-req" aria-hidden="true">*</span></label>
+                    <button type="button" class="regf-link" id="regSuffixAdd">+ Add suffix</button>
+                </div>
+                <input type="text" class="regf-input" id="regName" placeholder="e.g. Juan A. Dela Cruz" maxlength="50" required aria-describedby="regNameMsg" />
+                <p class="regf-help" id="regNameMsg">First name, middle initial, last name.</p>
+            </div>
+            <div class="regf-field regf-suffix" id="regSuffixField" hidden>
+                <label for="regSuffix">Suffix</label>
+                <select class="regf-input" id="regSuffix">
+                    <option value="">None</option>
+                    <option>Jr.</option>
+                    <option>Sr.</option>
+                    <option>II</option>
+                    <option>III</option>
+                    <option>IV</option>
+                    <option>V</option>
+                    <option>VI</option>
+                    <option>VII</option>
+                    <option>VIII</option>
+                    <option>IX</option>
+                    <option>X</option>
+                </select>
+                <p class="regf-help">&nbsp;</p>
+            </div>
+        </div>
+
+        <div class="regf-row regf-row--identity">
+            <div class="regf-field regf-grow">
+                <label for="regLrn">LRN <span class="regf-req" aria-hidden="true">*</span></label>
+                <input type="text" class="regf-input" id="regLrn" placeholder="12-digit LRN" maxlength="12" inputmode="numeric" required aria-describedby="regLrnMsg" />
+                <div class="regf-meter" id="regLrnMeter" aria-hidden="true"></div>
+                <p class="regf-help" id="regLrnMsg"><span id="regLrnCount">0</span>/12 digits</p>
+            </div>
+            <div class="regf-field regf-gender">
+                <span class="regf-label" id="regGenderLabel">Gender <span class="regf-req" aria-hidden="true">*</span></span>
+                <div class="regf-chips" id="regGenderChips" role="radiogroup" aria-labelledby="regGenderLabel">
+                    <button type="button" class="regf-chip" role="radio" aria-checked="false" data-value="Male">Male</button>
+                    <button type="button" class="regf-chip" role="radio" aria-checked="false" data-value="Female">Female</button>
+                </div>
+                <select class="regf-sr-only" id="regGender" tabindex="-1" aria-hidden="true">
+                    <option value="">Select</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="regf-step" id="regStep2"><span class="regf-step-num" aria-hidden="true">2</span><span class="regf-step-title">Class</span></div>
+
+        <div class="regf-row">
+            <div class="regf-field regf-category">
+                <span class="regf-label" id="regCategoryLabel">Class Category <span class="regf-req" aria-hidden="true">*</span></span>
+                <div class="regf-chips" id="regCategoryChips" role="radiogroup" aria-labelledby="regCategoryLabel">
+                    <button type="button" class="regf-chip" role="radio" aria-checked="false" data-value="Regular">Regular</button>
+                    <button type="button" class="regf-chip" role="radio" aria-checked="false" data-value="STE">STE</button>
+                </div>
+                <select class="regf-sr-only" id="regCategory" tabindex="-1" aria-hidden="true">
+                    <option value="">Select category</option>
+                    <option>Regular</option>
+                    <option>STE</option>
+                </select>
+            </div>
+            <div class="regf-field regf-grade">
+                <span class="regf-label" id="regGradeLabel">Grade <span class="regf-req" aria-hidden="true">*</span></span>
+                <div class="regf-chips" id="regGradeChips" role="radiogroup" aria-labelledby="regGradeLabel">
+                    <button type="button" class="regf-chip" role="radio" aria-checked="false" data-value="7">7</button>
+                    <button type="button" class="regf-chip" role="radio" aria-checked="false" data-value="8">8</button>
+                    <button type="button" class="regf-chip" role="radio" aria-checked="false" data-value="9">9</button>
+                    <button type="button" class="regf-chip" role="radio" aria-checked="false" data-value="10">10</button>
+                </div>
+                <select class="regf-sr-only" id="regGrade" tabindex="-1" aria-hidden="true">
+                    <option value="">Select grade</option>
+                    <option>7</option>
+                    <option>8</option>
+                    <option>9</option>
+                    <option>10</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="regf-row">
+            <div class="regf-field regf-grow">
+                <label for="regSection">Section <span class="regf-req" aria-hidden="true">*</span></label>
+                <div class="regf-combo">
+                    <input type="text" class="regf-input" id="regSection" placeholder="Section name" maxlength="30" required
+                           role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="regSectionList" aria-describedby="regSectionMsg" />
+                    <ul class="regf-suggest" id="regSectionList" role="listbox" aria-label="Existing sections" hidden></ul>
+                </div>
+                <p class="regf-help" id="regSectionMsg"></p>
+            </div>
+        </div>
+
+        <div class="regf-step" id="regStep3"><span class="regf-step-num" aria-hidden="true">3</span><span class="regf-step-title">RFID Fob</span><span class="regf-step-tag">Optional</span></div>
+
+        <div class="regf-field regf-fobfield">
+            <label for="rfidCardInput" class="regf-sr-only">RFID Fob</label>
+            <div class="regf-fob">
+                <div class="regf-fob-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path class="regf-fob-wave regf-fob-wave-1" d="M8.5 8.5a5 5 0 0 1 0 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path class="regf-fob-wave regf-fob-wave-2" d="M12 5.5a9 9 0 0 1 0 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path class="regf-fob-wave regf-fob-wave-3" d="M15.5 2.5a13 13 0 0 1 0 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <circle cx="5" cy="12" r="1.6" fill="currentColor"/>
+                    </svg>
+                    <svg class="regf-fob-check" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <input type="text" class="regf-input" id="rfidCardInput" placeholder="No fob linked yet" readonly aria-describedby="rfidScanStatus" />
+                <button type="button" class="regf-btn regf-btn-outline" id="rfidScanBtn">Scan RFID</button>
+                <p class="regf-scan-status" id="rfidScanStatus" data-state="idle" aria-live="polite">Optional. Click "Scan RFID", then tap the student's fob on the reader.</p>
+            </div>
+        </div>
+
+        <div class="regf-actions">
+            <p class="regf-submit-hint" id="regSubmitHint" aria-live="polite"></p>
+            <button type="button" class="regf-btn regf-btn-outline" id="registerClearBtn">Clear</button>
+            <button type="submit" class="regf-btn regf-btn-primary" id="regSubmitBtn">Register Student</button>
+        </div>
+    </form>
+
+    <div class="regf-confirm" id="regConfirm" role="alertdialog" aria-modal="true" aria-labelledby="regConfirmTitle" aria-describedby="regConfirmText" hidden>
+        <div class="regf-confirm-box">
+            <div class="regf-confirm-icon" aria-hidden="true">!</div>
+            <h3 class="regf-confirm-title" id="regConfirmTitle">Leave without saving?</h3>
+            <p class="regf-confirm-text" id="regConfirmText"></p>
+            <div class="regf-confirm-actions">
+                <button type="button" class="regf-btn regf-btn-outline regf-btn-discard" id="regConfirmDiscard">Discard &amp; close</button>
+                <button type="button" class="regf-btn regf-btn-primary" id="regConfirmKeep">Keep editing</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="regf-confirm regf-confirm--fixed" id="regDeleteConfirm" role="alertdialog" aria-modal="true" aria-labelledby="regDeleteConfirmTitle" aria-describedby="regDeleteConfirmText" hidden>
+    <div class="regf-confirm-box">
+        <div class="regf-confirm-icon regf-confirm-icon--danger" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m2 0-1 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7h12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <h3 class="regf-confirm-title" id="regDeleteConfirmTitle">Delete student?</h3>
+        <p class="regf-confirm-text" id="regDeleteConfirmText"></p>
+        <div class="regf-confirm-actions">
+            <button type="button" class="regf-btn regf-btn-outline" id="regDeleteConfirmCancel">Cancel</button>
+            <button type="button" class="regf-btn regf-btn-danger" id="regDeleteConfirmOk">Delete student</button>
+        </div>
+    </div>
+</div>
+
+<div class="regf-toast" id="regToast" role="status" aria-live="polite" hidden></div>
+
+<div class="registry-section registry-section--loading">
+    <div class="registry-toolbar">
+        <div class="registry-tabs" id="registryTabs">
+            <button type="button" class="registry-tab active" data-view="registered">
+                <img src="@Url.Content("~/images/icons/registered-tab-active.png")" alt="" class="registry-tab-icon registry-tab-icon-active" />
+                <img src="@Url.Content("~/images/icons/registered-tab.png")" alt="" class="registry-tab-icon registry-tab-icon-inactive" />
+                <span>Registered</span>
+            </button>
+            <button type="button" class="registry-tab" data-view="archived">
+                <img src="@Url.Content("~/images/icons/archived-tab-active.png")" alt="" class="registry-tab-icon registry-tab-icon-active" />
+                <img src="@Url.Content("~/images/icons/archived-tab.png")" alt="" class="registry-tab-icon registry-tab-icon-inactive" />
+                <span>Archived</span>
+            </button>
+        </div>
+        <button type="button" class="btn-add-pill" id="addStudentBtn">
+            <img src="@Url.Content("~/images/icons/add-student.png")" alt="" class="btn-add-pill-icon" />
+            <span>Add Student</span>
+        </button>
+    </div>
+    <div class="table-scroll">
+<table class="data-table">
+        <thead><tr>
+            <th>Name</th><th>LRN</th><th>Grade &amp; Section</th><th>Gender</th><th>RFID Fob</th><th>Registered On</th><th class="col-removed">Date Removed</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="registryRows"></tbody>
+    </table>
+</div>
+    <div class="table-empty" id="registryEmpty">No students registered yet this session.</div>
+    <div class="pagination" id="registryPagination"></div>
+</div>
+
+<script>
+    (function () {
+        var nameInput = document.getElementById("regName");
+        var lrnInput = document.getElementById("regLrn");
+        var gradeSelect = document.getElementById("regGrade");
+        var sectionInput = document.getElementById("regSection");
+        var clearBtn = document.getElementById("registerClearBtn");
+        var scanBtn = document.getElementById("rfidScanBtn");
+        var cardInput = document.getElementById("rfidCardInput");
+        var scanStatus = document.getElementById("rfidScanStatus");
+        var form = document.getElementById("regForm");
+        var editIconUrl = '@Url.Content("~/images/icons/edit.icon.png")';
+        var deleteIconUrl = '@Url.Content("~/images/icons/delete.icon.png")';
+        var retrieveIconUrl = '@Url.Content("~/images/icons/retrieve.icon.png")';
+
+        var genderSelect = document.getElementById("regGender");
+        var suffixSelect = document.getElementById("regSuffix");
+        var categorySelect = document.getElementById("regCategory");
+        var SUFFIXES = ["Jr.", "Sr.", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+
+        // ---------- Form look: chips, steps, preview, LRN meter ----------
+        // Gender and Grade are picked with chips; each chip group writes
+        // into its (hidden) <select>, so the rest of this script keeps
+        // reading/writing genderSelect / gradeSelect exactly as before.
+        // refreshUi() redraws everything from the field values, so it
+        // also covers values set from code (Edit, Clear).
+        var genderChips = document.getElementById("regGenderChips");
+        var gradeChips = document.getElementById("regGradeChips");
+        var categoryChips = document.getElementById("regCategoryChips");
+        var suffixField = document.getElementById("regSuffixField");
+        var suffixAddBtn = document.getElementById("regSuffixAdd");
+        var lrnMeter = document.getElementById("regLrnMeter");
+        var idCard = document.getElementById("regIdCard");
+        var prevAvatar = document.getElementById("regPrevAvatar");
+        var prevName = document.getElementById("regPrevName");
+        var prevMeta = document.getElementById("regPrevMeta");
+        var suffixOpen = false;
+
+        function chipButtons(group) {
+            return Array.prototype.slice.call(group.querySelectorAll(".regf-chip"));
+        }
+
+        function wireChips(group, select) {
+            if (!group || !select) return;
+            function pick(chip) {
+                if (select.value !== chip.dataset.value) {
+                    select.value = chip.dataset.value;
+                    select.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+                chip.focus();
+            }
+            group.addEventListener("click", function (e) {
+                var chip = e.target.closest(".regf-chip");
+                if (chip) pick(chip);
+            });
+            // Arrow keys move the choice, like a normal radio group.
+            group.addEventListener("keydown", function (e) {
+                var step = (e.key === "ArrowRight" || e.key === "ArrowDown") ? 1
+                    : (e.key === "ArrowLeft" || e.key === "ArrowUp") ? -1 : 0;
+                if (!step) return;
+                e.preventDefault();
+                var chips = chipButtons(group);
+                var at = chips.findIndex(function (c) { return c.dataset.value === select.value; });
+                pick(chips[(at + step + chips.length) % chips.length]);
+            });
+        }
+
+        function syncChips(group, select) {
+            if (!group || !select) return;
+            var chips = chipButtons(group);
+            var anyChecked = chips.some(function (c) { return c.dataset.value === select.value; });
+            chips.forEach(function (c, i) {
+                var on = c.dataset.value === select.value;
+                c.setAttribute("aria-checked", on ? "true" : "false");
+                // one tab stop per group: the picked chip, else the first
+                c.tabIndex = on || (!anyChecked && i === 0) ? 0 : -1;
+            });
+        }
+
+        function initialsOf(name) {
+            var words = name.replace(/[.,]/g, " ").trim().split(/\s+/).filter(Boolean);
+            if (!words.length) return "?";
+            var first = words[0].charAt(0);
+            var last = words.length > 1 ? words[words.length - 1].charAt(0) : "";
+            return (first + last).toLocaleUpperCase();
+        }
+
+        function setStepDone(id, done) {
+            var el = document.getElementById(id);
+            if (el) el.classList.toggle("is-done", !!done);
+        }
+
+        function refreshUi() {
+            syncChips(genderChips, genderSelect);
+            syncChips(gradeChips, gradeSelect);
+            syncChips(categoryChips, categorySelect);
+
+            // Suffix stays tucked away until it's needed.
+            var showSuffix = suffixOpen || !!suffixSelect.value;
+            if (suffixField) suffixField.hidden = !showSuffix;
+            if (suffixAddBtn) suffixAddBtn.hidden = showSuffix;
+
+            // LRN meter: one segment per digit
+            var digits = lrnInput.value.length;
+            if (lrnMeter) {
+                if (!lrnMeter.children.length) {
+                    for (var i = 0; i < 12; i++) lrnMeter.appendChild(document.createElement("i"));
+                }
+                Array.prototype.forEach.call(lrnMeter.children, function (seg, i) {
+                    seg.classList.toggle("on", i < digits);
+                });
+                lrnMeter.classList.toggle("is-full", digits === 12);
+            }
+
+            // Live student card in the header
+            var typedName = nameInput.value.trim();
+            if (idCard) {
+                idCard.dataset.empty = typedName ? "false" : "true";
+                prevAvatar.textContent = initialsOf(typedName);
+                prevName.textContent = typedName
+                    ? typedName + (suffixSelect.value ? " " + suffixSelect.value : "")
+                    : "New student";
+                var lrnText = lrnInput.value.replace(/(\d{4})(?=\d)/g, "$1 ");
+                var bits = [];
+                if (gradeSelect.value) bits.push("Grade " + gradeSelect.value);
+                if (categorySelect.value) bits.push(categorySelect.value);
+                if (sectionInput.value.trim()) bits.push(sectionInput.value.trim());
+                if (genderSelect.value) bits.push(genderSelect.value);
+                if (lrnText) bits.push("LRN " + lrnText);
+                prevMeta.textContent = bits.length ? bits.join("  ·  ") : "Details appear here as you type";
+            }
+
+            // Section check marks
+            setStepDone("regStep1",
+                typedName.length >= 3 && typedName.length <= 50 && digits === 12 && !!genderSelect.value);
+            setStepDone("regStep2", !!categorySelect.value && !!gradeSelect.value && !!sectionInput.value.trim());
+            setStepDone("regStep3", !!cardInput.value.trim() && !scanning);
+        }
+
+        wireChips(genderChips, genderSelect);
+        wireChips(gradeChips, gradeSelect);
+        wireChips(categoryChips, categorySelect);
+        if (suffixAddBtn) {
+            suffixAddBtn.addEventListener("click", function () {
+                suffixOpen = true;
+                refreshUi();
+                suffixSelect.focus();
+            });
+        }
+
+        // Full names are stored with the suffix at the end ("Juan Dela Cruz
+        // Jr."), so they read correctly everywhere (kiosk, attendance).
+        // These split / join it for the form.
+        function splitSuffix(fullName) {
+            var name = (fullName || "").trim();
+            for (var i = 0; i < SUFFIXES.length; i++) {
+                var sfx = SUFFIXES[i], bare = sfx.replace(".", "");
+                var re = new RegExp("[\\s,]+" + bare.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\.?$", "i");
+                if (re.test(name)) return { name: name.replace(re, "").trim(), suffix: sfx };
+            }
+            return { name: name, suffix: "" };
+        }
+        function joinSuffix(name, suffix) {
+            return suffix ? name + " " + suffix : name;
+        }
+
+        // Names: letters only (accented letters like n with tilde too), plus
+        // space, period, hyphen and apostrophe - e.g. "Ma. Dela Cruz-O'Neil".
+        var NAME_DISALLOWED = /[^\p{L}\p{M} .'\-]/gu;
+        var formTitle = document.getElementById("regFormTitle");
+        var formSubtitle = document.getElementById("regFormSubtitle");
+        var formMsg = document.getElementById("regFormMsg");
+        var lrnCount = document.getElementById("regLrnCount");
+        var toastEl = document.getElementById("regToast");
+
+        var paginationEl = document.getElementById("registryPagination");
+        // Row count flexes with the actual screen (see chat: more rows on a
+        // tall screen, fewer on a short one) instead of one fixed number -
+        // still never lets the page itself scroll (admin.css "html, body
+        // { overflow: hidden }"); CLabTapRowFit.watch below (wired once
+        // registryRows exists) keeps this in sync with the viewport.
+        var PAGE_SIZE = 10;
+        var currentPage = 1;
+        var registryLoadVersion = 0;
+
+        // When set, the form is editing this student's id instead of
+        // registering a new one - set by clicking a row's Edit button,
+        // cleared after a successful save, Clear, or closing the form.
+        var editingId = null;
+        var editingName = ""; // shown in the "discard changes?" dialog
+
+        // The registration form lives in a floating overlay - opened by
+        // "Add Student" (blank form) or a registry row's Edit button
+        // (pre-filled), closed by the X, clicking outside the card, or Esc.
+        var overlay = document.getElementById("regOverlay");
+        var overlayClose = document.getElementById("regOverlayClose");
+        var addStudentBtn = document.getElementById("addStudentBtn");
+
+        // ---------- Feedback: toast (outside the form) ----------
+        // Short confirmation that stays visible after the form closes, and
+        // for table actions (delete / retrieve) that happen outside it.
+        var toastTimer = null;
+        function showToast(message, isError) {
+            if (!toastEl) return;
+            toastEl.textContent = message;
+            toastEl.classList.toggle("is-error", !!isError);
+            toastEl.hidden = false;
+            // restart the slide-in animation
+            toastEl.classList.remove("is-showing");
+            void toastEl.offsetWidth;
+            toastEl.classList.add("is-showing");
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () {
+                toastEl.classList.remove("is-showing");
+                toastEl.hidden = true;
+            }, isError ? 6000 : 3500);
+        }
+
+        // ---------- Feedback: message inside the form ----------
+        function showFormMessage(message, type) {
+            if (!formMsg) return;
+            if (!message) {
+                formMsg.hidden = true;
+                formMsg.textContent = "";
+                return;
+            }
+            formMsg.textContent = message;
+            formMsg.dataset.type = type || "info";
+            formMsg.hidden = false;
+        }
+
+        // ---------- Field validation (inline, as you type) ----------
+        var fieldHelpDefaults = {
+            regName: "First name, middle initial, last name.",
+            regLrn: null // LRN help is the live digit counter
+        };
+
+        function setFieldState(input, state, message) {
+            var field = input.closest(".regf-field");
+            if (!field) return;
+            field.classList.toggle("is-invalid", state === "invalid");
+            field.classList.toggle("is-valid", state === "valid");
+            input.setAttribute("aria-invalid", state === "invalid" ? "true" : "false");
+            var help = document.getElementById(input.id + "Msg");
+            if (!help) return;
+            if (input === nameInput) {
+                // Near the 50-character limit, show a counter instead.
+                var len = nameInput.value.length;
+                fieldHelpDefaults.regName = nameStripNote
+                    ? "Only letters, spaces, and . - ' are allowed in names."
+                    : len >= 40
+                    ? len + "/50 characters" + (len >= 50 ? " – limit reached" : "")
+                    : "First name, middle initial, last name.";
+            }
+            if (input === lrnInput) {
+                var digits = lrnInput.value.length;
+                help.innerHTML = state === "invalid" && message
+                    ? escapeHtml(message)
+                    : '<span id="regLrnCount">' + digits + "</span>/12 digits" + (digits === 12 ? " ✓" : "");
+            } else {
+                help.textContent = state === "invalid" && message ? message : fieldHelpDefaults[input.id] || "";
+            }
+        }
+
+        function validateName(showEmpty) {
+            var v = nameInput.value.trim();
+            if (!v) {
+                setFieldState(nameInput, showEmpty ? "invalid" : "neutral", "Enter the student's full name.");
+                return false;
+            }
+            if (v.length < 3) {
+                setFieldState(nameInput, "invalid", "Name looks too short.");
+                return false;
+            }
+            if (v.length > 50) {
+                setFieldState(nameInput, "invalid", "Name can be at most 50 characters (" + v.length + " now).");
+                return false;
+            }
+            setFieldState(nameInput, "valid");
+            return true;
+        }
+
+        function validateLrn(showEmpty) {
+            var v = lrnInput.value.trim();
+            if (!v) {
+                setFieldState(lrnInput, showEmpty ? "invalid" : "neutral", "Enter the 12-digit LRN.");
+                return false;
+            }
+            if (v.length !== 12) {
+                // While typing, just show the counter; only call it an
+                // error once they leave the field or try to save.
+                setFieldState(lrnInput, showEmpty ? "invalid" : "neutral",
+                    "LRN must be exactly 12 digits (" + v.length + " entered).");
+                return false;
+            }
+            setFieldState(lrnInput, "valid");
+            return true;
+        }
+
+        // LRN: digits only - strip anything else as it's typed or pasted.
+        lrnInput.addEventListener("input", function () {
+            var cleaned = lrnInput.value.replace(/\D/g, "").slice(0, 12);
+            if (cleaned !== lrnInput.value) lrnInput.value = cleaned;
+            validateLrn(false);
+            markDirty();
+        });
+        lrnInput.addEventListener("blur", function () {
+            if (lrnInput.value) validateLrn(true);
+        });
+        var nameStripNote = false;
+        nameInput.addEventListener("input", function () {
+            var cleaned = nameInput.value.replace(NAME_DISALLOWED, "");
+            nameStripNote = cleaned !== nameInput.value;
+            if (nameStripNote) nameInput.value = cleaned;
+            if (nameInput.closest(".regf-field").classList.contains("is-invalid")) validateName(true);
+            else setFieldState(nameInput, nameInput.value.trim().length >= 3 ? "valid" : "neutral");
+            markDirty();
+        });
+        nameInput.addEventListener("blur", function () {
+            if (nameInput.value) validateName(true);
+        });
+        [sectionInput, gradeSelect, genderSelect, suffixSelect, categorySelect].forEach(function (el) {
+            el.addEventListener("input", markDirty);
+            el.addEventListener("change", markDirty);
+        });
+
+        // Kept for the rest of the page script, which calls it after
+        // filling the form: refreshes the inline hints for what's in it now.
+        function updatePreview() {
+            if (nameInput.value) validateName(false); else setFieldState(nameInput, "neutral");
+            if (lrnInput.value) validateLrn(false); else setFieldState(lrnInput, "neutral");
+        }
+
+        // ---------- Section suggestions (like a search box) ----------
+        // Sections already used by registered students are offered as you
+        // type; picking one keeps the spelling consistent ("Rose", not
+        // "rose" and "ROSE"). A brand-new section shows no list - just a
+        // note that it will be added.
+        // Sections grouped by grade ("7": ["Rose", "Sampaguita"], "8": [...])
+        // so the suggestion list only ever offers sections that already
+        // exist under whichever Grade chip is currently picked (see chat:
+        // picking Grade 7 should only show Grade 7's sections). Loaded
+        // once from the database; rememberSection() adds to it locally
+        // right after a successful save, same as before.
+        // Keyed by "<grade>|<category>" - Grade 7 Regular and Grade 7
+        // STE don't share sections (see chat: picking STE + Grade 7 was
+        // still offering Diamond, which is a Regular-7 section), so both
+        // chips together decide which bucket of sections is offered.
+        var sectionsByBucket = {};
+        function bucketKey(grade, category) { return grade + "|" + category; }
+        fetch("/RegisterStudent/Sections", { headers: { "X-Requested-With": "XMLHttpRequest" } })
+            .then(function (res) { return res.json(); })
+            .then(function (rows) {
+                rows.forEach(function (row) {
+                    var key = bucketKey(row.grade, row.category);
+                    var bucket = sectionsByBucket[key] || (sectionsByBucket[key] = []);
+                    bucket.push(row.section);
+                });
+                Object.keys(sectionsByBucket).forEach(function (k) {
+                    sectionsByBucket[k].sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+                });
+                updateSectionHint();
+            })
+            .catch(function () { /* suggestions are a convenience, not required to register a student */ });
+
+        var sectionList = document.getElementById("regSectionList");
+        var sectionHelp = document.getElementById("regSectionMsg");
+        var sectionActive = -1;
+        var sectionMatches = [];
+
+        function currentSections() {
+            var grade = gradeSelect.value, category = categorySelect.value;
+            if (!grade || !category) return [];
+            return sectionsByBucket[bucketKey(grade, category)] || [];
+        }
+
+        function findSection(name) {
+            var key = name.trim().toLowerCase();
+            var list = currentSections();
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].toLowerCase() === key) return list[i];
+            }
+            return null;
+        }
+
+        function rememberSection(name) {
+            var grade = gradeSelect.value, category = categorySelect.value;
+            if (!grade || !category || !name) return;
+            var key = bucketKey(grade, category);
+            var bucket = sectionsByBucket[key] || (sectionsByBucket[key] = []);
+            if (!findSection(name)) {
+                bucket.push(name);
+                bucket.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+            }
+        }
+
+        // Grade and Category come first in the form, but if either
+        // changes after a section was already typed, the suggestion
+        // list and "existing/new" hint were still showing the OLD
+        // bucket's sections - refresh them for whichever grade+category
+        // is now selected.
+        [gradeSelect, categorySelect].forEach(function (sel) {
+            sel.addEventListener("change", function () {
+                updateSectionHint();
+                if (!sectionList.hidden) renderSectionList();
+            });
+        });
+
+        function closeSectionList() {
+            sectionList.hidden = true;
+            sectionInput.setAttribute("aria-expanded", "false");
+            sectionInput.removeAttribute("aria-activedescendant");
+            sectionActive = -1;
+        }
+
+        function highlightSection(index) {
+            var items = sectionList.querySelectorAll("li");
+            items.forEach(function (li, i) { li.classList.toggle("is-active", i === index); li.setAttribute("aria-selected", i === index ? "true" : "false"); });
+            sectionActive = index;
+            if (index >= 0 && items[index]) {
+                sectionInput.setAttribute("aria-activedescendant", items[index].id);
+                items[index].scrollIntoView({ block: "nearest" });
+            } else {
+                sectionInput.removeAttribute("aria-activedescendant");
+            }
+        }
+
+        function updateSectionHint() {
+            if (!sectionHelp) return;
+            var typed = sectionInput.value.trim();
+            if (!typed) {
+                sectionHelp.textContent = currentSections().length ? "Start typing to pick an existing section." : "";
+                sectionHelp.classList.remove("is-new");
+            } else if (findSection(typed)) {
+                sectionHelp.textContent = "Existing section ✓";
+                sectionHelp.classList.remove("is-new");
+            } else {
+                sectionHelp.textContent = "New section – it will be added when you save.";
+                sectionHelp.classList.add("is-new");
+            }
+        }
+
+        function renderSectionList() {
+            var typed = sectionInput.value.trim().toLowerCase();
+            var starts = [], contains = [];
+            currentSections().forEach(function (name) {
+                var lower = name.toLowerCase();
+                if (!typed || lower.indexOf(typed) === 0) starts.push(name);
+                else if (lower.indexOf(typed) > 0) contains.push(name);
+            });
+            sectionMatches = starts.concat(contains).slice(0, 8);
+            // Nothing to suggest for a new name, or when it's already
+            // typed out exactly.
+            if (sectionMatches.length === 0 ||
+                (sectionMatches.length === 1 && sectionMatches[0].toLowerCase() === typed)) {
+                closeSectionList();
+                return;
+            }
+            sectionList.innerHTML = sectionMatches.map(function (name, i) {
+                var lower = name.toLowerCase(), at = typed ? lower.indexOf(typed) : -1;
+                var label = at < 0 ? escapeHtml(name)
+                    : escapeHtml(name.slice(0, at)) + "<mark>" + escapeHtml(name.slice(at, at + typed.length)) + "</mark>" + escapeHtml(name.slice(at + typed.length));
+                return '<li role="option" id="regSectionOpt' + i + '" aria-selected="false" data-index="' + i + '">' + label + "</li>";
+            }).join("");
+            sectionList.hidden = false;
+            sectionInput.setAttribute("aria-expanded", "true");
+            highlightSection(-1);
+        }
+
+        function chooseSection(name) {
+            sectionInput.value = name;
+            closeSectionList();
+            updateSectionHint();
+            markDirty();
+        }
+
+        if (sectionInput && sectionList) {
+            sectionInput.addEventListener("input", function () { renderSectionList(); updateSectionHint(); });
+            sectionInput.addEventListener("focus", function () { renderSectionList(); updateSectionHint(); });
+            sectionInput.addEventListener("blur", function () {
+                closeSectionList();
+                // Match an existing section's spelling if only the case differs.
+                var existing = findSection(sectionInput.value);
+                if (existing && existing !== sectionInput.value.trim()) sectionInput.value = existing;
+                updateSectionHint();
+            });
+            sectionInput.addEventListener("keydown", function (e) {
+                if (sectionList.hidden) {
+                    if (e.key === "ArrowDown") { renderSectionList(); e.preventDefault(); }
+                    return;
+                }
+                if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    highlightSection((sectionActive + 1) % sectionMatches.length);
+                } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    highlightSection(sectionActive <= 0 ? sectionMatches.length - 1 : sectionActive - 1);
+                } else if (e.key === "Enter") {
+                    if (sectionActive >= 0) {
+                        e.preventDefault(); // pick the suggestion, don't submit
+                        chooseSection(sectionMatches[sectionActive]);
+                    } else {
+                        closeSectionList();
+                    }
+                } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    e.stopPropagation(); // close the list, not the whole form
+                    closeSectionList();
+                } else if (e.key === "Tab") {
+                    if (sectionActive >= 0) chooseSection(sectionMatches[sectionActive]);
+                }
+            });
+            // mousedown (not click) so the pick happens before the input blurs
+            sectionList.addEventListener("mousedown", function (e) {
+                var li = e.target.closest("li");
+                if (!li) return;
+                e.preventDefault();
+                chooseSection(sectionMatches[+li.dataset.index]);
+            });
+            sectionList.addEventListener("mousemove", function (e) {
+                var li = e.target.closest("li");
+                if (li && +li.dataset.index !== sectionActive) highlightSection(+li.dataset.index);
+            });
+        }
+
+        // ---------- Register button: only enabled once required info is in ----------
+        // Required: Full Name, LRN, Gender, Grade, Section (RFID fob and
+        // Suffix are optional). The hint next to the button says what's
+        // still missing, so a greyed-out button never leaves you guessing.
+        var submitHint = document.getElementById("regSubmitHint");
+        var submitBusy = false;
+        function missingFields() {
+            var missing = [];
+            var n = nameInput.value.trim();
+            if (n.length < 3 || n.length > 50) missing.push("Full Name");
+            if (!/^\d{12}$/.test(lrnInput.value.trim())) missing.push("LRN");
+            if (!genderSelect.value) missing.push("Gender");
+            if (!categorySelect.value) missing.push("Class Category");
+            if (!gradeSelect.value) missing.push("Grade");
+            if (!sectionInput.value.trim()) missing.push("Section");
+            return missing;
+        }
+        function updateSubmitState() {
+            if (!registerBtn) return;
+            var missing = missingFields();
+            registerBtn.disabled = submitBusy || missing.length > 0;
+            registerBtn.title = missing.length ? "Fill in: " + missing.join(", ") : "";
+            if (submitHint) {
+                submitHint.textContent = missing.length
+                    ? "Still needed (" + missing.length + "): " + missing.join(", ")
+                    : "All set \u2013 ready to " + (editingId ? "save." : "register.");
+                submitHint.classList.toggle("is-ready", missing.length === 0);
+            }
+            refreshUi();
+        }
+        if (form) {
+            form.addEventListener("input", function () { setTimeout(updateSubmitState, 0); });
+            form.addEventListener("change", function () { setTimeout(updateSubmitState, 0); });
+        }
+
+        // ---------- Unsaved-changes guard ----------
+        var formDirty = false;
+        function markDirty() {
+            formDirty = true;
+            updateSubmitState();
+            // Once every flagged field is fixed, drop the "please fix" banner.
+            if (formMsg && !formMsg.hidden && formMsg.dataset.type === "error" &&
+                !form.querySelector(".regf-field.is-invalid")) {
+                showFormMessage("");
+            }
+        }
+
+        var overlayCard = overlay ? overlay.querySelector(".regf-card") : null;
+        // Whatever button was clicked to open the form (Add Student, or a
+        // row's Edit icon) - the shared-element morph grows the overlay
+        // out of this element, and shrinks back into it on close (see
+        // admin.js CLabTapMorph).
+        var overlayTrigger = null;
+
+        function showOverlay() {
+            if (!overlay) return;
+            overlay.style.display = "flex";
+            updateSubmitState();
+            setTimeout(function () { nameInput.focus(); }, 0);
+        }
+
+        function openOverlay(triggerEl) {
+            overlayTrigger = triggerEl || overlayTrigger;
+            if (overlayCard && overlayTrigger) {
+                window.CLabTapMorph.open(overlayTrigger, overlayCard, showOverlay);
+            } else {
+                showOverlay();
+            }
+        }
+
+        function hideOverlay() {
+            if (overlay) overlay.style.display = "none";
+            if (scanning) stopScanning(false);
+        }
+
+        function closeOverlay() {
+            if (overlayCard && overlayTrigger) {
+                window.CLabTapMorph.close(overlayTrigger, overlayCard, hideOverlay);
+            } else {
+                hideOverlay();
+            }
+            overlayTrigger = null;
+        }
+
+        function resetForm() {
+            if (scanning) {
+                scanning = false;
+                clearTimeout(scanTimeout);
+            }
+            form.querySelectorAll("input, select").forEach(function (field) {
+                if (field.tagName === "SELECT") {
+                    field.selectedIndex = 0;
+                } else {
+                    field.value = "";
+                }
+            });
+            form.querySelectorAll(".regf-field").forEach(function (f) {
+                f.classList.remove("is-invalid", "is-valid");
+            });
+            setFieldState(nameInput, "neutral");
+            setFieldState(lrnInput, "neutral");
+            suffixOpen = false;
+            resetRfidField();
+            exitEditMode();
+            showFormMessage("");
+            formDirty = false;
+            updateSubmitState();
+        }
+
+        function escapeHtml(value) {
+            return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+                return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+            });
+        }
+
+        // ---------- RFID scan ----------
+        function setScanState(state, message) {
+            if (!scanStatus) return;
+            scanStatus.dataset.state = state;
+            scanStatus.textContent = message;
+            var field = cardInput.closest(".regf-field");
+            if (field) field.classList.toggle("is-scanning", state === "waiting");
+            if (scanBtn) {
+                scanBtn.textContent = state === "waiting" ? "Cancel scan" : (cardInput.value ? "Scan again" : "Scan RFID");
+                scanBtn.setAttribute("aria-pressed", state === "waiting" ? "true" : "false");
+            }
+        }
+
+        function resetRfidField() {
+            cardInput.readOnly = true;
+            cardInput.value = "";
+            cardInput.placeholder = "No fob linked yet";
+            setScanState("idle", 'Optional. Click "Scan RFID", then tap the student\'s fob on the reader.');
+        }
+
+        function exitEditMode() {
+            editingId = null;
+            editingName = "";
+            if (registerBtn) registerBtn.textContent = "Register Student";
+            if (formTitle) formTitle.textContent = "Register Student";
+            if (formSubtitle) formSubtitle.textContent = "Fill in the student's details, then link their RFID fob.";
+            if (clearBtn) clearBtn.textContent = "Clear";
+        }
+
+        if (clearBtn && form) {
+            clearBtn.addEventListener("click", function () {
+                // In edit mode this button reads "Cancel" and closes the
+                // form; for a new registration it empties the fields.
+                if (editingId) {
+                    requestClose();
+                    return;
+                }
+                resetForm();
+                nameInput.focus();
+            });
+        }
+
+        if (addStudentBtn) {
+            addStudentBtn.addEventListener("click", function () {
+                resetForm();
+                openOverlay(addStudentBtn);
+            });
+        }
+
+        function closeOverlayAndReset() {
+            closeConfirm();
+            resetForm();
+            closeOverlay();
+        }
+
+        // Closing with unsaved typing asks first, in a dialog inside the
+        // form (not the browser's plain confirm box), so a stray click
+        // outside the card or Esc doesn't throw away a half-filled form.
+        // Esc / clicking the dim area behind the dialog = Keep editing.
+        var confirmEl = document.getElementById("regConfirm");
+        var confirmText = document.getElementById("regConfirmText");
+        var confirmTitle = document.getElementById("regConfirmTitle");
+        var confirmKeep = document.getElementById("regConfirmKeep");
+        var confirmDiscard = document.getElementById("regConfirmDiscard");
+        var confirmReturnFocus = null;
+
+        // Delete-student confirm (separate from the "leave without
+        // saving?" dialog above - this one is position:fixed so it can
+        // cover the whole page, since Delete lives in the registry table,
+        // not inside the form card).
+        var deleteConfirmEl = document.getElementById("regDeleteConfirm");
+        var deleteConfirmText = document.getElementById("regDeleteConfirmText");
+        var deleteConfirmCancel = document.getElementById("regDeleteConfirmCancel");
+        var deleteConfirmOk = document.getElementById("regDeleteConfirmOk");
+        var deleteConfirmReturnFocus = null;
+        var pendingDelete = null; // { row, name }
+
+        function closeDeleteConfirm(returnFocus) {
+            if (!deleteConfirmEl || deleteConfirmEl.hidden) return;
+            deleteConfirmEl.hidden = true;
+            deleteConfirmOk.disabled = false;
+            deleteConfirmOk.textContent = "Delete student";
+            if (returnFocus && deleteConfirmReturnFocus && deleteConfirmReturnFocus.focus) deleteConfirmReturnFocus.focus();
+            deleteConfirmReturnFocus = null;
+            pendingDelete = null;
+        }
+
+        function openDeleteConfirm(row, name) {
+            if (!deleteConfirmEl) return;
+            pendingDelete = { row: row, name: name };
+            deleteConfirmText.textContent = "";
+            deleteConfirmText.appendChild(document.createTextNode("This removes "));
+            var strong = document.createElement("strong");
+            strong.textContent = name;
+            deleteConfirmText.appendChild(strong);
+            deleteConfirmText.appendChild(document.createTextNode(" from the Registered list and moves them to Archived. Their RFID and LRN will stop working with C-LabTap."));
+            deleteConfirmReturnFocus = document.activeElement;
+            deleteConfirmEl.hidden = false;
+            deleteConfirmOk.focus();
+        }
+
+        function runPendingDelete() {
+            if (!pendingDelete) return;
+            var deleteRow = pendingDelete.row, name = pendingDelete.name;
+            var deleteBtn = deleteRow.querySelector(".registry-delete-btn");
+            deleteConfirmOk.disabled = true;
+            deleteConfirmOk.textContent = "Deleting...";
+            if (deleteBtn) deleteBtn.disabled = true;
+            var body = new URLSearchParams();
+            body.append("id", deleteRow.dataset.studentId);
+
+            fetch("/RegisterStudent/Delete", {
+                method: "POST",
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                body: body
+            })
+                .then(function (response) {
+                    return response.json().then(function (data) {
+                        return { ok: response.ok, data: data };
+                    });
+                })
+                .then(function (result) {
+                    closeDeleteConfirm(false);
+                    if (!result.ok) {
+                        if (deleteBtn) deleteBtn.disabled = false;
+                        setRegisterStatus(result.data.error || "Could not delete student.", true);
+                        return;
+                    }
+                    if (editingId === deleteRow.dataset.studentId) {
+                        closeOverlayAndReset();
+                    }
+                    setRegisterStatus(name + " deleted.", false);
+                    loadRegistry();
+                    loadStats();
+                })
+                .catch(function () {
+                    closeDeleteConfirm(false);
+                    if (deleteBtn) deleteBtn.disabled = false;
+                    setRegisterStatus("Network error - could not reach the server.", true);
+                });
+        }
+
+        if (deleteConfirmEl) {
+            deleteConfirmCancel.addEventListener("click", function () { closeDeleteConfirm(true); });
+            deleteConfirmOk.addEventListener("click", runPendingDelete);
+            deleteConfirmEl.addEventListener("click", function (e) {
+                if (e.target === deleteConfirmEl) closeDeleteConfirm(true);
+            });
+            deleteConfirmEl.addEventListener("keydown", function (e) {
+                if (e.key === "Escape") { closeDeleteConfirm(true); return; }
+                if (e.key !== "Tab") return;
+                var first = deleteConfirmCancel, last = deleteConfirmOk;
+                if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            });
+        }
+
+        function confirmIsOpen() {
+            return !!confirmEl && !confirmEl.hidden;
+        }
+
+        function openConfirm() {
+            // A fob scan keeps stealing focus back to its box - stop it first.
+            if (scanning) stopScanning(false);
+            confirmText.textContent = "";
+            if (editingId) {
+                confirmTitle.textContent = "Discard your changes?";
+                confirmDiscard.textContent = "Discard changes";
+                confirmText.appendChild(document.createTextNode("Your changes to "));
+                var strong = document.createElement("strong");
+                strong.textContent = editingName || "this student";
+                confirmText.appendChild(strong);
+                confirmText.appendChild(document.createTextNode(" haven't been saved yet."));
+            } else {
+                confirmTitle.textContent = "Leave without saving?";
+                confirmDiscard.textContent = "Discard & close";
+                confirmText.textContent = "You've started registering a student. If you close now, what you've entered won't be saved.";
+            }
+            confirmReturnFocus = document.activeElement;
+            confirmEl.hidden = false;
+            confirmKeep.focus();
+        }
+
+        function closeConfirm(returnFocus) {
+            if (!confirmEl || confirmEl.hidden) return;
+            confirmEl.hidden = true;
+            if (returnFocus && confirmReturnFocus && confirmReturnFocus.focus) confirmReturnFocus.focus();
+            confirmReturnFocus = null;
+        }
+
+        function requestClose() {
+            if (confirmIsOpen()) return;
+            // A save is already in flight - closing now wouldn't cancel
+            // it (the request is already sent), it would just make the
+            // form disappear while the student may or may not actually
+            // get registered on a slow connection, with no way to tell
+            // which happened (see chat). So closing is blocked outright
+            // here, not even offered as "discard changes?", until the
+            // response comes back.
+            if (submitBusy) return;
+            if (!formDirty) {
+                closeOverlayAndReset();
+                return;
+            }
+            openConfirm();
+        }
+
+        if (confirmEl) {
+            confirmKeep.addEventListener("click", function () { closeConfirm(true); });
+            confirmDiscard.addEventListener("click", closeOverlayAndReset);
+            confirmEl.addEventListener("click", function (e) {
+                if (e.target === confirmEl) closeConfirm(true);
+            });
+            // keep Tab inside the two buttons while the dialog is open
+            confirmEl.addEventListener("keydown", function (e) {
+                if (e.key !== "Tab") return;
+                var first = confirmDiscard, last = confirmKeep;
+                if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            });
+        }
+
+        if (overlayClose) {
+            overlayClose.addEventListener("click", requestClose);
+        }
+
+        if (overlay) {
+            document.addEventListener("keydown", function (e) {
+                if (e.key !== "Escape" || overlay.style.display === "none") return;
+                if (confirmIsOpen()) {
+                    closeConfirm(true);
+                    return;
+                }
+                // Esc while waiting for a fob cancels the scan first.
+                if (scanning) {
+                    stopScanning(false);
+                    return;
+                }
+                requestClose();
+            });
+        }
+
+        if (form) {
+            // Enter in a field submits through the Register button's own
+            // click handler; never let the browser do a real form post.
+            form.addEventListener("submit", function (e) { e.preventDefault(); });
+        }
+
+        // A USB/serial RFID reader acts as a keyboard: tapping a fob types
+        // its built-in chip code straight into whatever field is focused,
+        // then usually sends Enter. So "scanning" here means: unlock the
+        // field, focus it so the reader's keystrokes land in it, and treat
+        // Enter (or a short pause after typing stops) as "fob captured".
+        var scanning = false;
+        var scanTimeout = null;
+        var previousCard = "";
+
+        function stopScanning(captured) {
+            scanning = false;
+            clearTimeout(scanTimeout);
+            cardInput.readOnly = true;
+            cardInput.blur();
+            var code = cardInput.value.trim();
+            if (captured && code) {
+                markDirty();
+                setScanState("success", "Fob detected and linked: " + code + ". It will be saved when you register.");
+            } else {
+                // Cancelled or timed out: put back whatever was there before.
+                cardInput.value = previousCard;
+                cardInput.placeholder = "No fob linked yet";
+                setScanState(previousCard ? "success" : "idle",
+                    previousCard ? "Scan cancelled - keeping the fob already on file: " + previousCard + "."
+                                 : "Scan cancelled. No fob linked.");
+            }
+        }
+
+        if (scanBtn && cardInput && scanStatus) {
+            scanBtn.addEventListener("click", function () {
+                if (scanning) {
+                    stopScanning(false);
+                    return;
+                }
+                scanning = true;
+                previousCard = cardInput.value.trim();
+                cardInput.readOnly = false;
+                cardInput.value = "";
+                cardInput.placeholder = "Waiting for fob...";
+                cardInput.focus();
+                setScanState("waiting", "Waiting for fob... tap it on the reader now. (Esc to cancel)");
+                clearTimeout(scanTimeout);
+                scanTimeout = setTimeout(function () {
+                    if (!scanning) return;
+                    stopScanning(false);
+                    setScanState("error", "No fob detected after 20 seconds. Check the reader is plugged in, then try again.");
+                }, 20000);
+            });
+
+            // Most readers send Enter right after typing the code.
+            cardInput.addEventListener("keydown", function (e) {
+                if (scanning && e.key === "Enter") {
+                    e.preventDefault();
+                    stopScanning(true);
+                }
+            });
+
+            // Clicking elsewhere while waiting would send the reader's
+            // keystrokes to the wrong field - keep focus on the fob box.
+            cardInput.addEventListener("blur", function () {
+                if (scanning) setTimeout(function () { if (scanning) cardInput.focus(); }, 0);
+            });
+
+            // Fallback for a reader that doesn't send Enter: treat a pause
+            // after typing stops as "done" too.
+            var settleTimer = null;
+            cardInput.addEventListener("input", function () {
+                if (!scanning) return;
+                clearTimeout(settleTimer);
+                settleTimer = setTimeout(function () {
+                    if (scanning && cardInput.value.trim()) stopScanning(true);
+                }, 400);
+            });
+        }
+
+        var registryRows = document.getElementById("registryRows");
+        var registryTable = registryRows.closest("table");
+        var registryEmpty = document.getElementById("registryEmpty");
+        var registryTabs = document.getElementById("registryTabs");
+
+        // Registered/Archived tabs (see chat): "registered" lists active
+        // students (is_active = true, today's default list), "archived"
+        // lists soft-deleted ones (is_active = false) so a student like
+        // Carl can be found by name and reactivated via the Activate
+        // button buildRegistryRow renders for this view. currentView also
+        // decides what List() and Create()/Update()'s post-save reload
+        // show, and which Actions buttons each row gets.
+        var currentView = "registered";
+        var viewSwitching = false;
+
+        // "Date Removed" only means something on the Archived tab, so it
+        // only shows there; switching back to Registered hides and empties
+        // it, and the other filters stretch back to fill the row.
+        function syncRemovedFilter() {
+            var input = document.getElementById("regFilterRemoved");
+            if (!input) return;
+            var show = currentView === "archived";
+            if (!show && input.value) {
+                input.value = "";
+                input.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+            var field = input.closest(".filter-field");
+            if (field) field.classList.toggle("is-hidden", !show);
+            // Showing/hiding this filter resizes the RFID toggle next to
+            // it - move its sliding pill to match right away.
+            if (window.CLabTapToggleGroup && window.CLabTapToggleGroup.refresh) {
+                window.CLabTapToggleGroup.refresh(document.getElementById("regFilterRfid"));
+            }
+        }
+
+        function updateTabsUI() {
+            syncRemovedFilter();
+            if (!registryTabs) return;
+            registryTabs.querySelectorAll(".registry-tab").forEach(function (tab) {
+                tab.classList.toggle("active", tab.dataset.view === currentView);
+            });
+        }
+
+        function switchView(view) {
+            if (view === currentView || viewSwitching || !view) return;
+            viewSwitching = true;
+            currentView = view;
+            updateTabsUI();
+            currentPage = 1;
+            loadRegistry();
+        }
+
+        syncRemovedFilter();
+        if (registryTabs) {
+            registryTabs.querySelectorAll(".registry-tab").forEach(function (tab) {
+                tab.addEventListener("click", function () {
+                    switchView(tab.dataset.view);
+                });
+            });
+        }
+        var registerBtn = document.getElementById("regSubmitBtn");
+
+        // Routes a status message to where the user is looking: inside the
+        // form while it's open, otherwise as a toast over the page (table
+        // actions like Delete / Retrieve happen with the form closed).
+        function setRegisterStatus(message, isError) {
+            if (overlay && overlay.style.display !== "none") {
+                showFormMessage(message, isError ? "error" : "info");
+            } else if (message) {
+                showToast(message, isError);
+            }
+        }
+
+        // Small "STE" / "Regular" tag shown after Grade & Section.
+        function categoryTag(category) {
+            if (!category) return "";
+            return '<span class="cat-tag cat-tag--' + (category === "STE" ? "ste" : "regular") + '">' + escapeHtml(category) + "</span>";
+        }
+
+        // Builds one registry-table row, with an Edit button that reloads
+        // this student's info back into the form above for editing.
+        function buildRegistryRow(student) {
+            var row = document.createElement("tr");
+            row.dataset.studentId = student.id;
+            row.dataset.fullName = student.fullName || "";
+            row.dataset.lrn = student.lrn || "";
+            row.dataset.grade = student.grade != null ? student.grade : "";
+            row.dataset.section = student.section || "";
+            row.dataset.gender = student.gender || "";
+            row.dataset.category = student.classCategory || "";
+            row.dataset.rfidTag = student.rfidTag || "";
+
+            var rfidLabel = student.rfidLinked ? "Linked" : "Not linked";
+            // Archived rows (soft-deleted students) get a single Activate
+            // button instead of Edit/Delete - editing or deleting an
+            // already-archived student doesn't make sense here (see chat:
+            // "search his name on the archived records and press
+            // activate").
+            var actionsHtml = currentView === "archived"
+                ? '<button type="button" class="btn-icon btn-icon-activate registry-activate-btn" title="Retrieve" aria-label="Retrieve">' +
+                        '<img src="' + retrieveIconUrl + '" alt="">' +
+                        '<span>Retrieve</span>' +
+                    '</button>'
+                : '<button type="button" class="btn-icon btn-icon-edit registry-edit-btn" title="Edit" aria-label="Edit">' +
+                        '<img src="' + editIconUrl + '" alt="">' +
+                        '<span>Edit</span>' +
+                    '</button>' +
+                    // Delete is Admin-only (see chat / RegisterStudentController.IsAdmin) -
+                    // Staff never gets the button at all, on top of the server-side block.
+                    (document.body.dataset.role === "Admin"
+                        ? '<button type="button" class="btn-icon btn-icon-delete registry-delete-btn" title="Delete" aria-label="Delete">' +
+                                '<img src="' + deleteIconUrl + '" alt="">' +
+                                '<span>Delete</span>' +
+                            '</button>'
+                        : "");
+            row.innerHTML =
+                "<td>" + escapeHtml(student.fullName) + "</td>" +
+                "<td>" + escapeHtml(student.lrn) + "</td>" +
+                '<td><span class="gs-text">' + escapeHtml(student.gradeSection) + "</span>" + categoryTag(student.classCategory) + "</td>" +
+                "<td>" + escapeHtml(student.gender || "\u2014") + "</td>" +
+                "<td>" + rfidLabel + "</td>" +
+                "<td>" + escapeHtml(student.registeredOn) + "</td>" +
+                '<td class="col-removed">' + escapeHtml(student.removedOn || "\u2014") + "</td>" +
+                '<td><div class="registry-actions">' + actionsHtml + '</div></td>';
+            return row;
+        }
+
+        if (registryRows) {
+            registryRows.addEventListener("click", function (e) {
+                var activateBtn = e.target.closest(".registry-activate-btn");
+                if (activateBtn) {
+                    var activateRow = activateBtn.closest("tr");
+                    if (!activateRow) return;
+
+                    var activateName = activateRow.dataset.fullName || "this student";
+                    activateBtn.disabled = true;
+                    var activateBody = new URLSearchParams();
+                    activateBody.append("id", activateRow.dataset.studentId);
+
+                    fetch("/RegisterStudent/Activate", {
+                        method: "POST",
+                        headers: { "X-Requested-With": "XMLHttpRequest" },
+                        body: activateBody
+                    })
+                        .then(function (response) {
+                            return response.json().then(function (data) {
+                                return { ok: response.ok, data: data };
+                            });
+                        })
+                        .then(function (result) {
+                            if (!result.ok) {
+                                activateBtn.disabled = false;
+                                setRegisterStatus(result.data.error || "Could not activate student.", true);
+                                return;
+                            }
+                            setRegisterStatus(activateName + " activated - back in Registered, same history intact.", false);
+                            loadRegistry();
+                            loadStats();
+                        })
+                        .catch(function () {
+                            activateBtn.disabled = false;
+                            setRegisterStatus("Network error - could not reach the server.", true);
+                        });
+                    return;
+                }
+
+                var deleteBtn = e.target.closest(".registry-delete-btn");
+                if (deleteBtn) {
+                    var deleteRow = deleteBtn.closest("tr");
+                    if (!deleteRow) return;
+                    openDeleteConfirm(deleteRow, deleteRow.dataset.fullName || "this student");
+                    return;
+                }
+
+                var btn = e.target.closest(".registry-edit-btn");
+                if (!btn) return;
+                var row = btn.closest("tr");
+                if (!row) return;
+
+                resetForm();
+                editingId = row.dataset.studentId;
+                editingName = row.dataset.fullName || "";
+                var nameParts = splitSuffix(row.dataset.fullName);
+                nameInput.value = nameParts.name;
+                suffixSelect.value = nameParts.suffix;
+                lrnInput.value = row.dataset.lrn || "";
+                gradeSelect.value = row.dataset.grade || "";
+                sectionInput.value = row.dataset.section || "";
+                genderSelect.value = row.dataset.gender || "";
+                categorySelect.value = row.dataset.category || "";
+
+                if (row.dataset.rfidTag) {
+                    cardInput.readOnly = true;
+                    cardInput.value = row.dataset.rfidTag;
+                    setScanState("success", "Fob on file: " + row.dataset.rfidTag + '. Click "Scan again" to replace it.');
+                } else {
+                    resetRfidField();
+                }
+
+                updatePreview();
+                if (registerBtn) registerBtn.textContent = "Save Changes";
+                if (clearBtn) clearBtn.textContent = "Cancel";
+                if (formTitle) formTitle.textContent = "Edit Student";
+                if (formSubtitle) formSubtitle.textContent = "Editing " + (row.dataset.fullName || "student") + ". Changes are saved when you click Save Changes.";
+                formDirty = false;
+                openOverlay(btn);
+            });
+        }
+
+        // Grade/Section/search filter bar above the registry table - scoped
+        // to student-registration fields only (see chat: not Item
+        // Lending's Date/Status/Method, which don't apply to a student
+        // registry).
+        var filterDateStart = document.getElementById("regFilterDateStart");
+        var filterDateEnd = document.getElementById("regFilterDateEnd");
+        var filterRemoved = document.getElementById("regFilterRemoved");
+        var filterGrade = document.getElementById("regFilterGrade");
+        var filterSection = document.getElementById("regFilterSection");
+        var filterGender = document.getElementById("regFilterGender");
+        var filterRfid = document.getElementById("regFilterRfid");
+        var filterCategory = document.getElementById("regFilterCategory");
+        var fbar = null; // shared filter bar (popover + applied chips), set up below
+        var filterSearch = document.getElementById("regFilterSearch");
+        var filterApply = document.getElementById("regFilterApply");
+        var filterClearBtn = document.getElementById("regFilterClear");
+        var statNotLinkedEl = document.getElementById("statNotLinked");
+        var statTotalRegisteredEl = document.getElementById("statTotalRegistered");
+
+        // Date Start/End filter by registration date (same "Choose date"
+        // placeholder-overlay trick as Attendance's own date filters).
+        [filterDateStart, filterDateEnd, filterRemoved].forEach(function (dateInput) {
+            if (!dateInput) return;
+            var dateContainer = dateInput.parentElement;
+            function updateDatePlaceholder() {
+                dateContainer.classList.toggle("has-value", Boolean(dateInput.value));
+            }
+            dateInput.addEventListener("input", updateDatePlaceholder);
+            dateInput.addEventListener("change", updateDatePlaceholder);
+            updateDatePlaceholder();
+        });
+
+        // Same load-order issue as Attendance's own toggle groups (see
+        // chat): admin.js (further down the page) hasn't necessarily run
+        // yet on a direct/hard page load, so window.CLabTapToggleGroup
+        // may not exist at this exact point - deferring to
+        // DOMContentLoaded covers that; the AJAX nav-swap case (admin.js
+        // already loaded) still runs immediately.
+        function initRegFilterToggle() {
+            if (window.CLabTapToggleGroup) {
+                window.CLabTapToggleGroup.init(filterRfid);
+                window.CLabTapToggleGroup.init(filterGrade);
+                window.CLabTapToggleGroup.init(filterCategory);
+            }
+            initRegFilterBar();
+        }
+
+        // "Filters" popover + chips for whatever is applied (shared
+        // component, see admin.js CLabTapFilterBar). loadRegistry() calls
+        // fbar.refresh() so the chips always match the request.
+        function initRegFilterBar() {
+            if (fbar || !window.CLabTapFilterBar) return;
+            var FB = window.CLabTapFilterBar;
+            fbar = FB.init({
+                moreBtn: document.getElementById("regFbarMore"),
+                panel: document.getElementById("regFbarPanel"),
+                chipsEl: document.getElementById("regFbarChips"),
+                badge: document.getElementById("regFbarBadge"),
+                panelApplyBtn: document.getElementById("regFbarPanelApply"),
+                panelClearBtn: document.getElementById("regFbarPanelClear"),
+                onApply: function () { if (filterApply) filterApply.click(); },
+                onClearAll: function () { if (filterClearBtn) filterClearBtn.click(); },
+                onChange: function () { currentPage = 1; loadRegistry(); },
+                controls: [
+                    FB.fromGroup(filterCategory, "Category", false),
+                    FB.fromGroup(filterGrade, "Grade", false),
+                    FB.fromDate(filterDateStart, "From", true),
+                    FB.fromDate(filterDateEnd, "To", true),
+                    FB.fromDate(filterRemoved, "Removed", true),
+                    FB.fromSelect(filterSection, "Section", true),
+                    FB.fromSelect(filterGender, "Gender", true),
+                    FB.fromGroup(filterRfid, "RFID", true, { Linked: "Linked", NotLinked: "Not linked" })
+                ]
+            });
+            fbar.refresh();
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initRegFilterToggle);
+        } else {
+            initRegFilterToggle();
+        }
+
+        // Fills the Section dropdown with the sections that actually
+        // exist, same source Attendance's own Section filter uses.
+        function loadFilterOptions() {
+            fetch("/Attendance/FilterOptions", { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    var sections = (data && data.sections) || [];
+                    sections.forEach(rememberSection);
+                    sections.forEach(function (name) {
+                        var opt = document.createElement("option");
+                        opt.value = name;
+                        opt.textContent = name;
+                        filterSection.appendChild(opt);
+                    });
+                })
+                .catch(function () {
+                    // Section filter just stays at "All" if this fails.
+                });
+        }
+
+        // The stat card is independent of the table's own filters -
+        // always "how many active students have no RFID on file right
+        // now" (see RegisterStudentController.Stats).
+        function loadStats() {
+            fetch("/RegisterStudent/Stats", { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (statNotLinkedEl) statNotLinkedEl.textContent = data.notLinked;
+                    if (statTotalRegisteredEl) statTotalRegisteredEl.textContent = data.totalRegistered;
+                })
+                .catch(function () {
+                    // Leave whatever is already showing.
+                });
+        }
+
+        if (filterApply) {
+            filterApply.addEventListener("click", function () {
+                currentPage = 1;
+                loadRegistry();
+            });
+        }
+
+        if (filterClearBtn) {
+            filterClearBtn.addEventListener("click", function () {
+                if (filterSearch) filterSearch.value = "";
+                if (window.CLabTapToggleGroup) {
+                    window.CLabTapToggleGroup.reset(filterGrade);
+                    window.CLabTapToggleGroup.reset(filterCategory);
+                }
+                if (filterSection) filterSection.value = "";
+                if (filterGender) filterGender.value = "";
+                if (filterDateStart) {
+                    filterDateStart.value = "";
+                    filterDateStart.dispatchEvent(new Event("input", { bubbles: true }));
+                }
+                if (filterDateEnd) {
+                    filterDateEnd.value = "";
+                    filterDateEnd.dispatchEvent(new Event("input", { bubbles: true }));
+                }
+                if (filterRemoved) {
+                    filterRemoved.value = "";
+                    filterRemoved.dispatchEvent(new Event("input", { bubbles: true }));
+                }
+                if (window.CLabTapToggleGroup) window.CLabTapToggleGroup.reset(filterRfid);
+                currentPage = 1;
+                loadRegistry();
+            });
+        }
+
+        // Live search as you type, debounced so it doesn't fire a request
+        // on every keystroke (same pattern as Attendance's own search).
+        var filterSearchTimer = null;
+        if (filterSearch) {
+            filterSearch.addEventListener("input", function () {
+                clearTimeout(filterSearchTimer);
+                filterSearchTimer = setTimeout(function () {
+                    currentPage = 1;
+                    loadRegistry();
+                }, 300);
+            });
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadRegistry();
+        }
+
+        // Loads the existing students from the server so the table survives
+        // navigating away from this page and back (it used to only grow
+        // in-memory after a fresh registration, so it looked empty again
+        // on every reload even though the data was still saved), and is
+        // paginated server-side.
+        function loadRegistry() {
+            var loadVersion = ++registryLoadVersion;
+            if (fbar) fbar.refresh();
+            var params = new URLSearchParams();
+            if (filterSearch && filterSearch.value.trim()) params.append("search", filterSearch.value.trim());
+            if (filterDateStart && filterDateStart.value) params.append("dateStart", filterDateStart.value);
+            if (filterDateEnd && filterDateEnd.value) params.append("dateEnd", filterDateEnd.value);
+            if (currentView === "archived" && filterRemoved && filterRemoved.value) {
+                params.append("removedDate", filterRemoved.value);
+            }
+            if (filterGrade && filterGrade.dataset.value && filterGrade.dataset.value !== "All") params.append("grade", filterGrade.dataset.value);
+            if (filterCategory && filterCategory.dataset.value && filterCategory.dataset.value !== "All") params.append("category", filterCategory.dataset.value);
+            if (filterSection && filterSection.value) params.append("section", filterSection.value);
+            if (filterGender && filterGender.value) params.append("gender", filterGender.value);
+            if (filterRfid && filterRfid.dataset.value && filterRfid.dataset.value !== "All") {
+                params.append("rfid", filterRfid.dataset.value);
+            }
+            params.append("view", currentView);
+            params.append("page", currentPage);
+            params.append("pageSize", PAGE_SIZE);
+
+            fetch("/RegisterStudent/List?" + params.toString(), { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (loadVersion !== registryLoadVersion) return;
+                    currentPage = data.page || 1;
+                    var students = data.rows || [];
+                    // "Date Removed" column only shows on the Archived tab -
+                    // switched together with the rows so header and cells
+                    // always match.
+                    registryTable.classList.toggle("is-archived", currentView === "archived");
+                    registryRows.innerHTML = "";
+                    if (students.length === 0) {
+                        registryEmpty.textContent = currentView === "archived"
+                            ? "No archived students."
+                            : "No students registered yet this session.";
+                        registryEmpty.style.display = "";
+                    } else {
+                        registryEmpty.style.display = "none";
+                        students.forEach(function (student) {
+                            registryRows.appendChild(buildRegistryRow(student));
+                        });
+                        window.CLabTapStagger.apply(registryRows.children);
+                    }
+                    window.CLabTapPagination.render(paginationEl, data, goToPage);
+                    // Real rows are now in the tbody - recheck against
+                    // their genuine height, not the throwaway probe row
+                    // CLabTapRowFit had to measure before any data had
+                    // loaded (see chat: "still has scrollbar"). Only once
+                    // (see hasRecheckedRowFit above) - every load after
+                    // this one is already working from a real measurement.
+                    if (rowFitController && !hasRecheckedRowFit) {
+                        hasRecheckedRowFit = true;
+                        rowFitController.recheck();
+                    }
+                    if (loadVersion !== registryLoadVersion) return;
+                    document.querySelector(".registry-section").classList.remove("registry-section--loading");
+                    viewSwitching = false;
+                })
+                .catch(function () {
+                    // Leave whatever is already in the table; a failed
+                    // refresh shouldn't wipe out what's showing.
+                    if (loadVersion === registryLoadVersion) {
+                        document.querySelector(".registry-section").classList.remove("registry-section--loading");
+                    }
+                    viewSwitching = false;
+                });
+        }
+
+        if (registerBtn) {
+            registerBtn.addEventListener("click", function () {
+                if (scanning) {
+                    showFormMessage("Still waiting for a fob - tap it on the reader or cancel the scan first.", "error");
+                    return;
+                }
+                var nameOk = validateName(true);
+                var lrnOk = validateLrn(true);
+                if (!nameOk || !lrnOk) {
+                    showFormMessage("Please fix the highlighted field" + (!nameOk && !lrnOk ? "s" : "") + " below.", "error");
+                    (nameOk ? lrnInput : nameInput).focus();
+                    return;
+                }
+                var name = joinSuffix(nameInput.value.trim().replace(/\s+/g, " "), suffixSelect.value);
+                var lrn = lrnInput.value.trim();
+                var gender = genderSelect.value;
+
+                var grade = gradeSelect.value;
+                var section = findSection(sectionInput.value) || sectionInput.value.trim();
+                var rfid = cardInput.value.trim();
+                var isEditing = !!editingId;
+
+                submitBusy = true;
+                registerBtn.disabled = true;
+                registerBtn.classList.add("is-loading");
+                var idleLabel = registerBtn.textContent;
+                registerBtn.textContent = isEditing ? "Saving..." : "Registering...";
+                showFormMessage("");
+
+                var body = new URLSearchParams();
+                if (isEditing) body.append("Id", editingId);
+                body.append("FullName", name);
+                body.append("Lrn", lrn);
+                if (grade) body.append("Grade", grade);
+                if (section) body.append("Section", section);
+                if (rfid) body.append("RfidTag", rfid);
+                if (gender) body.append("Gender", gender);
+                if (categorySelect.value) body.append("ClassCategory", categorySelect.value);
+
+                fetch(isEditing ? "/RegisterStudent/Update" : "/RegisterStudent/Create", {
+                    method: "POST",
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    body: body
+                })
+                    .then(function (response) {
+                        return response.json().then(function (data) {
+                            return { ok: response.ok, data: data };
+                        });
+                    })
+                    .then(function (result) {
+                        submitBusy = false;
+                        updateSubmitState();
+                        registerBtn.classList.remove("is-loading");
+                        registerBtn.textContent = idleLabel;
+                        if (!result.ok) {
+                            showFormMessage(result.data.error || ("Could not " + (isEditing ? "update" : "register") + " student."), "error");
+                            return;
+                        }
+
+                        rememberSection(section);
+                        resetForm();
+                        closeOverlay();
+                        showToast(isEditing
+                            ? name + "'s details were updated."
+                            : (result.data.reactivated
+                                ? name + " was restored from Archived with the new details."
+                                : name + " was registered" + (rfid ? " and their RFID fob is linked." : ". No RFID fob linked yet.")), false);
+                        // A newly added/edited student is always active,
+                        // so they'd never show up if we were sitting on
+                        // the Archived tab - snap back to Registered so
+                        // they're visible right away (no swipe here, this
+                        // isn't a tab click).
+                        if (currentView !== "registered") {
+                            currentView = "registered";
+                            updateTabsUI();
+                        }
+                        if (!isEditing) currentPage = 1;
+                        loadRegistry();
+                        loadStats();
+                    })
+                    .catch(function () {
+                        submitBusy = false;
+                        updateSubmitState();
+                        registerBtn.classList.remove("is-loading");
+                        registerBtn.textContent = idleLabel;
+                        showFormMessage("Couldn't reach the server. Check the connection and try again - nothing was saved.", "error");
+                    });
+            });
+        }
+
+        updatePreview();
+        refreshUi();
+        loadFilterOptions();
+        loadStats();
+        // On a direct/hard page load this inline script runs while admin.js
+        // (further down the page, after the body - see the toggle-group
+        // init above for the same load-order issue) hasn't executed yet,
+        // so window.CLabTapRowFit doesn't exist at this exact point - a
+        // plain `if (window.CLabTapRowFit)` guard would just silently skip
+        // straight to the fallback loadRegistry() call and never attach the
+        // watcher, leaving the row count stuck at 6 forever
+        // (see chat). Deferring to DOMContentLoaded (same pattern as
+        // initToggleGroups) fixes that; the AJAX nav-swap case (document
+        // already "complete", admin.js long since loaded) still runs
+        // immediately.
+        var rowFitController = null;
+        // CLabTapRowFit's very first measurement has to use a throwaway
+        // probe row (tbody starts empty), which can read shorter than a
+        // real row here (the Actions column's icon buttons). One corrective
+        // recheck() against genuine row content, right after the first
+        // real rows render, fixes that mismatch - but calling it after
+        // EVERY load (not just the first) let each correction's own
+        // loadRegistry() call race the one before it, with whichever
+        // fetch happened to resolve last winning regardless of which was
+        // actually most recent - the row count kept bouncing between
+        // several different values instead of settling once (see chat:
+        // "pagination in register stud disappeared and i can use
+        // scrollbar" - the network log showed pageSize jumping 10, 9, 6,
+        // 8, 6, 10, 6 across one page load). This flag makes sure it only
+        // ever fires that one corrective pass.
+        var hasRecheckedRowFit = false;
+        function initRowFit() {
+            if (window.CLabTapRowFit) {
+                rowFitController = window.CLabTapRowFit.watch(registryTable, { minRows: 3, fallbackRows: 7 }, function (rows) {
+                    // Was "rows + 3" - that requested 3 MORE rows than
+                    // CLabTapRowFit measured would actually fit, which
+                    // guaranteed .main-col would overflow (a real
+                    // scrollbar, not a cosmetic one), and with few enough
+                    // active students could also push totalPages down to
+                    // 1, hiding the pager entirely (see chat: "pagination
+                    // in register stud disappeared and i can use
+                    // scrollbar"). "rows" is already the exact count that
+                    // fits - no padding needed.
+                    PAGE_SIZE = rows;
+                    currentPage = 1;
+                    loadRegistry();
+                });
+            } else {
+                loadRegistry();
+            }
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initRowFit);
+        } else {
+            initRowFit();
+        }
+    })();
+</script>

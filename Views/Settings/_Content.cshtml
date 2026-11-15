@@ -1,0 +1,401 @@
+@using C_LabTap.Models
+@model SettingsViewModel
+@{
+    Layout = null;
+    string logoUrl = string.IsNullOrWhiteSpace(Model.LogoFile)
+        ? BrandingHelper.DefaultLogoUrl
+        : $"/images/branding/{Model.LogoFile}";
+    string bgUrl = string.IsNullOrWhiteSpace(Model.BackgroundFile)
+        ? BrandingHelper.DefaultBackgroundUrl
+        : $"/images/branding/{Model.BackgroundFile}";
+}
+<!-- Branding and Accounts are kiosk-style tiles - press one and its
+     form opens in a modal (same pattern as "Add Student" on Register
+     Student). Login History + the Accounts overview sit below as plain
+     cards, always visible, side by side. -->
+<div class="settings-tile-row">
+    <button type="button" class="settings-tile" id="openBranding" aria-haspopup="dialog">
+        <span class="settings-tile-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="4" width="18" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8" />
+                <circle cx="8.5" cy="9.5" r="1.6" stroke="currentColor" stroke-width="1.8" />
+                <path d="M4 16.5l5-4.5 3.5 3 3-2.5L20 16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </span>
+        <span class="settings-tile-text">
+            <span class="settings-tile-label">Branding</span>
+            <span class="settings-tile-sub">Logo &amp; background</span>
+        </span>
+    </button>
+    <button type="button" class="settings-tile" id="openAddStaff" aria-haspopup="dialog">
+        <span class="settings-tile-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="9.5" cy="8.5" r="3.2" stroke="currentColor" stroke-width="1.8" />
+                <path d="M4 19c0-3.3 2.5-5.8 5.5-5.8s5.5 2.5 5.5 5.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                <path d="M18.5 8v6M15.5 11h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+        </span>
+        <span class="settings-tile-text">
+            <span class="settings-tile-label">Add Account</span>
+            <span class="settings-tile-sub">Create Admin &amp; Staff logins</span>
+        </span>
+    </button>
+</div>
+
+<!-- Login History (left) + who currently has an account (right) - both
+     always visible, no button needed to see either table. -->
+<div class="settings-bottom-grid">
+    <div class="settings-card">
+        <div class="settings-panel-head">
+            <h2 class="settings-card-title">Login History</h2>
+            <p class="settings-card-subtitle">Recent logins and logouts across all accounts.</p>
+        </div>
+        <div class="settings-card-body">
+            <div class="settings-table-scroll">
+                <table class="settings-table">
+                    <thead>
+                        <tr><th>Name</th><th>Action</th><th>When</th></tr>
+                    </thead>
+                    <tbody id="loginHistoryRows">
+                        <!-- Populated by JS, paginated - see the script
+                             block below / SettingsController.LoginHistoryList. -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="settings-empty" id="loginHistoryEmpty" style="display: none;">No activity recorded yet.</p>
+            <div class="pagination" id="loginHistoryPagination"></div>
+        </div>
+    </div>
+
+    <div class="settings-card">
+        <div class="settings-panel-head">
+            <h2 class="settings-card-title">Accounts</h2>
+            <p class="settings-card-subtitle">Everyone who can log in, as Admin or Staff.</p>
+        </div>
+        <div class="settings-card-body">
+            @if (Model.Staff.Count == 0)
+            {
+                <p class="settings-empty">No accounts yet.</p>
+            }
+            else
+            {
+                <div class="settings-table-scroll">
+                    <table class="settings-table">
+                        <thead>
+                            <tr><th>Name</th><th>Role</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in Model.Staff)
+                            {
+                                var id = row.GetValueOrDefault("id")?.ToString();
+                                var name = row.GetValueOrDefault("full_name")?.ToString();
+                                var username = row.GetValueOrDefault("username")?.ToString();
+                                var role = row.GetValueOrDefault("role")?.ToString() ?? "Staff";
+                                <tr>
+                                    <td>@name</td>
+                                    <td><span class="role-tag role-tag--@(role.ToLowerInvariant())">@role</span></td>
+                                    <td class="settings-table-actions">
+                                        <form method="post" asp-controller="Settings" asp-action="RemoveStaff" onsubmit="return confirm('Remove @username?');">
+                                            <input type="hidden" name="id" value="@id" />
+                                            <button type="submit" class="btn-icon btn-icon-delete" title="Remove" aria-label="Remove @username">
+                                                <img src="@Url.Content("~/images/icons/delete.icon.png")" alt="" />
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Branding modal -->
+<div class="settings-overlay" id="brandingOverlay" style="display:none;">
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="brandingModalTitle">
+        <div class="settings-modal-header">
+            <div>
+                <h2 class="settings-modal-title" id="brandingModalTitle">Branding</h2>
+                <p class="settings-modal-subtitle">The logo and background shown across the admin app, the login screen, and the Logbook kiosk.</p>
+            </div>
+            <button type="button" class="settings-modal-close" data-close="brandingOverlay" aria-label="Close" title="Close (Esc)">&times;</button>
+        </div>
+        <div class="settings-modal-body">
+            <form method="post" enctype="multipart/form-data" asp-controller="Settings" asp-action="SaveBranding" class="settings-form">
+                <div class="settings-row settings-row--branding">
+                    <div class="settings-field settings-grow settings-field--media">
+                        <label for="brandingLogo">School logo</label>
+                        <img src="@Url.Content(logoUrl)" alt="Current logo" class="settings-preview-img settings-preview-logo" id="brandingLogoPreview" />
+                        <p class="settings-preview-caption">Shown in the sidebar, the login screen, and the kiosk seal.</p>
+                        <div class="settings-upload">
+                            <label for="brandingLogo" class="settings-btn settings-btn-outline settings-upload-btn">Choose file</label>
+                            <input type="file" id="brandingLogo" name="logo" accept="image/*" class="settings-file-input-hidden" />
+                            <span class="settings-upload-filename" id="brandingLogoFilename">No file chosen</span>
+                        </div>
+                    </div>
+                    <div class="settings-field settings-grow settings-field--media">
+                        <label for="brandingBg">Background image</label>
+                        <img src="@Url.Content(bgUrl)" alt="Current background" class="settings-preview-img settings-preview-bg" id="brandingBgPreview" />
+                        <p class="settings-preview-caption">Shown behind the login screen and the Logbook kiosk.</p>
+                        <div class="settings-upload">
+                            <label for="brandingBg" class="settings-btn settings-btn-outline settings-upload-btn">Choose file</label>
+                            <input type="file" id="brandingBg" name="background" accept="image/*" class="settings-file-input-hidden" />
+                            <span class="settings-upload-filename" id="brandingBgFilename">No file chosen</span>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="settings-btn settings-btn-primary">Save branding</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Account modal: creates an Admin or Staff login, picked with the
+     toggle below (see chat - this used to always create Staff only).
+     The separate view/remove "Accounts" tile+modal was dropped (see
+     chat) since the always-visible Accounts card below already shows
+     the record list with a delete action on each row. -->
+<div class="settings-overlay" id="addStaffOverlay" style="display:none;">
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="addStaffModalTitle">
+        <div class="settings-modal-header">
+            <div>
+                <h2 class="settings-modal-title" id="addStaffModalTitle">Add Account</h2>
+                <p class="settings-modal-subtitle">Create a new Admin or Staff login.</p>
+            </div>
+            <button type="button" class="settings-modal-close" data-close="addStaffOverlay" aria-label="Close" title="Close (Esc)">&times;</button>
+        </div>
+        <div class="settings-modal-body">
+            <form method="post" asp-controller="Settings" asp-action="AddStaff" class="settings-form settings-add-staff">
+                <div class="settings-field">
+                    <label>Role</label>
+                    <div class="toggle-group toggle-group--sliding" id="newAccountRole" data-value="Staff">
+                        <span class="toggle-slider"></span>
+                        <button type="button" class="toggle-option active" data-value="Staff">Staff</button>
+                        <button type="button" class="toggle-option" data-value="Admin">Admin</button>
+                    </div>
+                    <input type="hidden" name="role" id="newAccountRoleInput" value="Staff" />
+                </div>
+                <div class="settings-row">
+                    <div class="settings-field settings-grow">
+                        <label for="staffFullName">Full name <span class="settings-req" aria-hidden="true">*</span></label>
+                        <input type="text" id="staffFullName" name="fullName" class="settings-input" required />
+                    </div>
+                    <div class="settings-field settings-grow">
+                        <label for="staffPassword">Password <span class="settings-req" aria-hidden="true">*</span></label>
+                        <input type="password" id="staffPassword" name="password" class="settings-input" minlength="8" required />
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-field settings-grow">
+                        <label for="staffEmail">Gmail address <span class="settings-req" aria-hidden="true">*</span></label>
+                        <input type="email" id="staffEmail" name="email" class="settings-input" placeholder="name@gmail.com" required />
+                    </div>
+                    <div class="settings-field settings-grow">
+                        <label for="staffPin">Starting PIN <span class="settings-req" aria-hidden="true">*</span></label>
+                        <input type="password" id="staffPin" name="pin" class="settings-input" inputmode="numeric" minlength="4" maxlength="4" data-pin-dots="4" autocomplete="off" required />
+                    </div>
+                </div>
+                <p class="settings-preview-caption">The Gmail address and PIN are a starting point - have the new account holder change their own PIN and link their Gmail from their profile menu once they're logged in.</p>
+                @if (!string.IsNullOrEmpty(Model.StaffError))
+                {
+                    <p class="settings-error">@Model.StaffError</p>
+                }
+                <button type="submit" class="settings-btn settings-btn-primary">Add account</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        // Custom file-upload buttons (replacing the native "Choose File"
+        // control): show the picked filename, and swap the thumbnail to
+        // a live preview before the form is even submitted.
+        [
+            { input: "brandingLogo", filename: "brandingLogoFilename", preview: "brandingLogoPreview" },
+            { input: "brandingBg", filename: "brandingBgFilename", preview: "brandingBgPreview" },
+        ].forEach(function (cfg) {
+            var input = document.getElementById(cfg.input);
+            var filenameEl = document.getElementById(cfg.filename);
+            var previewEl = document.getElementById(cfg.preview);
+            if (!input) return;
+
+            input.addEventListener("change", function () {
+                var file = input.files && input.files[0];
+                filenameEl.textContent = file ? file.name : "No file chosen";
+                if (file && previewEl) {
+                    previewEl.src = URL.createObjectURL(file);
+                }
+            });
+        });
+    })();
+
+    // Role toggle on the "Add account" form - mirrors the picked value
+    // (Staff/Admin) into the hidden input the native form actually posts.
+    (function () {
+        var group = document.getElementById("newAccountRole");
+        var hiddenInput = document.getElementById("newAccountRoleInput");
+        if (!group || !hiddenInput) return;
+
+        function initRoleToggle() {
+            if (window.CLabTapToggleGroup) window.CLabTapToggleGroup.init(group);
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initRoleToggle);
+        } else {
+            initRoleToggle();
+        }
+
+        group.querySelectorAll(".toggle-option").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                hiddenInput.value = btn.getAttribute("data-value");
+            });
+        });
+    })();
+
+    // Kiosk tiles -> modal overlays. Each tile opens its own overlay;
+    // Esc, the dim backdrop, or the X all close whichever is open -
+    // same conventions as the Register Student "Add Student" form.
+    (function () {
+        var openers = [
+            { btn: "openBranding", overlay: "brandingOverlay" },
+            { btn: "openAddStaff", overlay: "addStaffOverlay" },
+        ];
+        var overlays = openers.map(function (o) { return document.getElementById(o.overlay); }).filter(Boolean);
+
+        function openOverlay(overlay) {
+            if (!overlay) return;
+            overlay.style.display = "flex";
+            // Any sliding toggle-group (e.g. the Role picker) was
+            // initialized while this overlay was still display:none, so
+            // its pill measured a 0-width box and never got a real
+            // position - it only "catches up" with a visible jump on
+            // the first click after opening (see chat: "role is
+            // lagging"). Now that the overlay is actually visible,
+            // re-settle every such group onto its active option before
+            // the user can see or click it.
+            if (window.CLabTapToggleGroup) {
+                overlay.querySelectorAll(".toggle-group--sliding").forEach(function (group) {
+                    var active = group.querySelector(".toggle-option.active") || group.querySelector(".toggle-option");
+                    window.CLabTapToggleGroup._settleSlider(group, active, 10);
+                });
+            }
+            var firstField = overlay.querySelector("input, textarea, select, button");
+            if (firstField) setTimeout(function () { firstField.focus(); }, 0);
+        }
+        function closeOverlay(overlay) {
+            if (overlay) overlay.style.display = "none";
+        }
+        function closeAll() {
+            overlays.forEach(closeOverlay);
+        }
+
+        openers.forEach(function (o) {
+            var btn = document.getElementById(o.btn);
+            var overlay = document.getElementById(o.overlay);
+            if (!btn || !overlay) return;
+            btn.addEventListener("click", function () { openOverlay(overlay); });
+        });
+
+        document.querySelectorAll(".settings-modal-close").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                closeOverlay(document.getElementById(btn.getAttribute("data-close")));
+            });
+        });
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") closeAll();
+        });
+    })();
+
+    // Login History pagination (see chat - this used to be a plain
+    // server-rendered list capped at 50 rows with no way to page
+    // further back). Same fetch + CLabTapPagination pattern as
+    // Attendance/_Content.cshtml, just without any filters - plus
+    // CLabTapRowFit so the row count itself follows the screen size
+    // (more rows on a tall screen, fewer on a short one) instead of
+    // being stuck at a fixed 8 regardless of available space (see chat).
+    (function () {
+        var rowsBody = document.getElementById("loginHistoryRows");
+        var emptyMsg = document.getElementById("loginHistoryEmpty");
+        var paginationEl = document.getElementById("loginHistoryPagination");
+        if (!rowsBody) return;
+        var historyTable = rowsBody.closest("table");
+
+        var PAGE_SIZE = 8;
+        var currentPage = 1;
+        var rowFitController = null;
+
+        function escapeHtml(value) {
+            return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+                return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+            });
+        }
+
+        function renderRows(records) {
+            rowsBody.innerHTML = "";
+            if (!records || records.length === 0) {
+                emptyMsg.style.display = "";
+                return;
+            }
+            emptyMsg.style.display = "none";
+            records.forEach(function (rec) {
+                var row = document.createElement("tr");
+                row.innerHTML =
+                    "<td>" + escapeHtml(rec.name) + "</td>" +
+                    "<td>" + escapeHtml(rec.action) + "</td>" +
+                    "<td>" + escapeHtml(rec.when) + "</td>";
+                rowsBody.appendChild(row);
+            });
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadLoginHistory();
+        }
+
+        function loadLoginHistory() {
+            var params = new URLSearchParams();
+            params.append("page", currentPage);
+            params.append("pageSize", PAGE_SIZE);
+            fetch("/Settings/LoginHistoryList?" + params.toString(), { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    currentPage = data.page || 1;
+                    renderRows(data.rows);
+                    if (window.CLabTapPagination) window.CLabTapPagination.render(paginationEl, data, goToPage);
+                    // Re-measure against the real rows that just rendered
+                    // (the first measurement, before any data existed,
+                    // used a throwaway probe row - see CLabTapRowFit.watch).
+                    if (rowFitController) rowFitController.recheck();
+                })
+                .catch(function () {
+                    // Leave whatever is already showing.
+                });
+        }
+
+        // Same load-order note as Attendance/_Content.cshtml: on a hard
+        // page load this script can run before admin.js (further down
+        // the page) has defined window.CLabTapRowFit, so the watcher
+        // has to be attached on DOMContentLoaded instead of right away -
+        // otherwise the row count would just fall back to 8 forever.
+        function initRowFit() {
+            if (window.CLabTapRowFit) {
+                rowFitController = window.CLabTapRowFit.watch(historyTable, { minRows: 4, fallbackRows: 8 }, function (rows) {
+                    PAGE_SIZE = rows;
+                    currentPage = 1;
+                    loadLoginHistory();
+                });
+            } else {
+                loadLoginHistory();
+            }
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initRowFit);
+        } else {
+            initRowFit();
+        }
+    })();
+</script>

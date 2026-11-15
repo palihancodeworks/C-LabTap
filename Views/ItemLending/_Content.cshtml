@@ -1,0 +1,1096 @@
+@{
+    Layout = null;
+}
+<div class="stat-filter-row">
+    <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-card-title">Borrowed Today</div>
+            <div class="stat-card-row">
+                <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                    <path d="M10 17l5-5-5-5" />
+                    <path d="M15 12H3" />
+                </svg>
+                <span class="stat-card-value" id="statBorrowedToday">&mdash;</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-title">Currently Borrowed</div>
+            <div class="stat-card-row">
+                <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 3L4 7.5V16.5L12 21L20 16.5V7.5L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M4 7.5L12 12L20 7.5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M12 12V21" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+                <span class="stat-card-value" id="statCurrentlyBorrowed">&mdash;</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-bar filter-bar--stacked fbar" id="lendFbar">
+        <div class="fbar-top">
+            <div class="search-combo">
+                <input type="text" placeholder="Search borrower name..." id="lendingSearch" autocomplete="off" />
+            </div>
+            <div class="fbar-more-wrap">
+                <button type="button" class="fbar-more" id="lendFbarMore" aria-expanded="false" aria-controls="lendFbarPanel">
+                    <svg class="fbar-more-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4-2v-4.5L4 5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                    <span>Filters</span>
+                    <span class="fbar-badge" id="lendFbarBadge" hidden>0</span>
+                </button>
+                <div class="fbar-panel" id="lendFbarPanel" role="group" aria-label="More filters" hidden>
+                    <div class="fbar-panel-grid">
+                        <div class="filter-field lending-date-filter">
+                            <label>Date Start</label>
+                            <div class="date-filter-input">
+                                <span class="date-filter-placeholder" aria-hidden="true">Choose date</span>
+                                <input type="date" id="lendingDateStart" />
+                            </div>
+                        </div>
+                        <div class="filter-field lending-date-filter">
+                            <label>Date End</label>
+                            <div class="date-filter-input">
+                                <span class="date-filter-placeholder" aria-hidden="true">Choose date</span>
+                                <input type="date" id="lendingDateEnd" />
+                            </div>
+                        </div>
+                        <div class="filter-field lending-method-filter">
+                            <label>Method</label>
+                            <div class="toggle-group toggle-group--sliding" id="lendingMethod" data-value="All">
+                                <span class="toggle-slider"></span>
+                                <button type="button" class="toggle-option active" data-value="All">All</button>
+                                <button type="button" class="toggle-option" data-value="RFID">RFID</button>
+                                <button type="button" class="toggle-option" data-value="Manual">Manual</button>
+                            </div>
+                        </div>
+                        <div class="filter-field lending-grade-filter">
+                            <label>Grade</label>
+                            <div class="toggle-group toggle-group--sliding" id="lendingGrade" data-value="All">
+                                <span class="toggle-slider"></span>
+                                <button type="button" class="toggle-option active" data-value="All">All</button>
+                                <button type="button" class="toggle-option" data-value="7">7</button>
+                                <button type="button" class="toggle-option" data-value="8">8</button>
+                                <button type="button" class="toggle-option" data-value="9">9</button>
+                                <button type="button" class="toggle-option" data-value="10">10</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="fbar-reset" id="lendingClear" aria-label="Clear all filters" title="Clear all filters"><img src="@Url.Content("~/images/icons/clear.icon.png")" alt="" class="fbar-reset-icon" /><span class="fbar-reset-label">Clear</span></button>
+        </div>
+        <div class="fbar-quick">
+            <div class="filter-field fbar-seg">
+                <label>Category</label>
+                <div class="toggle-group toggle-group--sliding" id="lendingCategory" data-value="All">
+                    <span class="toggle-slider"></span>
+                    <button type="button" class="toggle-option active" data-value="All">All</button>
+                    <button type="button" class="toggle-option" data-value="Regular">Regular</button>
+                    <button type="button" class="toggle-option" data-value="STE">STE</button>
+                    <button type="button" class="toggle-option" data-value="Staff">Staff</button>
+                </div>
+            </div>
+            <div class="filter-field fbar-seg lending-status-filter">
+                <label>Status</label>
+                <div class="toggle-group toggle-group--sliding" id="lendingStatus" data-value="All">
+                    <span class="toggle-slider"></span>
+                    <button type="button" class="toggle-option active" data-value="All">All</button>
+                    <button type="button" class="toggle-option" data-value="Borrowed">Borrowed</button>
+                    <button type="button" class="toggle-option" data-value="Returned">Returned</button>
+                </div>
+            </div>
+            <button type="button" class="btn-apply" id="lendingApply">Apply filters</button>
+        </div>
+        <div class="fbar-foot">
+            <div class="fbar-chips fbar-chips--slot" id="lendFbarChips" aria-label="Applied filters"></div>
+        </div>
+    </div>
+</div>
+
+<div class="reg-overlay" id="lendOverlay" style="display:none;">
+<div class="regf-card regf-card--compact" role="dialog" aria-modal="true" aria-labelledby="lendFormTitle">
+    <div class="regf-header">
+        <div class="regf-head-main regf-head-title-row">
+            <span class="regf-head-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M10 17l5-5-5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M15 12H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </span>
+            <h2 class="regf-title" id="lendFormTitle">Log a Borrow</h2>
+        </div>
+        <button type="button" class="regf-close" id="lendOverlayClose" aria-label="Close form" title="Close (Esc)">&times;</button>
+    </div>
+
+    <form class="regf-body" id="lendForm" novalidate autocomplete="off">
+        <div class="regf-message" id="lendFormMsg" role="alert" aria-live="assertive" hidden></div>
+
+        <div class="regf-row">
+            <div class="regf-field regf-grow">
+                <span class="regf-label" id="lendBorrowerTypeLabel">Borrower</span>
+                <div class="regf-chips" id="lendBorrowerTypeChips" role="radiogroup" aria-labelledby="lendBorrowerTypeLabel">
+                    <button type="button" class="regf-chip" role="radio" aria-checked="false" data-value="Student">Student</button>
+                    <button type="button" class="regf-chip" role="radio" aria-checked="false" data-value="Staff">Staff / Teacher</button>
+                </div>
+                <select class="regf-sr-only" id="lendBorrowerType" tabindex="-1" aria-hidden="true">
+                    <option value="Student">Student</option>
+                    <option value="Staff">Staff</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="regf-row">
+            <div class="regf-field regf-grow" id="lendLrnField">
+                <label for="lendLrnSearch">Student <span class="regf-req" aria-hidden="true">*</span></label>
+                <div class="regf-combobox" id="lendStudentCombo">
+                    <input type="text" class="regf-input" id="lendLrnSearch" placeholder="Type a name or LRN..." autocomplete="off" role="combobox" aria-expanded="false" aria-controls="lendStudentComboList" />
+                    <div class="regf-combobox-list" id="lendStudentComboList" role="listbox" hidden></div>
+                </div>
+                <input type="hidden" id="lendLrn" />
+            </div>
+            <div class="regf-field regf-grow" id="lendStaffNameField" hidden>
+                <label for="lendStaffName">Staff/Teacher Name <span class="regf-req" aria-hidden="true">*</span></label>
+                <input type="text" class="regf-input" id="lendStaffName" maxlength="80" />
+            </div>
+        </div>
+
+        <!-- Staged reveal: the item checklist only appears once a
+             borrower has actually been identified (a student picked from
+             the combobox, or a staff name typed in) - one thing at a
+             time, instead of a blank checklist sitting there before it
+             means anything (see chat). -->
+        <div class="regf-row lend-items-stage" id="lendItemsStage" hidden>
+            <div class="regf-field regf-grow">
+                <span class="regf-label" id="lendCategoryLabel">Category</span>
+                <div class="regf-chips lend-category-chips" id="lendCategoryChips" role="radiogroup" aria-labelledby="lendCategoryLabel">
+                    <button type="button" class="regf-chip" role="radio" aria-checked="true" data-value="All">All</button>
+                    <button type="button" class="regf-chip" role="radio" aria-checked="false" data-value="Lab Equipment">Lab Equipment</button>
+                    <button type="button" class="regf-chip" role="radio" aria-checked="false" data-value="Peripheral">Peripheral</button>
+                </div>
+                <select class="regf-sr-only" id="lendCategoryFilter" tabindex="-1" aria-hidden="true">
+                    <option value="All">All</option>
+                    <option>Lab Equipment</option>
+                    <option>Peripheral</option>
+                </select>
+
+                <span class="regf-label" id="lendItemsLabel">Items to borrow <span class="regf-req" aria-hidden="true">*</span></span>
+                <!-- One row per product (not per physical unit) - pick a
+                     quantity and the lowest-numbered available units are
+                     assigned automatically (see loadAvailableItems/the
+                     submit handler), instead of checking off which exact
+                     unit by its item code. -->
+                <div class="regf-item-list" id="lendItemList" aria-labelledby="lendItemsLabel">
+                    <p class="regf-help">Loading available items...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="regf-actions">
+            <p class="regf-submit-hint" aria-live="polite"></p>
+            <button type="button" class="regf-btn regf-btn-outline" id="lendClearBtn">Clear</button>
+            <button type="button" class="regf-btn regf-btn-primary" id="lendSubmitBtn">Log Borrow</button>
+        </div>
+    </form>
+</div>
+</div>
+
+<div class="regf-toast" id="lendToast" role="status" aria-live="polite" hidden></div>
+
+<div class="registry-section">
+    <div class="registry-toolbar" style="justify-content: flex-end;">
+        <button type="button" class="btn-add-pill" id="logBorrowBtn">
+            <svg class="btn-add-pill-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+            </svg>
+            <span>Log a Borrow</span>
+        </button>
+    </div>
+    <div class="table-scroll">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Grade &amp; Section</th>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Status</th>
+                <th>Time Borrowed</th>
+                <th>Time Returned</th>
+                <th>Method</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="lendingRows"></tbody>
+    </table>
+    </div>
+    <div class="table-empty" id="lendingEmpty" style="display:none;">No lending records yet.</div>
+    <div class="pagination" id="lendingPagination"></div>
+</div>
+
+<!-- Borrow-session detail/edit modal (see chat - "edit button where I can
+     see the borrowed [items] and also that's where I can press the
+     returned") - opened from each row's Edit button; shows that session's
+     items and is the one place Return now happens (moved out of the
+     table itself, which just shows status at a glance). Reuses the same
+     reg-overlay/regf-card modal shell as "Log a Borrow" above. -->
+<div class="reg-overlay" id="lendDetailOverlay" style="display:none;">
+<div class="regf-card regf-card--compact regf-card--lend-detail" role="dialog" aria-modal="true" aria-labelledby="lendDetailTitle">
+    <div class="regf-header">
+        <div class="regf-head-main regf-head-title-row">
+            <span class="regf-head-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 20h4L19.5 8.5a2 2 0 0 0 0-2.8l-1.2-1.2a2 2 0 0 0-2.8 0L4 16v4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                </svg>
+            </span>
+            <h2 class="regf-title" id="lendDetailTitle">Borrow Details</h2>
+        </div>
+        <button type="button" class="regf-close" id="lendDetailClose" aria-label="Close" title="Close (Esc)">&times;</button>
+    </div>
+
+    <div class="regf-body">
+        <div class="lend-detail-meta" id="lendDetailMeta"></div>
+        <div class="regf-item-list lend-detail-list" id="lendDetailList"></div>
+    </div>
+</div>
+</div>
+
+<script>
+    (function () {
+        function escapeHtml(value) {
+            return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+                return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+            });
+        }
+
+        // ---- Filter bar wiring (search / date range / method / category / grade / status) ----
+        var clearBtn = document.getElementById("lendingClear");
+        var search = document.getElementById("lendingSearch");
+        var statusGroup = document.getElementById("lendingStatus");
+        var methodGroup = document.getElementById("lendingMethod");
+        var categoryGroup = document.getElementById("lendingCategory");
+        var gradeGroup = document.getElementById("lendingGrade");
+        var dateStart = document.getElementById("lendingDateStart");
+        var dateEnd = document.getElementById("lendingDateEnd");
+        [dateStart, dateEnd].forEach(function (dateInput) {
+            var dateContainer = dateInput.parentElement;
+            function updateDatePlaceholder() {
+                dateContainer.classList.toggle("has-value", Boolean(dateInput.value));
+            }
+            dateInput.addEventListener("input", updateDatePlaceholder);
+            dateInput.addEventListener("change", updateDatePlaceholder);
+            updateDatePlaceholder();
+        });
+        var applyBtn = document.getElementById("lendingApply");
+
+        var fbar = null;
+        function initLendingFilterBar() {
+            if (fbar || !window.CLabTapFilterBar) return;
+            var FB = window.CLabTapFilterBar;
+            fbar = FB.init({
+                moreBtn: document.getElementById("lendFbarMore"),
+                panel: document.getElementById("lendFbarPanel"),
+                chipsEl: document.getElementById("lendFbarChips"),
+                badge: document.getElementById("lendFbarBadge"),
+                onApply: function () { if (applyBtn) applyBtn.click(); },
+                onClearAll: function () { if (clearBtn) clearBtn.click(); },
+                onChange: function () { currentPage = 1; loadLending(); },
+                controls: [
+                    FB.fromGroup(categoryGroup, "Category", false),
+                    FB.fromGroup(gradeGroup, "Grade", false),
+                    FB.fromDate(dateStart, "From", true),
+                    FB.fromDate(dateEnd, "To", true),
+                    FB.fromGroup(statusGroup, "Status", true),
+                    FB.fromGroup(methodGroup, "Method", true)
+                ]
+            });
+            fbar.refresh();
+        }
+
+        if (applyBtn) {
+            applyBtn.addEventListener("click", function () { currentPage = 1; loadLending(); });
+        }
+
+        if (search) {
+            var searchDebounce = null;
+            search.addEventListener("input", function () {
+                clearTimeout(searchDebounce);
+                searchDebounce = setTimeout(function () { currentPage = 1; loadLending(); }, 300);
+            });
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener("click", function () {
+                if (search) search.value = "";
+                if (dateStart) dateStart.value = "";
+                if (dateEnd) dateEnd.value = "";
+                if (window.CLabTapToggleGroup) {
+                    window.CLabTapToggleGroup.reset(statusGroup);
+                    window.CLabTapToggleGroup.reset(methodGroup);
+                    window.CLabTapToggleGroup.reset(categoryGroup);
+                    window.CLabTapToggleGroup.reset(gradeGroup);
+                }
+                currentPage = 1;
+                loadLending();
+                if (fbar) fbar.refresh();
+            });
+        }
+
+        // ---- Toast (same component as Register Item/Register Student) ----
+        var toastEl = document.getElementById("lendToast");
+        var toastTimer = null;
+        function setLendingStatus(message, isError) {
+            if (!toastEl) return;
+            toastEl.textContent = message;
+            toastEl.classList.toggle("is-error", !!isError);
+            toastEl.hidden = false;
+            toastEl.classList.remove("is-showing");
+            void toastEl.offsetWidth;
+            toastEl.classList.add("is-showing");
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () {
+                toastEl.classList.remove("is-showing");
+                setTimeout(function () { toastEl.hidden = true; }, 200);
+            }, 3200);
+        }
+
+        // ---- "Log a Borrow" modal ----
+        var overlay = document.getElementById("lendOverlay");
+        var overlayClose = document.getElementById("lendOverlayClose");
+        var logBorrowBtn = document.getElementById("logBorrowBtn");
+        var form = document.getElementById("lendForm");
+        var formMsg = document.getElementById("lendFormMsg");
+        var clearFormBtn = document.getElementById("lendClearBtn");
+        var submitBtn = document.getElementById("lendSubmitBtn");
+        var borrowerTypeSelect = document.getElementById("lendBorrowerType");
+        var borrowerTypeChips = document.getElementById("lendBorrowerTypeChips");
+        var lrnField = document.getElementById("lendLrnField");
+        var lrnInput = document.getElementById("lendLrn"); // hidden - holds the actual LRN once a student is picked
+        var lrnSearchInput = document.getElementById("lendLrnSearch");
+        var lrnComboList = document.getElementById("lendStudentComboList");
+        var staffNameField = document.getElementById("lendStaffNameField");
+        var staffNameInput = document.getElementById("lendStaffName");
+        var itemsStage = document.getElementById("lendItemsStage");
+        var itemListEl = document.getElementById("lendItemList");
+        var categoryFilterSelect = document.getElementById("lendCategoryFilter");
+        var categoryFilterChips = document.getElementById("lendCategoryChips");
+        // Products currently available to borrow, grouped by name - see
+        // loadAvailableItems(). Each product's units[] is sorted lowest
+        // item-code number first, so a quantity picks the next unit in
+        // sequence automatically instead of someone choosing exactly
+        // which physical unit (see chat).
+        var availableProducts = [];
+
+        function chipButtons(group) {
+            return Array.prototype.slice.call(group.querySelectorAll(".regf-chip"));
+        }
+        function wireChips(group, select, onPick) {
+            if (!group || !select) return;
+            function pick(chip) {
+                if (select.value !== chip.dataset.value) {
+                    select.value = chip.dataset.value;
+                    select.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+                syncChips(group, select);
+                chip.focus();
+                if (onPick) onPick();
+            }
+            group.addEventListener("click", function (e) {
+                var chip = e.target.closest(".regf-chip");
+                if (chip) pick(chip);
+            });
+            group.addEventListener("keydown", function (e) {
+                var step = (e.key === "ArrowRight" || e.key === "ArrowDown") ? 1
+                    : (e.key === "ArrowLeft" || e.key === "ArrowUp") ? -1 : 0;
+                if (!step) return;
+                e.preventDefault();
+                var chips = chipButtons(group);
+                var at = chips.findIndex(function (c) { return c.dataset.value === select.value; });
+                pick(chips[(at + step + chips.length) % chips.length]);
+            });
+        }
+        function syncChips(group, select) {
+            if (!group || !select) return;
+            var chips = chipButtons(group);
+            chips.forEach(function (c) {
+                var on = c.dataset.value === select.value;
+                c.setAttribute("aria-checked", on ? "true" : "false");
+                c.tabIndex = on ? 0 : -1;
+            });
+        }
+
+        function updateBorrowerFields() {
+            var isStaff = borrowerTypeSelect.value === "Staff";
+            lrnField.hidden = isStaff;
+            staffNameField.hidden = !isStaff;
+            // Switching sides invalidates whatever was picked/typed on
+            // the other one, so the items stage can't stay revealed on
+            // a borrower that's no longer selected.
+            if (isStaff) {
+                lrnInput.value = "";
+                lrnSearchInput.value = "";
+                closeComboList();
+            } else {
+                staffNameInput.value = "";
+            }
+            updateItemsStageVisibility();
+        }
+
+        // A borrower is "identified" once there's either a picked
+        // student (lrnInput has a value, set only by choosing a combobox
+        // result) or a typed staff name - that's the signal the staged
+        // item checklist waits for (see chat: one thing at a time).
+        function updateItemsStageVisibility() {
+            var isStaff = borrowerTypeSelect.value === "Staff";
+            var ready = isStaff ? !!staffNameInput.value.trim() : !!lrnInput.value;
+            itemsStage.hidden = !ready;
+        }
+
+        function closeComboList() {
+            lrnComboList.hidden = true;
+            lrnComboList.innerHTML = "";
+            lrnSearchInput.setAttribute("aria-expanded", "false");
+        }
+
+        // Combobox: typing searches students by name/LRN (debounced);
+        // picking a result fills the hidden lrnInput (what actually gets
+        // submitted) and shows the student's name + grade/section in the
+        // visible field. Editing the text again after a pick clears the
+        // selection, so a half-typed name can't silently submit as the
+        // student that was picked before the edit.
+        var comboSearchTimer = null;
+        function searchStudents(term) {
+            fetch("/ItemLending/SearchStudents?term=" + encodeURIComponent(term), { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (matches) {
+                    if (!matches || matches.length === 0) {
+                        lrnComboList.innerHTML = '<div class="regf-combobox-empty">No matching students.</div>';
+                        lrnComboList.hidden = false;
+                        lrnSearchInput.setAttribute("aria-expanded", "true");
+                        return;
+                    }
+                    lrnComboList.innerHTML = "";
+                    matches.forEach(function (m) {
+                        var opt = document.createElement("div");
+                        opt.className = "regf-combobox-option";
+                        opt.setAttribute("role", "option");
+                        opt.dataset.lrn = m.lrn;
+                        opt.dataset.name = m.fullName;
+                        opt.innerHTML = escapeHtml(m.fullName) +
+                            (m.gradeSection ? ' <small>' + escapeHtml(m.gradeSection) + '</small>' : "");
+                        lrnComboList.appendChild(opt);
+                    });
+                    lrnComboList.hidden = false;
+                    lrnSearchInput.setAttribute("aria-expanded", "true");
+                })
+                .catch(function () {
+                    closeComboList();
+                });
+        }
+
+        if (lrnSearchInput) {
+            lrnSearchInput.addEventListener("input", function () {
+                lrnInput.value = ""; // typing again invalidates whatever was picked before
+                updateItemsStageVisibility();
+                var term = lrnSearchInput.value.trim();
+                clearTimeout(comboSearchTimer);
+                if (term.length < 2) {
+                    closeComboList();
+                    return;
+                }
+                comboSearchTimer = setTimeout(function () { searchStudents(term); }, 250);
+            });
+        }
+        if (lrnComboList) {
+            lrnComboList.addEventListener("click", function (e) {
+                var opt = e.target.closest(".regf-combobox-option");
+                if (!opt || !opt.dataset.lrn) return;
+                lrnInput.value = opt.dataset.lrn;
+                lrnSearchInput.value = opt.dataset.name;
+                closeComboList();
+                updateItemsStageVisibility();
+            });
+        }
+        document.addEventListener("click", function (e) {
+            if (lrnComboList && !lrnComboList.hidden && !e.target.closest("#lendStudentCombo")) {
+                closeComboList();
+            }
+        });
+        if (staffNameInput) {
+            staffNameInput.addEventListener("input", updateItemsStageVisibility);
+        }
+
+        wireChips(borrowerTypeChips, borrowerTypeSelect, updateBorrowerFields);
+        syncChips(borrowerTypeChips, borrowerTypeSelect);
+        updateBorrowerFields();
+
+        function showFormMessage(message, type) {
+            if (!formMsg) return;
+            if (!message) {
+                formMsg.hidden = true;
+                formMsg.textContent = "";
+                return;
+            }
+            formMsg.textContent = message;
+            formMsg.dataset.type = type || "info";
+            formMsg.hidden = false;
+        }
+
+        var overlayCard = overlay ? overlay.querySelector(".regf-card") : null;
+
+        function showOverlay() {
+            if (!overlay) return;
+            overlay.style.display = "flex";
+        }
+        function openOverlay(triggerEl) {
+            if (overlayCard && triggerEl) {
+                window.CLabTapMorph.open(triggerEl, overlayCard, showOverlay);
+            } else {
+                showOverlay();
+            }
+        }
+        function hideOverlay() {
+            if (overlay) overlay.style.display = "none";
+        }
+        function closeOverlay() {
+            if (overlayCard && logBorrowBtn) {
+                window.CLabTapMorph.close(logBorrowBtn, overlayCard, hideOverlay);
+            } else {
+                hideOverlay();
+            }
+        }
+
+        // Trailing digits in the item code (e.g. "CHR-BLU66" -> 66) decide
+        // the auto-pick order within a product - lowest first, so if unit
+        // 2 is already borrowed the next borrow gets 3, not a random one.
+        function unitSuffix(itemCode) {
+            var m = /(\d+)$/.exec(itemCode || "");
+            return m ? parseInt(m[1], 10) : 0;
+        }
+
+        function renderItemList() {
+            var activeCategory = categoryFilterSelect.value;
+            var visible = availableProducts.filter(function (p) {
+                return activeCategory === "All" || p.category === activeCategory;
+            });
+            if (visible.length === 0) {
+                itemListEl.innerHTML = '<p class="regf-help">No items are currently available in this category.</p>';
+                return;
+            }
+            itemListEl.innerHTML = "";
+            visible.forEach(function (p) {
+                var row = document.createElement("div");
+                row.className = "regf-item-row lend-product-row";
+                row.dataset.name = p.name;
+                row.innerHTML =
+                    '<span>' + escapeHtml(p.name) + ' <small>(' + p.units.length + ' available)</small></span>' +
+                    '<input type="number" class="lend-product-qty" min="0" max="' + p.units.length + '" step="1" value="0" />';
+                itemListEl.appendChild(row);
+            });
+        }
+
+        function loadAvailableItems() {
+            itemListEl.innerHTML = '<p class="regf-help">Loading available items...</p>';
+            fetch("/ItemLending/AvailableItems", { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (items) {
+                    availableProducts = [];
+                    if (!items || items.length === 0) {
+                        itemListEl.innerHTML = '<p class="regf-help">No items are currently available.</p>';
+                        return;
+                    }
+                    var byName = {};
+                    items.forEach(function (item) {
+                        if (!byName[item.name]) {
+                            byName[item.name] = { name: item.name, category: item.category, units: [] };
+                        }
+                        byName[item.name].units.push({ id: item.id, itemCode: item.itemCode });
+                    });
+                    availableProducts = Object.keys(byName).map(function (k) { return byName[k]; });
+                    availableProducts.forEach(function (p) {
+                        p.units.sort(function (a, b) { return unitSuffix(a.itemCode) - unitSuffix(b.itemCode); });
+                    });
+                    availableProducts.sort(function (a, b) { return a.name.localeCompare(b.name); });
+                    renderItemList();
+                })
+                .catch(function () {
+                    availableProducts = [];
+                    itemListEl.innerHTML = '<p class="regf-help">Could not load items - try reopening this form.</p>';
+                });
+        }
+
+        wireChips(categoryFilterChips, categoryFilterSelect, renderItemList);
+        syncChips(categoryFilterChips, categoryFilterSelect);
+
+        function resetForm() {
+            borrowerTypeSelect.value = "Student";
+            syncChips(borrowerTypeChips, borrowerTypeSelect);
+            categoryFilterSelect.value = "All";
+            syncChips(categoryFilterChips, categoryFilterSelect);
+            lrnInput.value = "";
+            lrnSearchInput.value = "";
+            closeComboList();
+            staffNameInput.value = "";
+            updateBorrowerFields();
+            form.querySelectorAll(".regf-field").forEach(function (f) { f.classList.remove("is-invalid"); });
+            showFormMessage("");
+            loadAvailableItems();
+        }
+
+        if (logBorrowBtn) {
+            logBorrowBtn.addEventListener("click", function () {
+                resetForm();
+                openOverlay(logBorrowBtn);
+            });
+        }
+        // A borrow is already being logged once submitBtn is disabled -
+        // closing now wouldn't cancel that request, it would just hide
+        // the form while it's still unclear whether it actually went
+        // through on a slow connection (see chat), so closing is
+        // blocked outright until the response comes back.
+        function overlayBusy() { return submitBtn && submitBtn.disabled; }
+
+        if (overlayClose) {
+            overlayClose.addEventListener("click", function () {
+                if (!overlayBusy()) closeOverlay();
+            });
+        }
+        if (clearFormBtn) {
+            clearFormBtn.addEventListener("click", function () {
+                if (!overlayBusy()) resetForm();
+            });
+        }
+        if (overlay) {
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape" && overlay.style.display !== "none" && !overlayBusy()) closeOverlay();
+            });
+        }
+
+        if (submitBtn) {
+            submitBtn.addEventListener("click", function () {
+                form.querySelectorAll(".regf-field").forEach(function (f) { f.classList.remove("is-invalid"); });
+
+                var isStaff = borrowerTypeSelect.value === "Staff";
+
+                // Each product row's quantity picks that many of its
+                // lowest-numbered available units (see loadAvailableItems) -
+                // nothing here lets someone choose a specific unit.
+                var itemIds = [];
+                var qtyError = null;
+                Array.prototype.slice.call(itemListEl.querySelectorAll(".lend-product-row")).forEach(function (row) {
+                    var qtyInput = row.querySelector(".lend-product-qty");
+                    var qty = parseInt(qtyInput.value, 10) || 0;
+                    if (qty <= 0) return;
+                    var product = availableProducts.filter(function (p) { return p.name === row.dataset.name; })[0];
+                    if (!product || qty > product.units.length) {
+                        qtyError = "Only " + (product ? product.units.length : 0) + " " + row.dataset.name + " available.";
+                        return;
+                    }
+                    for (var i = 0; i < qty; i++) itemIds.push(product.units[i].id);
+                });
+
+                if (isStaff && !staffNameInput.value.trim()) {
+                    staffNameField.classList.add("is-invalid");
+                    showFormMessage("Enter the staff/teacher's name.", "error");
+                    return;
+                }
+                if (!isStaff && !lrnInput.value.trim()) {
+                    lrnField.classList.add("is-invalid");
+                    showFormMessage("Pick a student from the list.", "error");
+                    return;
+                }
+                if (qtyError) {
+                    showFormMessage(qtyError, "error");
+                    return;
+                }
+                if (itemIds.length === 0) {
+                    showFormMessage("Select at least one item.", "error");
+                    return;
+                }
+                showFormMessage("");
+
+                var body = new URLSearchParams();
+                body.append("BorrowerType", isStaff ? "Staff" : "Student");
+                if (isStaff) body.append("BorrowerName", staffNameInput.value.trim());
+                else body.append("Lrn", lrnInput.value.trim());
+                itemIds.forEach(function (id) { body.append("ItemIds", id); });
+
+                submitBtn.disabled = true;
+                submitBtn.classList.add("is-loading");
+                setLendingStatus("Logging borrow...", false);
+
+                fetch("/ItemLending/CreateManual", {
+                    method: "POST",
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    body: body
+                })
+                    .then(function (response) {
+                        return response.json().then(function (data) {
+                            return { ok: response.ok, data: data };
+                        });
+                    })
+                    .then(function (result) {
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove("is-loading");
+                        if (!result.ok) {
+                            setLendingStatus(result.data.error || "Could not log this borrow.", true);
+                            return;
+                        }
+                        setLendingStatus("Borrow logged.", false);
+                        closeOverlay();
+                        currentPage = 1;
+                        loadLending();
+                        loadStats();
+                    })
+                    .catch(function () {
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove("is-loading");
+                        setLendingStatus("Network error - could not reach the server.", true);
+                    });
+            });
+        }
+
+        // ---- Table ----
+        var lendingRows = document.getElementById("lendingRows");
+        var lendingTable = lendingRows.closest("table");
+        var lendingEmpty = document.getElementById("lendingEmpty");
+        var paginationEl = document.getElementById("lendingPagination");
+        var statBorrowedTodayEl = document.getElementById("statBorrowedToday");
+        var statCurrentlyBorrowedEl = document.getElementById("statCurrentlyBorrowed");
+        var PAGE_SIZE = 6;
+        var currentPage = 1;
+
+        function stackedCell(lines) {
+            var wrap = document.createElement("div");
+            wrap.className = "stacked-cell";
+            lines.forEach(function (line) {
+                var div = document.createElement("div");
+                div.className = "stacked-cell-line";
+                if (typeof line === "string") {
+                    div.textContent = line;
+                } else {
+                    div.appendChild(line);
+                }
+                wrap.appendChild(div);
+            });
+            return wrap;
+        }
+
+        // One <tr> per borrow SESSION - Student/Grade & Section/Time Out/
+        // Method stay single-line (they describe the whole batch); Item/
+        // Item Code/Status/Time In stack one line per item, in the same
+        // order, so line N lines up across those four columns for the
+        // same item. Each still-borrowed item gets its own Return button
+        // right in the Status line.
+        // Collapses identical units (same name, status and return time)
+        // into one entry with a quantity, so borrowing 16 chairs shows one
+        // "Blue Monoblock ×16" line instead of 16 identical ones.
+        function groupLendItems(items) {
+            var groups = [];
+            var byKey = {};
+            items.forEach(function (it) {
+                var key = (it.name || "") + "|" + it.status + "|" + (it.timeIn || "");
+                if (!byKey[key]) {
+                    byKey[key] = { name: it.name || "—", status: it.status, timeIn: it.timeIn || "", units: [] };
+                    groups.push(byKey[key]);
+                }
+                byKey[key].units.push(it);
+            });
+            return groups;
+        }
+
+        function groupLabel(group) {
+            return group.units.length > 1 ? group.name + " ×" + group.units.length : group.name;
+        }
+
+        function buildLendingRow(session) {
+            var row = document.createElement("tr");
+            var groups = groupLendItems(session.items || []);
+
+            var itemCell = document.createElement("td");
+            itemCell.appendChild(stackedCell(groups.length ? groups.map(function (g) { return g.name; }) : ["—"]));
+
+            var qtyCell = document.createElement("td");
+            qtyCell.appendChild(stackedCell(groups.length ? groups.map(function (g) { return String(g.units.length); }) : ["—"]));
+
+            // Read-only status at a glance - Return itself now happens in
+            // the Edit modal (see chat), not inline in the table.
+            var statusCell = document.createElement("td");
+            statusCell.appendChild(stackedCell(groups.length ? groups.map(function (g) { return g.status; }) : ["—"]));
+
+            var timeInCell = document.createElement("td");
+            timeInCell.appendChild(stackedCell(groups.length ? groups.map(function (g) { return g.timeIn || "—"; }) : ["—"]));
+
+            row.innerHTML =
+                "<td>" + escapeHtml(session.borrowerName) + "</td>" +
+                "<td>" + escapeHtml(session.gradeSection) + "</td>";
+            row.appendChild(itemCell);
+            row.appendChild(qtyCell);
+            row.appendChild(statusCell);
+            row.insertAdjacentHTML("beforeend", "<td>" + escapeHtml(session.timeOut) + "</td>");
+            row.appendChild(timeInCell);
+            row.insertAdjacentHTML("beforeend", "<td>" + escapeHtml(session.method) + "</td>");
+
+            var actionsCell = document.createElement("td");
+            var editBtn = document.createElement("button");
+            editBtn.type = "button";
+            editBtn.className = "btn-icon btn-icon-edit lending-edit-btn";
+            editBtn.title = "Edit";
+            editBtn.setAttribute("aria-label", "Edit");
+            editBtn.dataset.sessionId = session.id;
+            editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 20h4L19.5 8.5a2 2 0 0 0 0-2.8l-1.2-1.2a2 2 0 0 0-2.8 0L4 16v4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+            actionsCell.appendChild(editBtn);
+            row.appendChild(actionsCell);
+
+            return row;
+        }
+
+        // ---- Borrow Details / Edit modal (view items + Return) ----
+        var sessionsById = {};
+        var detailOverlay = document.getElementById("lendDetailOverlay");
+        var detailClose = document.getElementById("lendDetailClose");
+        var detailMeta = document.getElementById("lendDetailMeta");
+        var detailList = document.getElementById("lendDetailList");
+        var openSessionId = null;
+
+        function renderDetailModal(session) {
+            detailMeta.innerHTML =
+                '<p class="lend-detail-borrower">' + escapeHtml(session.borrowerName) +
+                (session.gradeSection ? ' <span class="lend-detail-sub">' + escapeHtml(session.gradeSection) + '</span>' : "") + '</p>' +
+                '<p class="lend-detail-sub">Borrowed ' + escapeHtml(session.timeOut) + ' · ' + escapeHtml(session.method) + '</p>';
+
+            var groups = groupLendItems(session.items || []);
+            if (!groups.length) {
+                detailList.innerHTML = '<p class="regf-help">No items on this record.</p>';
+                return;
+            }
+            detailList.innerHTML = "";
+            groups.forEach(function (group) {
+                var row = document.createElement("div");
+                row.className = "regf-item-row lend-detail-item";
+                var n = group.units.length;
+                var actionHtml;
+                if (group.status === "Borrowed") {
+                    var ids = group.units.map(function (u) { return u.sessionItemId; });
+                    row.dataset.ids = ids.join(",");
+                    row.dataset.qty = n;
+                    var stepper = n > 1
+                        ? '<span class="lend-qty">' +
+                              '<button type="button" class="lend-qty-btn" data-dir="-1" aria-label="Fewer">&minus;</button>' +
+                              '<span class="lend-qty-val">' + n + '</span>' +
+                              '<button type="button" class="lend-qty-btn" data-dir="1" aria-label="More" disabled>+</button>' +
+                          '</span>'
+                        : "";
+                    actionHtml = stepper +
+                        '<button type="button" class="btn-icon btn-icon-activate lending-return-btn" data-session-item-ids="' + ids.join(",") + '">Return</button>';
+                } else {
+                    actionHtml = '<span class="lend-detail-returned">Returned' + (group.timeIn ? " · " + escapeHtml(group.timeIn) : "") + '</span>';
+                }
+                row.innerHTML =
+                    '<span class="lend-detail-item-text">' +
+                        '<span class="lend-detail-item-name">' + escapeHtml(groupLabel(group)) + '</span>' +
+                    '</span>' +
+                    '<span class="lend-detail-actions">' + actionHtml + '</span>';
+                detailList.appendChild(row);
+            });
+        }
+
+        function openDetailModal(sessionId) {
+            var session = sessionsById[sessionId];
+            if (!session) return;
+            openSessionId = sessionId;
+            renderDetailModal(session);
+            detailOverlay.style.display = "flex";
+        }
+        function closeDetailModal() {
+            detailOverlay.style.display = "none";
+            openSessionId = null;
+        }
+        if (detailClose) detailClose.addEventListener("click", closeDetailModal);
+        if (detailOverlay) {
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape" && detailOverlay.style.display !== "none") closeDetailModal();
+            });
+        }
+
+        if (lendingRows) {
+            lendingRows.addEventListener("click", function (e) {
+                var editBtn = e.target.closest(".lending-edit-btn");
+                if (editBtn) {
+                    openDetailModal(editBtn.dataset.sessionId);
+                }
+            });
+        }
+
+        function handleReturnClick(btn) {
+            if (!btn || btn.disabled) return;
+            var ids = (btn.dataset.sessionItemIds || "").split(",").filter(Boolean);
+            if (!ids.length) return;
+            btn.disabled = true;
+            var originalText = btn.textContent;
+            btn.textContent = "...";
+
+            // One request per unit (the endpoint returns a single
+            // session item), run in order so a failure stops cleanly.
+            function returnNext(index) {
+                if (index >= ids.length) return Promise.resolve({ ok: true });
+                var body = new URLSearchParams();
+                body.append("sessionItemId", ids[index]);
+                return fetch("/ItemLending/Return", {
+                    method: "POST",
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    body: body
+                })
+                    .then(function (response) {
+                        return response.json().then(function (data) {
+                            return { ok: response.ok, data: data };
+                        });
+                    })
+                    .then(function (result) {
+                        if (!result.ok) return result;
+                        return returnNext(index + 1);
+                    });
+            }
+
+            returnNext(0)
+                .then(function (result) {
+                    if (!result.ok) {
+                        setLendingStatus((result.data && result.data.error) || "Could not mark this item as returned.", true);
+                    } else {
+                        setLendingStatus(ids.length > 1 ? ids.length + " items marked as returned." : "Item marked as returned.", false);
+                    }
+                    // Refresh either way - some units may have been returned
+                    // before a failure - and keep the modal open on the
+                    // updated record instead of letting it go stale.
+                    loadLending().then(function () {
+                        if (openSessionId != null && sessionsById[openSessionId]) {
+                            renderDetailModal(sessionsById[openSessionId]);
+                        }
+                    });
+                    loadStats();
+                })
+                .catch(function () {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                    setLendingStatus("Network error - could not reach the server.", true);
+                });
+        }
+
+        // Quantity stepper on a grouped Borrowed row: picks how many of
+        // that group's units the Return button will return.
+        function handleQtyClick(stepBtn) {
+            var row = stepBtn.closest(".lend-detail-item");
+            if (!row || stepBtn.disabled) return;
+            var ids = row.dataset.ids.split(",");
+            var qty = Math.max(1, Math.min(ids.length, parseInt(row.dataset.qty, 10) + parseInt(stepBtn.dataset.dir, 10)));
+            row.dataset.qty = qty;
+            row.querySelector(".lend-qty-val").textContent = qty;
+            row.querySelector(".lend-qty-btn[data-dir='-1']").disabled = qty <= 1;
+            row.querySelector(".lend-qty-btn[data-dir='1']").disabled = qty >= ids.length;
+            row.querySelector(".lending-return-btn").dataset.sessionItemIds = ids.slice(0, qty).join(",");
+        }
+
+        if (detailList) {
+            detailList.addEventListener("click", function (e) {
+                var stepBtn = e.target.closest(".lend-qty-btn");
+                if (stepBtn) { handleQtyClick(stepBtn); return; }
+                var btn = e.target.closest(".lending-return-btn");
+                if (btn) handleReturnClick(btn);
+            });
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadLending();
+        }
+
+        function loadLending() {
+            var params = new URLSearchParams();
+            params.append("page", currentPage);
+            params.append("pageSize", PAGE_SIZE);
+
+            if (search && search.value.trim()) params.append("search", search.value.trim());
+            if (categoryGroup && categoryGroup.dataset.value !== "All") params.append("category", categoryGroup.dataset.value);
+            if (gradeGroup && gradeGroup.dataset.value !== "All") params.append("grade", gradeGroup.dataset.value);
+            if (statusGroup && statusGroup.dataset.value !== "All") params.append("status", statusGroup.dataset.value);
+            if (methodGroup && methodGroup.dataset.value !== "All") params.append("method", methodGroup.dataset.value);
+            if (dateStart && dateStart.value) params.append("dateStart", dateStart.value);
+            if (dateEnd && dateEnd.value) params.append("dateEnd", dateEnd.value);
+
+            // Returns the fetch promise (see chat - the Edit modal's
+            // Return button awaits this so it can re-render the still-
+            // open modal from the refreshed session data instead of
+            // going stale).
+            return fetch("/ItemLending/List?" + params.toString(), { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    currentPage = data.page || 1;
+                    var sessions = data.rows || [];
+                    sessionsById = {};
+                    lendingRows.innerHTML = "";
+                    if (sessions.length === 0) {
+                        lendingEmpty.style.display = "";
+                    } else {
+                        lendingEmpty.style.display = "none";
+                        sessions.forEach(function (session) {
+                            sessionsById[session.id] = session;
+                            lendingRows.appendChild(buildLendingRow(session));
+                        });
+                        window.CLabTapStagger.apply(lendingRows.children);
+                    }
+                    window.CLabTapPagination.render(paginationEl, data, goToPage);
+                    if (fbar) fbar.refresh();
+                    if (rowFitController) rowFitController.recheck();
+                })
+                .catch(function () {
+                    // Leave whatever is already in the table.
+                });
+        }
+
+        function loadStats() {
+            fetch("/ItemLending/Stats", { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (statBorrowedTodayEl) statBorrowedTodayEl.textContent = data.borrowedToday;
+                    if (statCurrentlyBorrowedEl) statCurrentlyBorrowedEl.textContent = data.currentlyBorrowed;
+                })
+                .catch(function () {
+                    // Stat cards just stay at "—" if this fails.
+                });
+        }
+
+        loadStats();
+
+        // Same load-order issue as Attendance's/Register Student's own
+        // toggle groups (see chat): admin.js (further down the page)
+        // hasn't necessarily run yet on a direct/hard page load, so
+        // window.CLabTapToggleGroup may not exist at this exact point -
+        // deferring this to initAll() (already gated on DOMContentLoaded
+        // below) covers that; the AJAX nav-swap case (admin.js already
+        // loaded) still runs immediately.
+        var rowFitController = null;
+        function initAll() {
+            if (window.CLabTapToggleGroup) {
+                window.CLabTapToggleGroup.init(statusGroup);
+                window.CLabTapToggleGroup.init(methodGroup);
+                window.CLabTapToggleGroup.init(categoryGroup);
+                window.CLabTapToggleGroup.init(gradeGroup);
+            }
+            initLendingFilterBar();
+            if (window.CLabTapRowFit) {
+                rowFitController = window.CLabTapRowFit.watch(lendingTable, { minRows: 3, fallbackRows: 6 }, function (rows) {
+                    PAGE_SIZE = rows;
+                    currentPage = 1;
+                    loadLending();
+                });
+            } else {
+                loadLending();
+            }
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initAll);
+        } else {
+            initAll();
+        }
+    })();
+</script>

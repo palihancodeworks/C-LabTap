@@ -1,0 +1,522 @@
+@{
+    Layout = null;
+}
+<div class="stat-filter-row">
+    <div class="stat-cards report-stat-cards">
+        <div class="stat-card">
+            <div class="stat-card-title">Entries Today</div>
+            <div class="stat-card-row">
+                <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                    <path d="M10 17l5-5-5-5" />
+                    <path d="M15 12H3" />
+                </svg>
+                <span class="stat-card-value" id="repEntriesToday">&mdash;</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-title">Borrowed Today</div>
+            <div class="stat-card-row">
+                <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M10 17l5-5-5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M15 12H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                <span class="stat-card-value" id="repBorrowedToday">&mdash;</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-title">Currently Borrowed</div>
+            <div class="stat-card-row">
+                <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 3L4 7.5V16.5L12 21L20 16.5V7.5L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M4 7.5L12 12L20 7.5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M12 12V21" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+                <span class="stat-card-value" id="repCurrentlyBorrowed">&mdash;</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-title">Items Registered</div>
+            <div class="stat-card-row">
+                <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M7 12h10M12 7v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                <span class="stat-card-value" id="repItemsRegistered">&mdash;</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-title">Students Not Linked</div>
+            <div class="stat-card-row">
+                <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M16 8l2.5 2.5L16 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="stat-card-value" id="repStudentsNotLinked">&mdash;</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-title">Total Students Registered</div>
+            <div class="stat-card-row">
+                <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M15 7a3 3 0 1 1 1.4 5.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M16 14c2.8.5 5 2.8 5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                <span class="stat-card-value" id="repTotalStudents">&mdash;</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="registry-section">
+    <div class="registry-toolbar">
+        <div class="filter-field report-range-field">
+            <label>Range</label>
+            <div class="toggle-group toggle-group--sliding" id="reportRange" data-value="14">
+                <span class="toggle-slider"></span>
+                <button type="button" class="toggle-option" data-value="7">7 days</button>
+                <button type="button" class="toggle-option active" data-value="14">14 days</button>
+                <button type="button" class="toggle-option" data-value="30">30 days</button>
+                <button type="button" class="toggle-option" data-value="90">90 days</button>
+            </div>
+        </div>
+        <div class="report-toolbar-actions">
+            <button type="button" class="btn-add-pill" id="reportPrintBtn">
+                <svg class="btn-add-pill-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M6 9V3h12v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <rect x="6" y="14" width="12" height="7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+                <span>Print Report</span>
+            </button>
+            <button type="button" class="btn-add-pill" id="reportExportBtn">
+                <svg class="btn-add-pill-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>Export to Excel</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="report-sections-field">
+        <label>Include in Print / Export</label>
+        <div class="report-sections-checks">
+            <label class="report-section-check"><input type="checkbox" id="repSecInventory" value="inventory"> Full Inventory</label>
+            <label class="report-section-check"><input type="checkbox" id="repSecStudents" value="students"> Full Student List</label>
+            <label class="report-section-check"><input type="checkbox" id="repSecAttendance" value="attendance"> Attendance Log (RFID)</label>
+            <label class="report-section-check"><input type="checkbox" id="repSecBorrow" value="borrow"> Borrow/Return Log</label>
+        </div>
+    </div>
+
+    <div class="report-charts">
+        <div class="report-chart-card">
+            <h3 class="report-chart-title">Daily Lab Attendance</h3>
+            <p class="report-chart-note">Entries per day. A line shows whether lab use is rising, falling, or dipping on certain days.</p>
+            <div class="report-chart-canvas-wrap"><canvas id="reportAttendanceChart"></canvas></div>
+        </div>
+        <div class="report-chart-card">
+            <h3 class="report-chart-title">Busiest Hours</h3>
+            <p class="report-chart-note">Entries by hour of day, all days combined. Bars compare hours side by side to show when the lab fills up.</p>
+            <div class="report-chart-canvas-wrap"><canvas id="reportHoursChart"></canvas></div>
+        </div>
+        <div class="report-chart-card">
+            <h3 class="report-chart-title">Items Borrowed vs Returned</h3>
+            <p class="report-chart-note">Paired bars per day. When borrowed runs higher than returned, items are piling up outside the lab.</p>
+            <div class="report-chart-canvas-wrap"><canvas id="reportBorrowChart"></canvas></div>
+        </div>
+        <div class="report-chart-card">
+            <h3 class="report-chart-title">Most Borrowed Items</h3>
+            <p class="report-chart-note">Ranking for the selected range. Horizontal bars fit long item names and show which equipment is in highest demand.</p>
+            <div class="report-chart-canvas-wrap"><canvas id="reportTopItemsChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="table-scroll report-table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Entries</th>
+                    <th>Items Borrowed</th>
+                    <th>Items Returned</th>
+                </tr>
+            </thead>
+            <tbody id="reportTableRows"></tbody>
+        </table>
+    </div>
+    <div class="table-empty" id="reportTableEmpty" style="display:none;">No activity in this range.</div>
+    <div class="pagination" id="reportTablePagination"></div>
+
+    <div id="reportPrintArea" class="report-print-area"></div>
+</div>
+
+<script>
+    (function () {
+        function escapeHtml(value) {
+            return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+                return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+            });
+        }
+
+        var rangeGroup = document.getElementById("reportRange");
+        var exportBtn = document.getElementById("reportExportBtn");
+        var printBtn = document.getElementById("reportPrintBtn");
+        var printArea = document.getElementById("reportPrintArea");
+        var tableRows = document.getElementById("reportTableRows");
+        var tableEmpty = document.getElementById("reportTableEmpty");
+        var currentDays = parseInt(rangeGroup.dataset.value, 10) || 14;
+        var lastTableData = []; // last response from /Report/Table - what Export/Print reads from
+
+        function formatDateTime(iso) {
+            if (!iso) return "";
+            var d = new Date(iso);
+            if (isNaN(d.getTime())) return "";
+            return d.toLocaleString();
+        }
+
+        // Optional extra sections the user can tick to include full,
+        // ungrouped data (not just the day-by-day totals above) in the
+        // Excel export and the printable view - see chat.
+        var SECTIONS = [
+            {
+                key: "inventory", checkboxId: "repSecInventory", title: "Full Inventory",
+                endpoint: "/Report/InventoryList", ranged: false,
+                headers: ["Item Name", "Category", "Status"],
+                row: function (r) { return [r.name, r.category, r.status]; }
+            },
+            {
+                key: "students", checkboxId: "repSecStudents", title: "Full Student List",
+                endpoint: "/Report/StudentList", ranged: false,
+                headers: ["Full Name", "LRN", "Grade Level", "Section", "Gender", "Class Category"],
+                row: function (r) { return [r.fullName, r.lrn, r.gradeLevel, r.section, r.gender, r.classCategory]; }
+            },
+            {
+                key: "attendance", checkboxId: "repSecAttendance", title: "Attendance Log (RFID)",
+                endpoint: "/Report/AttendanceLog", ranged: true,
+                headers: ["Student", "Event", "Method", "Occurred At"],
+                row: function (r) { return [r.studentName, r.eventType, r.method, formatDateTime(r.occurredAt)]; }
+            },
+            {
+                key: "borrow", checkboxId: "repSecBorrow", title: "Borrow / Return Log",
+                endpoint: "/Report/BorrowLog", ranged: true,
+                headers: ["Item", "Borrower", "Status", "Borrowed At", "Returned At"],
+                row: function (r) { return [r.itemName, r.borrowerName, r.status, formatDateTime(r.borrowedAt), formatDateTime(r.returnedAt)]; }
+            }
+        ];
+
+        function getCheckedSections() {
+            return SECTIONS.filter(function (s) {
+                var box = document.getElementById(s.checkboxId);
+                return box && box.checked;
+            });
+        }
+
+        function fetchSectionRows(section) {
+            var url = section.endpoint + (section.ranged ? "?days=" + currentDays : "");
+            return fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .catch(function () { return []; });
+        }
+
+        function loadOverview() {
+            fetch("/Report/Overview", { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    document.getElementById("repEntriesToday").textContent = data.entriesToday;
+                    document.getElementById("repBorrowedToday").textContent = data.borrowedToday;
+                    document.getElementById("repCurrentlyBorrowed").textContent = data.currentlyBorrowed;
+                    document.getElementById("repItemsRegistered").textContent = data.itemsRegistered;
+                    document.getElementById("repStudentsNotLinked").textContent = data.studentsNotLinked;
+                    document.getElementById("repTotalStudents").textContent = data.totalStudents;
+                })
+                .catch(function () {
+                    // Cards just stay at "—" if this fails.
+                });
+        }
+
+        // ---- Charts (Chart.js, loaded once in _AdminLayout - see chat) ----
+        // Each chart type is picked for what its data is: a line for a
+        // trend over time, bars to compare hours / paired counts, and
+        // horizontal bars to rank named items.
+        var charts = {};
+
+        function drawChart(key, canvasId, config) {
+            if (charts[key]) charts[key].destroy();
+            charts[key] = new Chart(document.getElementById(canvasId).getContext("2d"), config);
+        }
+
+        var baseOptions = {
+            responsive: true,
+            maintainAspectRatio: false
+        };
+
+        function renderAttendanceChart(rows) {
+            drawChart("attendance", "reportAttendanceChart", {
+                type: "line",
+                data: {
+                    labels: rows.map(function (r) { return r.label; }),
+                    datasets: [{
+                        label: "Entries",
+                        data: rows.map(function (r) { return r.entries; }),
+                        borderColor: "#1F4D3C",
+                        backgroundColor: "rgba(31, 77, 60, 0.12)",
+                        fill: true,
+                        tension: 0.25
+                    }]
+                },
+                options: Object.assign({}, baseOptions, {
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                    plugins: { legend: { display: false } }
+                })
+            });
+        }
+
+        function renderBorrowChart(rows) {
+            drawChart("borrow", "reportBorrowChart", {
+                type: "bar",
+                data: {
+                    labels: rows.map(function (r) { return r.label; }),
+                    datasets: [
+                        { label: "Borrowed", data: rows.map(function (r) { return r.borrowed; }), backgroundColor: "#C70000" },
+                        { label: "Returned", data: rows.map(function (r) { return r.returned; }), backgroundColor: "#48977B" }
+                    ]
+                },
+                options: Object.assign({}, baseOptions, {
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                    plugins: { legend: { position: "bottom" } }
+                })
+            });
+        }
+
+        function hourLabel(h) {
+            var suffix = h < 12 ? "AM" : "PM";
+            var twelve = h % 12 === 0 ? 12 : h % 12;
+            return twelve + " " + suffix;
+        }
+
+        function renderHoursChart(hours) {
+            // Trim empty hours at both ends so the chart isn't mostly
+            // blank; with no data at all, fall back to a school-day span.
+            var first = -1, last = -1;
+            hours.forEach(function (h) {
+                if (h.count > 0) {
+                    if (first === -1) first = h.hour;
+                    last = h.hour;
+                }
+            });
+            if (first === -1) { first = 7; last = 17; }
+            var shown = hours.filter(function (h) { return h.hour >= first && h.hour <= last; });
+
+            drawChart("hours", "reportHoursChart", {
+                type: "bar",
+                data: {
+                    labels: shown.map(function (h) { return hourLabel(h.hour); }),
+                    datasets: [{ label: "Entries", data: shown.map(function (h) { return h.count; }), backgroundColor: "#1F4D3C" }]
+                },
+                options: Object.assign({}, baseOptions, {
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                    plugins: { legend: { display: false } }
+                })
+            });
+        }
+
+        function renderTopItemsChart(items) {
+            drawChart("topItems", "reportTopItemsChart", {
+                type: "bar",
+                data: {
+                    labels: items.map(function (i) { return i.name; }),
+                    datasets: [{ label: "Times Borrowed", data: items.map(function (i) { return i.count; }), backgroundColor: "#B88939" }]
+                },
+                options: Object.assign({}, baseOptions, {
+                    indexAxis: "y",
+                    scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
+                    plugins: { legend: { display: false } }
+                })
+            });
+        }
+
+        function loadTopItems(days) {
+            fetch("/Report/TopItems?limit=6&days=" + days, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (items) {
+                    if (!items || items.length === 0) {
+                        items = [{ name: "No borrows in this range", count: 0 }];
+                    }
+                    renderTopItemsChart(items);
+                })
+                .catch(function () { /* chart just stays empty */ });
+        }
+
+        function loadHours(days) {
+            fetch("/Report/PeakHours?days=" + days, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (hours) { renderHoursChart(hours || []); })
+                .catch(function () { /* chart just stays empty */ });
+        }
+
+        // The day-by-day table can hold up to 90 rows (one per day at the
+        // 90-day range) - too many to show at once (see chat: "make it
+        // only 20 row then it will have pagination"). The whole range is
+        // still fetched in one request (it's a tiny payload either way),
+        // this just slices it into pages of 20 for display. Export/Print
+        // still use the full lastTableData, not just the visible page.
+        var TABLE_PAGE_SIZE = 20;
+        var tablePage = 1;
+        var tablePaginationEl = document.getElementById("reportTablePagination");
+
+        function renderTablePage() {
+            var totalPages = Math.max(1, Math.ceil(lastTableData.length / TABLE_PAGE_SIZE));
+            if (tablePage > totalPages) tablePage = totalPages;
+            var start = (tablePage - 1) * TABLE_PAGE_SIZE;
+            var pageRows = lastTableData.slice(start, start + TABLE_PAGE_SIZE);
+
+            tableRows.innerHTML = "";
+            pageRows.forEach(function (r) {
+                var tr = document.createElement("tr");
+                tr.innerHTML =
+                    "<td>" + escapeHtml(r.label) + "</td>" +
+                    "<td>" + r.entries + "</td>" +
+                    "<td>" + r.borrowed + "</td>" +
+                    "<td>" + r.returned + "</td>";
+                tableRows.appendChild(tr);
+            });
+
+            if (window.CLabTapPagination) {
+                window.CLabTapPagination.render(tablePaginationEl, { page: tablePage, totalPages: totalPages }, function (p) {
+                    tablePage = p;
+                    renderTablePage();
+                });
+            }
+        }
+
+        function loadTable(days) {
+            fetch("/Report/Table?days=" + days, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (res) { return res.json(); })
+                .then(function (rows) {
+                    lastTableData = rows || [];
+                    renderAttendanceChart(lastTableData);
+                    renderBorrowChart(lastTableData);
+
+                    var anyActivity = lastTableData.some(function (r) { return r.entries || r.borrowed || r.returned; });
+                    tableEmpty.style.display = anyActivity ? "none" : "";
+                    tablePage = 1;
+                    renderTablePage();
+                })
+                .catch(function () {
+                    // Leave whatever is already there.
+                });
+        }
+
+        if (rangeGroup) {
+            rangeGroup.addEventListener("click", function (e) {
+                var opt = e.target.closest(".toggle-option");
+                if (!opt) return;
+                currentDays = parseInt(opt.dataset.value, 10) || 14;
+                loadTable(currentDays);
+                loadTopItems(currentDays);
+                loadHours(currentDays);
+            });
+        }
+
+        // ---- Export to Excel (SheetJS/xlsx, loaded once in _AdminLayout) ----
+        // Always includes the day-by-day summary; one extra sheet per
+        // ticked checkbox, fetched fresh so it reflects the current range.
+        if (exportBtn) {
+            exportBtn.addEventListener("click", function () {
+                if (!window.XLSX || !lastTableData.length) return;
+                var sections = getCheckedSections();
+
+                Promise.all(sections.map(fetchSectionRows)).then(function (results) {
+                    var book = XLSX.utils.book_new();
+
+                    var aoa = [["Date", "Entries", "Items Borrowed", "Items Returned"]];
+                    lastTableData.forEach(function (r) {
+                        aoa.push([r.date, r.entries, r.borrowed, r.returned]);
+                    });
+                    XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(aoa), "Summary");
+
+                    sections.forEach(function (section, i) {
+                        var rows = results[i] || [];
+                        var sAoa = [section.headers];
+                        rows.forEach(function (r) { sAoa.push(section.row(r)); });
+                        var sheetName = section.title.length > 31 ? section.title.slice(0, 31) : section.title;
+                        XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(sAoa), sheetName);
+                    });
+
+                    XLSX.writeFile(book, "C-LabTap Report " + new Date().toISOString().slice(0, 10) + ".xlsx");
+                });
+            });
+        }
+
+        // ---- Print Report (browser print/PDF - see .report-print-area
+        // rules in admin.css, which hide everything else on the page
+        // while printing) ----
+        if (printBtn) {
+            printBtn.addEventListener("click", function () {
+                var sections = getCheckedSections();
+
+                Promise.all(sections.map(fetchSectionRows)).then(function (results) {
+                    var html = "<h1>C-LabTap Report</h1>" +
+                        "<p class=\"report-print-meta\">Generated " + escapeHtml(new Date().toLocaleString()) +
+                        " &middot; Last " + currentDays + " days</p>";
+
+                    html += "<h2>Daily Summary</h2>" + buildPrintTable(
+                        ["Date", "Entries", "Items Borrowed", "Items Returned"],
+                        lastTableData.map(function (r) { return [r.label, r.entries, r.borrowed, r.returned]; }));
+
+                    sections.forEach(function (section, i) {
+                        var rows = results[i] || [];
+                        html += "<h2>" + escapeHtml(section.title) + "</h2>" +
+                            buildPrintTable(section.headers, rows.map(section.row));
+                    });
+
+                    printArea.innerHTML = html;
+                    window.print();
+                });
+            });
+        }
+
+        function buildPrintTable(headers, rows) {
+            var html = "<table class=\"report-print-table\"><thead><tr>";
+            headers.forEach(function (h) { html += "<th>" + escapeHtml(h) + "</th>"; });
+            html += "</tr></thead><tbody>";
+            if (!rows.length) {
+                html += "<tr><td colspan=\"" + headers.length + "\">No data.</td></tr>";
+            } else {
+                rows.forEach(function (row) {
+                    html += "<tr>";
+                    row.forEach(function (cell) { html += "<td>" + escapeHtml(cell) + "</td>"; });
+                    html += "</tr>";
+                });
+            }
+            html += "</tbody></table>";
+            return html;
+        }
+
+        loadOverview();
+
+        // Same load-order note as every other admin page's own toggle
+        // groups (see chat): admin.js may not have run yet on a direct
+        // page load, so window.CLabTapToggleGroup might not exist right
+        // at this point - defer to DOMContentLoaded; the AJAX nav-swap
+        // case (admin.js already loaded) runs immediately either way.
+        function initAll() {
+            if (window.CLabTapToggleGroup) {
+                window.CLabTapToggleGroup.init(rangeGroup);
+            }
+            loadTable(currentDays);
+            loadTopItems(currentDays);
+            loadHours(currentDays);
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initAll);
+        } else {
+            initAll();
+        }
+    })();
+</script>

@@ -1,0 +1,4654 @@
+/* =========================================================
+   C-LABTAP Admin UI
+   Colors sampled directly from the approved mockup.
+   ========================================================= */
+:root {
+  /* Colors in OKLCH instead of hex - same colors (each value below is
+     the exact converted equivalent of the old hex, kept in a comment),
+     but OKLCH's L channel is PERCEPTUAL lightness: two colors with the
+     same L actually look equally light/dark to the eye, which plain hex
+     or HSL don't guarantee. That makes new shades easy to derive
+     correctly later - e.g. a hover state is just "same H and C, lower
+     L" - instead of eyeballing a darker hex and hoping it reads as
+     evenly darker. */
+  --green-dark: oklch(38.25% 0.0588 166.43); /* was #1F4D3C */
+  --green-darker: oklch(31.80% 0.0473 166.61); /* was #173A2D */
+  --sidebar-bg: oklch(32.47% 0.0488 167.65); /* was #173C2F - sidebar's own background, kept separate from --green-dark so changing it doesn't also recolor the nav pill, topbar title, focus outlines, etc. that reuse --green-dark elsewhere */
+  --green-content: oklch(44.52% 0.0696 163.35); /* was #2A6049 - same family as --green-dark, a touch
+                                lighter - used for content-area chrome
+                                (filter bar, table header) so it reads
+                                as related to the sidebar without
+                                being visually identical to it */
+  --gold: oklch(66.08% 0.1118 77.78); /* was #B88939 */
+  --gold-hover: oklch(61.15% 0.1053 78.16); /* was #A67B30 */
+  --teal-logout: oklch(61.83% 0.0897 167.77); /* was #48977B */
+  --teal-logout-hover: oklch(55.36% 0.0824 166.61); /* was #3C8268 */
+  --grey-sub: oklch(67.64% 0 0); /* was #979797 - chroma 0, hue has no effect */
+  --grey-border: oklch(88.53% 0 0); /* was #D9D9D9 */
+  --grey-panel: oklch(95.77% 0.0017 247.84); /* was #F0F1F2 - unused for now - filter bars moved to a
+                             white container with a border instead (see
+                             .filter-bar below); kept in case a panel
+                             tint is needed elsewhere later */
+  --toggle-active: oklch(94.46% 0.0768 92.08); /* was #FFECB2 - fill for the selected option in a
+                                Status/Method toggle group */
+  --outline-dark: oklch(25.20% 0 0); /* was #222222 */
+  --text-dark: oklch(32.11% 0 0); /* was #333333 */
+  --green-timein: oklch(61.83% 0.0897 167.77); /* was #48977B - retheme: was an off-palette bright green, now the brand teal */
+  --red-timeout: oklch(52.10% 0.2138 29.23); /* was #C70000 */
+  --blue-edit: oklch(61.83% 0.0897 167.77); /* was #48977B - retheme: was an off-palette blue, now the brand teal (kept the var name for minimal diff) */
+  --page-bg: oklch(100% 0 0); /* was #FFFFFF */
+  --sidebar-width: 252px; /* was 280px - 10% narrower, per chat */
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden; /* page itself never scrolls; #main-content does */
+  background: var(--page-bg);
+  font-family: "Public Sans", sans-serif;
+  color: var(--text-dark);
+  font-weight: 700;
+}
+
+a { text-decoration: none; color: inherit; }
+button { font-family: inherit; }
+
+/* ---------------- Shell layout ---------------- */
+.app-shell {
+  display: flex;
+  height: 100vh;
+}
+
+/* ---------------- Sidebar ---------------- */
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--sidebar-bg, rgb(23, 60, 47));
+  display: flex;
+  flex-direction: column;
+  padding: 32px 0 24px;
+  position: relative;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 20px 28px;
+}
+
+.sidebar-brand img {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  margin-bottom: 14px;
+}
+
+.sidebar-brand .brand-name {
+  font-family: "Fraunces", serif;
+  font-weight: 700;
+  font-size: 1.6rem;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.sidebar-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  flex: 1;
+}
+
+.sidebar-nav li {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 20px 11px 48px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #ffffff;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.1s linear;
+}
+
+.nav-link .nav-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* The icon file is used as a mask (only its shape/alpha matters) and
+   painted with a plain background-color - so switching active state
+   just transitions that one color, the same icon pixels the whole
+   time, instead of swapping between two separate images. */
+.nav-icon-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  transition: color 0.1s linear;
+}
+
+.nav-link.active {
+  color: var(--green-dark);
+}
+
+.nav-link.active .nav-icon-img {
+  background-color: var(--green-dark);
+}
+
+/* "More" nav icon reads smaller than the others at 20px - scale just
+   the icon graphic up (not the .nav-icon box) so the text column stays
+   aligned with every other nav item. */
+.nav-link[data-page="Settings"] .nav-icon-img {
+  transform: scale(1.3) translateX(1px);
+}
+
+/* Sliding indicator (the "pill" behind the active link).
+   Light tab extends to the sidebar's right edge with rounded left
+   corners. Above and below it, two rounded "shoulders" carve a
+   smooth concave scoop out of the dark sidebar so it curves outward
+   into a rounded shape instead of a sharp corner. Technique: each
+   shoulder is a dark circle (matching the sidebar) with a light
+   circle cast as its box-shadow, offset by exactly half its size so
+   the light circle's edge lands precisely on the tab's own corner -
+   that's what makes the join seamless with no wedge or gap. */
+:root {
+  --nav-left-inset: 24px;
+  --nav-radius: 32px;
+  --nav-scoop: 28px;
+  --nav-duration: 600ms;
+}
+
+.nav-indicator {
+  position: absolute;
+  left: var(--nav-left-inset);
+  right: 0;
+  top: 0;
+  height: 0;
+  background: #ffffff;
+  border-radius: var(--nav-radius) 0 0 var(--nav-radius);
+  z-index: 1;
+  opacity: 0;
+  transition: top var(--nav-duration) cubic-bezier(.34,1.3,.64,1),
+              height var(--nav-duration) cubic-bezier(.34,1.3,.64,1),
+              opacity 0.2s ease;
+}
+
+.nav-indicator.ready { opacity: 1; }
+
+.nav-indicator::before,
+.nav-indicator::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  width: var(--nav-scoop);
+  height: var(--nav-scoop);
+  border-radius: 50%;
+  background: var(--sidebar-bg);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.nav-indicator::before {
+  top: calc(-1 * var(--nav-scoop));
+  box-shadow: calc(var(--nav-scoop) / 2) calc(var(--nav-scoop) / 2) 0 0 #ffffff;
+}
+
+.nav-indicator::after {
+  bottom: calc(-1 * var(--nav-scoop));
+  box-shadow: calc(var(--nav-scoop) / 2) calc(-1 * var(--nav-scoop) / 2) 0 0 #ffffff;
+}
+
+.sidebar-footer {
+  padding: 0 20px;
+  margin-top: 12px;
+}
+
+.btn-logout {
+  width: 100%;
+  background: var(--teal-logout);
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  padding: 10px 18px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.btn-logout:hover { background: var(--teal-logout-hover); }
+
+.btn-logout .nav-icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.sidebar-footer .leave-note {
+  text-align: center;
+  color: #CFE0D8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+/* Signed-in account row at the bottom of the sidebar (see
+   _AdminLayout.cshtml) - click opens a small menu above it with
+   Change Password / Log Out, instead of Log-Out being its own
+   separate button. Anchors the popup menu via position: relative. */
+.sidebar-profile {
+  position: relative;
+}
+
+.sidebar-profile-trigger {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  color: #ffffff;
+}
+
+.sidebar-profile-trigger:hover,
+.sidebar-profile-trigger[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.sidebar-profile-avatar {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--gold, #B88939);
+  color: #3B2E0E;
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-profile-avatar--photo {
+  object-fit: cover;
+  background: var(--grey-panel);
+}
+
+.sidebar-profile-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-profile-name {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-profile-role {
+  font-size: 0.74rem;
+  color: #CFE0D8;
+}
+
+.sidebar-profile-caret {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: #CFE0D8;
+  transition: transform 0.15s ease;
+}
+
+.sidebar-profile-trigger[aria-expanded="true"] .sidebar-profile-caret {
+  transform: rotate(180deg);
+}
+
+.sidebar-profile-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 8px);
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  z-index: 20;
+}
+
+.sidebar-profile-menu-item {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 11px 16px;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.sidebar-profile-menu-item:hover {
+  background: var(--grey-panel);
+}
+
+.sidebar-profile-menu-item--danger {
+  color: #B3261E;
+}
+
+.sidebar-profile-menu-item--static {
+  color: var(--grey-sub);
+  cursor: default;
+}
+
+.sidebar-profile-menu-item--static:hover {
+  background: none;
+}
+
+.sidebar-profile-menu-item--google {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.sidebar-profile-menu-item-label {
+  font-size: 0.85rem;
+}
+
+.sidebar-profile-menu-item-email {
+  font-size: 0.78rem;
+  color: var(--grey-sub);
+  opacity: 0.8;
+  word-break: break-all;
+}
+
+/* ---------------- Main column ---------------- */
+.main-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.main-col::-webkit-scrollbar {
+  display: none;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 40px;
+  border-bottom: 1px solid #E7E7E7;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--page-bg);
+}
+
+.topbar-page-title {
+  font-family: "Public Sans", sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--green-dark);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.btn-gold {
+  background: var(--gold);
+  color: #ffffff;
+  border: none;
+  border-radius: 15px;
+  padding: 8px 20px;
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  display: inline-block;
+  cursor: pointer;
+  cursor: pointer;
+}
+
+.btn-gold:hover { background: var(--gold-hover); }
+
+/* ---------------- "Open Logbook" topbar CTA ----------------
+   This is the one button admins reach for over and over (every time
+   they hand the kiosk back to students), so it gets its own identity
+   instead of blending in with every other gold button: an icon, a
+   gentle glow that breathes to draw the eye without being distracting,
+   and a clear hover/focus state. Motion is skipped entirely for
+   anyone who has reduced-motion set. */
+.btn-logbook {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #D6A552, var(--gold));
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 13px 26px 13px 20px;
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(184, 137, 57, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  animation: btn-logbook-glow 2.6s ease-in-out infinite;
+}
+
+.btn-logbook-icon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.btn-logbook-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.btn-logbook:hover {
+  background: linear-gradient(135deg, var(--gold), var(--gold-hover));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(184, 137, 57, 0.55);
+}
+
+.btn-logbook:active {
+  transform: translateY(0);
+}
+
+.btn-logbook:focus-visible {
+  outline: 2px solid var(--green-dark);
+  outline-offset: 3px;
+}
+
+@keyframes btn-logbook-glow {
+  0%, 100% { box-shadow: 0 2px 10px rgba(184, 137, 57, 0.45); }
+  50% { box-shadow: 0 2px 18px rgba(184, 137, 57, 0.8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-logbook {
+    animation: none;
+  }
+}
+
+#main-content {
+  padding: 36px 40px 40px;
+  flex: 1;
+}
+
+/* The skeleton (below) IS the loading state now, so this just blocks
+   clicks while it's showing - no more dimming the outgoing page,
+   which read as a stuck/ghosted screen rather than "loading". */
+#main-content.loading { pointer-events: none; }
+
+/* ---------------- Page-load skeleton (admin.js PAGE_SKELETON_HTML) ---------------- */
+.page-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.page-skeleton .skel-row {
+  display: flex;
+  gap: 20px;
+}
+.skel-block {
+  border-radius: 14px;
+  background: linear-gradient(90deg, #EAEAE6 25%, #F5F5F3 37%, #EAEAE6 63%);
+  background-size: 400% 100%;
+  animation: skeletonShimmer 1.4s ease infinite;
+}
+.skel-card { height: 110px; flex: 1 1 0; }
+.skel-bar { height: 64px; }
+.skel-row-line { height: 34px; }
+@keyframes skeletonShimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel-block { animation: none; }
+}
+
+/* ---------------- Page header (per-page) ---------------- */
+.page-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--green-dark);
+  margin: 0 0 2px;
+}
+
+.page-subtitle {
+  color: var(--grey-sub);
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin: 0 0 14px;
+}
+
+.page-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.search-row {
+  display: flex;
+  gap: 10px;
+  /* The translateY(-10px) nudge this used to carry was only there to
+     line up with the taller .page-title/.page-subtitle block that
+     used to sit next to it in .page-head-row (align-items: flex-end
+     cancels margin-top on a shorter flex child - see the admin.css
+     header comment/dev handout). Now that the title has moved up into
+     the topbar (see .topbar-title), .search-row is page-head-row's
+     only child, so that offset would just shift it up for no reason -
+     dropped. */
+}
+
+.input-outline,
+select.input-outline {
+  border: 1.5px solid var(--outline-dark);
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+  background: #fff;
+  font-family: inherit;
+}
+
+.input-outline::placeholder { color: #9A9A9A; font-weight: 600; }
+.input-outline:focus::placeholder { opacity: 0; }
+
+.btn-outline-dark {
+  border: 1.5px solid var(--outline-dark);
+  border-radius: 10px;
+  background: #fff;
+  padding: 7px 18px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* ---------------- Registry row action icons (RegisterStudent) ---------------- */
+.registry-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.registry-actions .btn-icon {
+  width: auto;
+  gap: 6px;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  background: #fff;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.btn-icon img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.btn-icon-edit {
+  border-color: var(--grey-border);
+  color: var(--blue-edit);
+}
+
+.btn-icon-edit:hover {
+  background: rgba(72, 151, 123, 0.14);
+  color: var(--blue-edit);
+}
+
+.btn-icon-delete {
+  border-color: var(--grey-border);
+  color: var(--red-timeout);
+}
+
+.btn-icon-activate {
+  border-color: var(--grey-border);
+  width: auto;
+  gap: 6px;
+  padding: 0 10px;
+  color: var(--text-dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.btn-icon-activate:hover {
+  background: rgba(33, 150, 243, 0.14);
+}
+
+.btn-icon-delete:hover {
+  background: rgba(199, 0, 0, 0.1);
+  color: var(--red-timeout);
+}
+
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------------- Filter bar ---------------- */
+.filter-bar {
+  background: #ffffff;
+  border: 1.5px solid var(--grey-border);
+  border-radius: 16px;
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+  margin: 5px 0px 16px;
+}
+
+/* Modifier for a filter bar that stacks the search box on its own
+   row below the filter fields (Item Lending), instead of the plain
+   6-fields-plus-Apply grid above (Attendance). */
+.filter-bar.filter-bar--stacked {
+  display: block;
+}
+
+.filter-fields-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.filter-fields-row .filter-field {
+  flex: 1 1 110px;
+  min-width: 110px;
+}
+
+.filter-fields-row.reg-filter-fields {
+  flex-wrap: nowrap;
+}
+
+.reg-filter-fields .filter-field {
+  min-width: 0;
+}
+
+.attendance-filter-fields {
+  /* Was locked to flex-wrap: nowrap (one row of fields no matter what,
+     shrinking fields down to illegible instead of wrapping) - removed
+     per chat, the row now wraps like every other filter bar once the
+     fields hit their minimum width instead of being forced to stay on
+     one line. */
+  flex-wrap: wrap;
+}
+
+.attendance-filter-fields .filter-field {
+  min-width: 0;
+}
+
+.attendance-filter-fields .attendance-date-filter {
+  /* Fluid instead of a fixed 125px: shrinks with the viewport down to
+     a legible floor (85px), so this field keeps pace with the window
+     instead of staying rigid until the 820px tablet breakpoint forces
+     a wrap (see chat). flex-grow:1 (not 0) so this field also shares
+     out any leftover row width instead of leaving it as dead space
+     after Status (see chat - "big space at the right side"), with no
+     max-width ceiling - an earlier cap here meant growth simply
+     stopped past a certain screen width, reopening that same empty
+     space (see chat - "the filter container did not follow"). */
+  flex: 1 1 clamp(85px, 9vw, 125px);
+}
+
+.attendance-filter-fields .attendance-grade-filter {
+  /* Grows too (see chat - every field should follow a bigger screen),
+     just slower than its neighbors (flex-grow 0.6 instead of 1) since
+     it only ever shows "All" or a 2-digit number and doesn't need as
+     much room as the others - no max-width ceiling, same reasoning as
+     .attendance-date-filter above. */
+  flex: 0.6 1 clamp(42px, 4vw, 55px);
+}
+
+.attendance-filter-fields .attendance-section-filter {
+  /* Grows along with the date fields for the same reason - see
+     .attendance-date-filter above. */
+  flex: 1 1 clamp(78px, 8vw, 110px);
+}
+
+/* Method/Status hold a sliding toggle-group that sizes to its own
+   text, so the field must size to that content too - a fixed 110px
+   basis was narrower than the toggle, which spilled out of its field
+   and sat on top of the next one. */
+.attendance-filter-fields .attendance-method-filter,
+.attendance-filter-fields .attendance-status-filter {
+  /* Grows now too (see chat), not just shrinks - the toggle-group
+     inside is stretched to the field's full width below (instead of
+     sizing to its own text), with each button sharing that width
+     equally, so the buttons actually get bigger along with the field
+     instead of the field just gaining dead padding around a
+     fixed-size toggle. No max-width ceiling - same reasoning as
+     .attendance-date-filter above. */
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.attendance-filter-fields .toggle-group--sliding .toggle-option {
+  /* Fluid padding + font so Method/Status shrink together with the
+     rest of the row as the viewport narrows, instead of staying a
+     fixed size that forces the field around it to overflow or the
+     whole row to break (see chat). */
+  padding: 0 clamp(6px, 1.1vw, 10px);
+  font-size: clamp(0.66rem, 1vw, 0.76rem);
+  border-right: none;
+}
+
+.filter-fields-row .reg-date-filter {
+  flex: 1 1 clamp(120px, 16vw, 190px);
+  min-width: 0;
+}
+
+.filter-fields-row .reg-grade-filter {
+  flex: 0.6 1 clamp(70px, 8vw, 100px);
+  min-width: 0;
+}
+
+.filter-fields-row .reg-section-filter {
+  flex: 1 1 clamp(100px, 12vw, 150px);
+  min-width: 0;
+}
+
+.filter-fields-row .reg-rfid-filter {
+  flex: 1.4 1 clamp(170px, 20vw, 220px);
+  min-width: 0;
+}
+
+#regFilterRfid .toggle-option {
+  border-right: none;
+  padding: 0 clamp(3px, 0.6vw, 8px);
+  font-size: clamp(0.62rem, 0.9vw, 0.76rem);
+}
+
+/* Item Lending's own filter row - same fluid/content-sized treatment
+   as Attendance's and Register Student's filter fields (see chat: all
+   pages should behave the same - no dead space, no fixed widths that
+   stop following the screen), scoped to its own classes so none of
+   this touches Item Lending's plain (non-sliding) toggle-group look,
+   which stays exactly as its reference screenshot shows (see chat -
+   don't change Item Lending's established visual design, only make it
+   responsive like the rest). */
+.lending-filter-fields {
+  flex-wrap: nowrap;
+}
+
+.lending-filter-fields .filter-field {
+  min-width: 0;
+}
+
+.lending-filter-fields .lending-date-filter {
+  flex: 1 1 clamp(85px, 9vw, 125px);
+}
+
+.lending-filter-fields .lending-status-filter,
+.lending-filter-fields .lending-method-filter {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lending-filter-fields .lending-grade-filter {
+  flex: 0.6 1 clamp(42px, 4vw, 55px);
+}
+
+.lending-filter-fields .lending-section-filter {
+  flex: 1 1 clamp(78px, 8vw, 110px);
+}
+
+.lending-filter-fields .toggle-group .toggle-option {
+  padding: 0 clamp(6px, 1.1vw, 10px);
+  font-size: clamp(0.66rem, 1vw, 0.76rem);
+}
+
+/* Method/Grade in Item Lending's "More filters" popover: drop the
+   divider line between options, same sliding-toggle look used
+   everywhere else (see chat - Attendance's sliding toggles have no
+   divider; Item Lending's Method/Grade still had one). Scoped to
+   these two groups' own ids since .lending-filter-fields isn't on
+   the actual markup. */
+#lendingMethod .toggle-option,
+#lendingGrade .toggle-option,
+#newAccountRole .toggle-option {
+  border-right: none;
+}
+
+.filter-search-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.filter-search-row .search-combo {
+  flex: 1;
+}
+
+/* Two-option (or three-option incl. "All") filter shown as a row of
+   buttons instead of a <select> - better for a field this small,
+   since all choices are visible at once and it's a single click to
+   switch (see chat: Status/Method only ever have 2-3 values). */
+.toggle-group {
+  display: flex;
+  width: 100%;
+  height: 34px;
+  border: 1.5px solid var(--grey-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.toggle-option {
+  /* Starts from its own text width (not an equal share), so a long
+     label like "Not Linked" borrows room from a short one like "All"
+     and "..." only shows once the whole group truly runs out of room. */
+  flex: 1 1 auto;
+  border: none;
+  border-right: 1.5px solid var(--grey-border);
+  background: #ffffff;
+  color: var(--text-dark);
+  font-family: inherit;
+  font-weight: 400;
+  font-size: 0.76rem;
+  padding: 0 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  /* Label never leaves its own segment: when the segment gets too
+     narrow (zoomed-in window), the text is cut with "..." instead. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toggle-option:last-child { border-right: none; }
+
+.toggle-option.active {
+  background: var(--toggle-active);
+  font-weight: 700;
+}
+
+/* "--sliding" modifier: an animated pill that slides under whichever
+   option is active, instead of each option just flat-painting its own
+   background - same technique as the sidebar's own sliding nav
+   indicator (see _AdminLayout.cshtml / admin.js moveIndicatorTo).
+   Scoped to this modifier, so any page that still uses the plain
+   .toggle-group (no "--sliding") keeps the old flat per-button
+   background instead - Item Lending now uses this modifier too,
+   same as Register Item/Register Student. */
+.toggle-group.toggle-group--sliding {
+  position: relative;
+  overflow: visible;
+  /* Stretches to fill its field (see chat - every field should follow
+     a bigger screen), instead of sizing to its own text; the active
+     pill's position/width are re-measured on resize to match (see
+     admin.js) since they're no longer a one-time fixed layout. */
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  border: none; /* replaced with an outline-style box-shadow below - a real
+                    border consumes box-model space, and at some device
+                    pixel ratios the browser rounds/snaps a hairline border's
+                    PAINTED width differently from its LAYOUT width, which
+                    threw off the active pill's height-matching math (see
+                    chat - this is what caused the pill/container height
+                    mismatch). A box-shadow draws the same look without
+                    taking up any layout space, so there's nothing left to
+                    get out of sync. */
+  box-shadow: 0 0 0 1px var(--grey-border); /* every other filter field
+                                                 authors a 1.5px border, but
+                                                 this browser paints a
+                                                 hairline border thinner than
+                                                 its authored width (computed
+                                                 border-width came back as
+                                                 0.8px - see chat). A
+                                                 box-shadow has no such
+                                                 snapping, so 1.5px here
+                                                 actually rendered heavier
+                                                 than everyone else's real
+                                                 border. 1px matches what
+                                                 they visually render as. */
+}
+
+.toggle-group--sliding .toggle-option {
+  flex: 1 1 auto; /* text width first, spare room shared equally -
+                     see .toggle-option above */
+  position: relative;
+  background: transparent;
+  /* block (not flex) so text-overflow: ellipsis can apply to the label;
+     a button still centres its own text vertically. */
+  display: block;
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 14px;
+  color: var(--grey-sub); /* muted color for unselected segments */
+  z-index: 0; /* sits behind the active pill, so its border is covered where they'd overlap */
+}
+
+.toggle-group--sliding .toggle-option.active {
+  background: transparent;
+  color: var(--text-dark); /* darker than the muted unselected color */
+  z-index: 2; /* drawn in front, on top of the neighboring segments */
+}
+
+/* "All" is only 3 letters: it stays just as wide as its own text
+   (plus padding) and leaves the spare room to the longer labels.
+   Placed after both .toggle-option rules so it wins over their flex. */
+.toggle-group .toggle-option[data-value="All"] {
+  flex: 0 1 auto;
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 0;
+  bottom: 0; /* flush with the full height of the group's box - the group no
+                longer has a real border eating into that space (see above),
+                so this is an exact, guaranteed match with no offset to get
+                wrong. */
+  left: 2px;
+  width: 0;
+  border-radius: 8px;
+  background: var(--toggle-active);
+  box-shadow: 0 0 0 1px var(--grey-border); /* same technique and weight
+                                                 as the container's own
+                                                 outline - no layout-space
+                                                 side effects */
+  transition: left 0.25s ease-in,
+              width 0.25s ease-in;
+  z-index: 1; /* above the unselected segments, below the active segment's own text */
+  pointer-events: none;
+}
+
+/* Search input + Clear button joined into one bordered control
+   instead of two separate boxes with a gap between them. */
+.search-combo {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--grey-border);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 8px;
+  background: #ffffff;
+}
+
+.search-combo input {
+  flex: 1;
+  border: none;
+  padding: 6px 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+  font-family: inherit;
+  background: transparent;
+}
+
+.search-combo input:focus { outline: none; }
+
+.search-combo input::placeholder { color: #9A9A9A; font-weight: 600; }
+.search-combo input:focus::placeholder { opacity: 0; }
+
+
+/* ---------------- Stat cards (Item Lending header) ----------------
+   Visual only for now - values are placeholders until Item Lending
+   has a real backend to compute them from (see chat). */
+.stat-filter-row {
+  display: flex;
+  gap: 14px;
+  /* stretch: the stat cards (totals) should always match the filter
+     bar's height exactly, whatever that height is - the content inside
+     each stat card stays vertically centered (see .stat-card
+     justify-content: center) so it still reads fine when the box is
+     tall. */
+  align-items: stretch;
+  margin: 5px 0px 16px;
+}
+
+.stat-filter-row .filter-bar {
+  flex: 2 1 600px; /* bigger share than the stat cards, since it holds
+                       more fields, but both now grow together (see
+                       chat) instead of only this one expanding */
+  margin: 0;
+}
+
+/* No max-width ceiling here either - same reasoning as
+   .attendance-date-filter above (a cap just means growth stops and
+   the "didn't follow" gap comes back past that width). */
+.stat-filter-row .stat-cards {
+  flex: 1 1 380px;
+}
+
+.stat-cards {
+  display: flex;
+  gap: 14px;
+}
+
+.attendance-stat-cards .stat-card {
+  background: rgb(31, 77, 60);
+}
+
+/* Shared stat-card shell (see chat - "this should be the layout of
+   every card container"): small title on top, then a row where the
+   number is the dominant visual element and the icon just sits beside
+   it, vertically centered against the number's own height rather than
+   being a same-size sibling. Used on Attendance, Item Lending, Register
+   Item and Register Student - one change here updates all of them. */
+.stat-card {
+  background: rgb(31, 77, 60);
+  border-radius: 16px;
+  padding: 16px 20px;
+  min-width: 190px;
+  flex: 1 1 190px; /* grows with .stat-cards instead of staying pinned
+                        to its content width (see chat) */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.stat-card-title {
+  font-family: "Public Sans", sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: #ffffff;
+}
+
+.stat-card-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.stat-card-icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  color: #ffffff;
+  margin-left: 20px;
+}
+
+.stat-card-value {
+  font-family: "Poppins", sans-serif;
+  font-weight: 800;
+  font-size: 4rem;
+  line-height: 1;
+  color: #FFECB2;
+}
+
+.filter-field label {
+  display: block;
+  color: var(--text-dark);
+  font-weight: 700;
+  margin-bottom: 5px;
+  font-size: 0.82rem;
+}
+
+.filter-field .input-outline,
+.filter-field select {
+  width: 100%;
+  border: 1.5px solid var(--grey-border);
+  border-radius: 10px;
+  padding: 6px 8px;
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 0.85rem;
+  background: #fff;
+  color: #333;
+  height: 34px;
+}
+
+/* Custom dropdown arrow, nudged in from the right edge (see chat -
+   the native arrow sat flush against the edge; this moves it left). */
+.filter-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 25px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23333333' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px 6px;
+}
+
+.filter-field input[type="date"] {
+  width: 100%;
+  border: 1.5px solid var(--grey-border);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  background: transparent;
+  height: 34px;
+}
+
+.date-filter-input {
+  position: relative;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden; /* so a shrunk field truncates "Choose date" instead
+                        of letting it spill past the rounded box */
+}
+
+.date-filter-input input[type="date"] {
+  position: relative;
+  z-index: 1;
+}
+
+.date-filter-input:not(.has-value) input[type="date"] {
+  color: transparent;
+}
+
+.date-filter-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 11px;
+  right: 6px;
+  transform: translateY(-50%);
+  color: #777;
+  font-size: 0.85rem;
+  font-weight: 400;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.date-filter-input.has-value .date-filter-placeholder {
+  display: none;
+}
+
+.date-filter-input:focus-within .date-filter-placeholder {
+  display: none;
+}
+
+.btn-apply {
+  background: rgb(31, 77, 60);
+  border: none;
+  color: #ffffff;
+  border-radius: 50px;
+  padding: 9px clamp(24px, 5vw, 50px); /* fluid, not fixed (see chat) */
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-apply:hover { background: rgb(23, 58, 45); }
+
+/* ---------------- Table ---------------- */
+/* Border/radius/shadow live on the .table-scroll wrapper, not the
+   <table> itself. The wrapper has overflow-x: auto for narrow-screen
+   scrolling (see chat), and setting overflow-x alone forces the
+   browser to also compute overflow-y as "auto" (a plain CSS rule, not
+   a bug) - so when the table carried its own box-shadow, that
+   automatic overflow-y clipped the shadow's bleed right at the
+   table's edge ("the shadow border is broken" - see chat). An
+   element's OWN box-shadow is never clipped by its OWN overflow
+   property, only by an ancestor's, so moving the decoration up onto
+   the wrapper (which has no ancestor doing this) fixes it outright.
+   overflow:auto + border-radius together still correctly round off
+   whatever's visible inside, exactly like .data-table's own
+   overflow:hidden did before. */
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--green-dark);
+  border-radius: 16px;
+  box-shadow: 0 3px 10px rgba(31, 77, 60, 0.14);
+}
+
+/* Reserves room for a reasonable first page of rows before any data
+   has loaded, so the table doesn't collapse down to the empty-state
+   message's height and then suddenly jump taller once rows arrive (or
+   shrink back down switching to a filter with fewer matches) - the
+   classic layout-shift-as-things-load problem. Sized for about 4 rows
+   plus the header; CLabTapRowFit may still make the page itself taller
+   once it measures the real viewport, this just stops the smaller jump
+   that happens on every load/filter change in between. */
+.table-scroll {
+  min-height: 230px;
+}
+
+/* The Registered/Archived tabs sit directly on this corner (see chat -
+   tabs as "an extension part" of the table), so it's flattened only
+   where a toolbar actually has tabs in it (Register Student). Register
+   Item's toolbar now holds just the Add Item button (tabs were
+   removed), so it keeps the normal all-around rounding like Attendance
+   and Item Lending. */
+.registry-toolbar:has(.registry-tabs) + .table-scroll {
+  position: relative;
+  z-index: 1;
+  border-top-left-radius: 0;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table thead th {
+  background: var(--green-content);
+  color: #ffffff;
+  text-align: left;
+  font-weight: 800;
+  padding: 10px 16px;
+  font-size: 0.88rem;
+}
+
+/* .table-scroll's wrapper is rounded (border-radius: 16px) but only
+   clips horizontally (overflow-x: auto, so it can still scroll
+   sideways) - without this, the header row's square corners poke out
+   past the wrapper's rounded top edge. Matches the wrapper's radius
+   minus its 1px border. */
+.data-table thead th:first-child { border-top-left-radius: 15px; }
+.data-table thead th:last-child { border-top-right-radius: 15px; }
+
+/* Where the wrapper's own top-left corner is flattened for a tab to
+   curve into (Register Student - see .registry-toolbar:has(.registry-tabs)
+   + .table-scroll above), the header cell's corner has to stay flat
+   too, or it pokes a second, conflicting curve out from under the tab. */
+.registry-toolbar:has(.registry-tabs) + .table-scroll .data-table thead th:first-child {
+  border-top-left-radius: 0;
+}
+
+.data-table tbody td {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--grey-border);
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+  vertical-align: top;
+}
+
+.data-table tbody tr:last-child td { border-bottom: none; }
+
+/* A cell holding one line per item in a multi-item borrow session
+   (see Item Lending's table) - plain vertical stack, each line the
+   same height as a normal single-line cell so line N always lines up
+   across the Item / Item Code / Status / Time In columns. */
+.stacked-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stacked-cell-line {
+  line-height: 1.3;
+}
+
+/* Single-line cells (Student, Grade & Section, Time Out, Method)
+   center vertically against a taller stacked cell in the same row. */
+.data-table tbody td:not(:has(.stacked-cell)) {
+  vertical-align: middle;
+}
+
+/* Item Lending specifically (see chat) reads better with the
+   single-line cells flush to the top of the row, same baseline as the
+   first item line, instead of floating centered against a tall
+   multi-item stack. Higher specificity (#id) wins over the generic
+   middle-align rule above without needing !important. */
+#lendingRows td {
+  vertical-align: top;
+}
+
+.status-in { color: var(--green-timein); }
+.status-out { color: var(--red-timeout); }
+
+.table-empty {
+  padding: 30px 24px;
+  text-align: center;
+  color: var(--grey-sub);
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+/* Placeholder page (no mockup yet) */
+.placeholder-note {
+  margin-top: 18px;
+  padding: 22px;
+  border: 1.5px dashed var(--grey-border);
+  border-radius: 14px;
+  color: var(--grey-sub);
+  font-weight: 700;
+}
+
+/* ---------------- Register Student form ---------------- */
+.form-card {
+  background: #ffffff;
+  border: 1.5px solid var(--grey-border);
+  border-radius: 16px;
+  padding: 20px 22px;
+  margin-top: 14px;
+  max-width: 720px;
+  box-shadow: 0 4px 18px rgba(31, 77, 60, 0.07);
+}
+
+.form-row {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.form-row:last-of-type {
+  margin-bottom: 0;
+}
+
+.form-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.form-field-wide {
+  flex: 2;
+}
+
+.form-field label {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--text-dark);
+}
+
+.rfid-scan-row {
+  display: flex;
+  gap: 10px;
+}
+
+.rfid-scan-row .input-outline {
+  flex: 1;
+}
+
+.form-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--grey-sub);
+  font-weight: 600;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1.5px solid var(--grey-border);
+}
+
+.form-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  margin-top: 18px;
+}
+
+.form-layout .form-card {
+  flex: 1 1 560px;
+  max-width: 640px;
+  margin-top: 0;
+}
+
+.form-section-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--green-content);
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-section-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  flex-shrink: 0;
+}
+
+.form-section-label:not(:first-child) {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1.5px solid var(--grey-border);
+}
+
+/* ---------------- Live preview panel ---------------- */
+.preview-panel {
+  flex: 1 1 300px;
+  max-width: 340px;
+  background: linear-gradient(160deg, var(--green-dark), var(--green-content));
+  border-radius: 16px;
+  padding: 20px 18px;
+  color: #ffffff;
+  box-shadow: 0 10px 28px rgba(31, 77, 60, 0.22);
+}
+
+.preview-panel-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #CFE0D8;
+  margin: 0 0 14px;
+}
+
+.preview-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+}
+
+.preview-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  transition: background 0.25s ease;
+}
+
+.preview-icon.cat-lab-equipment { background: rgba(255, 255, 255, 0.15); }
+.preview-icon.cat-peripheral { background: rgba(72, 151, 123, 0.35); } /* retheme: brand teal tint instead of off-palette blue */
+.preview-icon.cat-tool { background: rgba(184, 137, 57, 0.4); } /* retheme: brand gold tint instead of off-palette amber */
+
+.preview-name {
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+  word-break: break-word;
+}
+
+.preview-sub {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #CFE0D8;
+  margin: 0 0 14px;
+}
+
+.preview-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.8rem;
+}
+
+.preview-row:first-of-type {
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.preview-row-label {
+  color: #CFE0D8;
+  font-weight: 600;
+}
+
+.preview-row-value {
+  font-weight: 700;
+  text-align: right;
+}
+
+.preview-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.preview-badge.is-linked {
+  background: var(--gold);
+  color: #ffffff;
+}
+
+@media (max-width: 980px) {
+  .form-layout {
+    flex-direction: column;
+  }
+  .preview-panel {
+    max-width: none;
+    width: 100%;
+  }
+}
+
+/* ---------------- Responsive: down to small tablets ----------------
+   Everything above this point assumed a laptop-or-wider screen (mostly
+   true already via flex/rem, give or take the fixed sidebar). Below
+   ~820px there's no longer room for a full text sidebar, a 6-field
+   filter row on one line, or side-by-side form fields, so this tier
+   collapses/stacks/scrolls those instead of letting them crush
+   together unreadably (see chat). */
+@media (max-width: 820px) {
+  /* Sidebar: icon rail only - brand name, nav labels, logout label and
+     the "Leave C-LabTap" note all hidden, everything centered. The
+     sliding active-pill indicator (admin.js moveIndicatorTo) keeps
+     working unchanged - it measures the real link position every
+     time, and the existing resize listener already repositions it
+     when this breakpoint flips. --nav-left-inset/--nav-scoop are
+     resized here too, so the pill's curve stays in proportion to the
+     much narrower rail instead of looking oversized. */
+  :root {
+    --nav-left-inset: 10px;
+    --nav-scoop: 14px;
+  }
+
+  .sidebar {
+    width: 84px;
+  }
+
+  .sidebar-brand {
+    padding: 0 8px 20px;
+  }
+
+  .sidebar-brand img {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 0;
+  }
+
+  .sidebar-brand .brand-name,
+  .nav-link .nav-text,
+  .btn-logout-text,
+  .sidebar-footer .leave-note,
+  .sidebar-profile-text,
+  .sidebar-profile-caret {
+    display: none;
+  }
+
+  .sidebar-profile-trigger {
+    justify-content: center;
+    padding: 8px;
+  }
+
+  .sidebar-profile-menu {
+    left: 8px;
+    width: 180px;
+  }
+
+  .nav-link {
+    padding: 12px 0;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .sidebar-footer {
+    padding: 0 14px;
+  }
+
+  .btn-logout {
+    padding: 10px;
+    gap: 0;
+  }
+
+  /* Topbar + content gutters shrink along with the sidebar; the
+     "Open Logbook" CTA drops its label and becomes an icon-only
+     circle so it doesn't crowd the (now shorter) page title. */
+  .topbar {
+    padding: 10px 20px;
+  }
+
+  .topbar-page-title {
+    font-size: 1.4rem;
+  }
+
+  .btn-logbook {
+    padding: 13px;
+    gap: 0;
+  }
+
+  .btn-logbook span:not(.btn-logbook-icon) {
+    display: none;
+  }
+
+  #main-content {
+    padding: 20px 20px 24px;
+  }
+
+  /* Stat cards + filter bar: let the row wrap instead of squeezing a
+     fixed-width card and a 6-field filter bar into less space than
+     they were sized for. */
+  .stat-filter-row {
+    flex-wrap: wrap;
+  }
+
+  .stat-filter-row .stat-cards {
+    flex: 1 1 100%;
+  }
+
+  .stat-filter-row .filter-bar {
+    flex: 1 1 100%;
+    margin: 0;
+  }
+
+  .stat-card {
+    min-width: 140px;
+  }
+
+  /* Item Lending's plain (non-stacked) filter-bar: swap the rigid
+     repeat(6, 1fr) grid for one that wraps fields onto as many rows as
+     the screen actually needs. */
+  .filter-bar:not(.filter-bar--stacked) {
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  }
+
+  /* Attendance's filter row was deliberately locked to a single
+     non-wrapping line at normal widths (see chat - "filter only 2
+     lines"), but the fields and sliding toggle can't all stay
+     legible in this narrow a rail; that lock is for laptop widths, not
+     this breakpoint, so it's relaxed here back to wrapping. */
+  .attendance-filter-fields {
+    flex-wrap: wrap;
+  }
+
+  .attendance-filter-fields .attendance-date-filter,
+  .attendance-filter-fields .attendance-grade-filter,
+  .attendance-filter-fields .attendance-section-filter,
+  .attendance-filter-fields .attendance-status-filter {
+    flex: 1 1 130px;
+  }
+
+  .filter-fields-row .reg-date-filter {
+    flex: 1 1 130px;
+  }
+
+  .filter-fields-row .reg-grade-filter {
+    flex: 0.6 1 80px;
+  }
+
+  .filter-fields-row .reg-section-filter {
+    flex: 1 1 130px;
+  }
+
+  .filter-fields-row .reg-rfid-filter {
+    flex: 1.4 1 170px;
+  }
+
+  /* Register Student / Register Item: fields that sat side by side in
+     a .form-row now stack, same as the form card already does as a
+     whole below 980px. */
+  .form-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .form-field-wide {
+    flex: 1;
+  }
+}
+
+/* Data tables: instead of crushing columns to fit a narrower main
+   area, the table scrolls horizontally within its own box once it's
+   wider than its wrapper - the page itself still never scrolls (see
+   "html, body { overflow: hidden }" above). At normal widths the
+   table already fits, so this is a no-op until a screen is actually
+   too narrow for it. */
+
+
+@media (max-width: 820px) {
+  .table-scroll .data-table {
+    min-width: 640px;
+  }
+}
+
+.registry-section {
+  margin-top: 20px;
+}
+
+/* Report page: the Range toggle field sits next to Export instead of
+   stretching full width like a normal filter field. */
+.report-range-field {
+  max-width: 280px;
+}
+
+/* Every other sliding toggle-group already drops the base
+   .toggle-option divider line (see e.g. .lending-filter-fields,
+   #newAccountRole above) - #reportRange was the one left over still
+   showing a vertical line between "7 days"/"14 days"/etc (see chat:
+   "remove the division in the range"). */
+#reportRange .toggle-option {
+  border-right: none;
+}
+
+/* Print + Export are a pair of actions, not two independent toolbar
+   items - .registry-toolbar's space-between was spreading them across
+   the full width with Range on the left. Group them so they sit right
+   next to each other, with space-between now just pushing this one
+   group away from Range (see chat: "make the export and print
+   closer"). */
+.report-toolbar-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+/* Two chart cards side by side, each a plain white bordered box in the
+   same spirit as the rest of the admin UI (table wrapper, etc). Wraps
+   to one column on narrow screens. */
+.report-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 16px 0 20px;
+}
+
+.report-chart-card {
+  min-width: 0;
+  background: #ffffff;
+  border: 1px solid var(--grey-border);
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+
+.report-chart-title {
+  font-family: "Public Sans", sans-serif;
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: var(--text-dark);
+  margin: 0 0 4px;
+}
+
+/* One-line "why this chart" explainer under each chart title. */
+.report-chart-note {
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.report-chart-canvas-wrap {
+  position: relative;
+  height: 260px;
+}
+
+@media (max-width: 860px) {
+  .report-charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Report page: "Include in Print / Export" checkbox row, styled like
+   the toggle/filter fields next to it in the same toolbar. */
+.report-sections-field {
+  margin-top: 14px;
+}
+
+.report-sections-field > label {
+  display: block;
+  font-family: "Public Sans", sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.report-sections-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.report-section-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.88rem;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+
+.report-section-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #1F4D3C;
+  cursor: pointer;
+}
+
+/* Printable report: built into #reportPrintArea by Report/_Content's
+   script right before window.print() is called, then hidden again on
+   screen. In print, everything else on the page is hidden so only this
+   area ends up on the page/PDF. */
+.report-print-area {
+  display: none;
+}
+
+.report-print-meta {
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 18px;
+}
+
+.report-print-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 26px;
+  font-family: "Public Sans", sans-serif;
+  font-size: 0.85rem;
+}
+
+.report-print-table th,
+.report-print-table td {
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.report-print-table th {
+  background: #f0f0f0;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .report-print-area,
+  .report-print-area * {
+    visibility: visible !important;
+  }
+  .report-print-area {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
+
+.registry-section--loading {
+  visibility: hidden;
+}
+
+.registry-section-heading {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin: 0 0 10px;
+}
+
+.registry-section:has(#registryRows) .data-table tbody td {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.registry-section:has(#registryRows) .data-table thead th:last-child {
+  text-align: right;
+  padding-right: 10px;
+}
+
+.registry-section:has(#registryRows) .data-table tbody td:last-child {
+  padding-right: 10px;
+}
+
+@media (min-width: 821px) {
+  .registry-section:has(#registryRows) .data-table {
+    table-layout: fixed;
+  }
+
+  .registry-section:has(#registryRows) .data-table th:nth-child(1),
+  .registry-section:has(#registryRows) .data-table td:nth-child(1) { width: 16%; }
+  .registry-section:has(#registryRows) .data-table th:nth-child(2),
+  .registry-section:has(#registryRows) .data-table td:nth-child(2) { width: 14%; }
+  .registry-section:has(#registryRows) .data-table th:nth-child(3),
+  .registry-section:has(#registryRows) .data-table td:nth-child(3) { width: 19%; }
+  .registry-section:has(#registryRows) .data-table th:nth-child(4),
+  .registry-section:has(#registryRows) .data-table td:nth-child(4) { width: 12%; }
+  .registry-section:has(#registryRows) .data-table th:nth-child(5),
+  .registry-section:has(#registryRows) .data-table td:nth-child(5) { width: 17%; }
+  .registry-section:has(#registryRows) .data-table th:nth-child(6),
+  .registry-section:has(#registryRows) .data-table td:nth-child(6) { width: 22%; }
+}
+
+/* ---------------- Register Student: Registered/Archived tabs + Add
+   Student pill ----------------
+   Registered/Archived now sit INSIDE .registry-section, directly on
+   top of .table-scroll with no gap - styled like browser tabs that are
+   physically an extension of the table (see chat): the active tab
+   shares the table header's own green and border color and has no
+   bottom radius/border, so it reads as one continuous surface with the
+   table below it; the inactive tab sits a couple pixels lower and in a
+   muted color, like a background browser tab. Add Student is a
+   separate pill to the right, not part of that tab strip. */
+.registry-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.registry-tabs {
+  display: flex;
+  gap: 0;
+  align-items: flex-end;
+}
+
+.registry-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid var(--green-dark);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  /* Re-checked against the actual pixels of the reference Canva mock
+     (see chat - "why did u not copy the inactive color"): it's NOT a
+     lighter grey-tan at all, it's a darker green (sampled ~#173C2F,
+     the same value already used for --sidebar-bg) with the icon/text
+     just faded via opacity, not a different hue. */
+  background: var(--sidebar-bg);
+  color: rgba(255, 255, 255, 0.55);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  position: relative;
+  /* Sits a couple px lower than the active tab, and its own 1px bottom
+     edge draws on top of .table-scroll's top border below (see chat -
+     "like its an extension part" of the table), overlapping by the
+     tab's own border width so there's no visible seam. */
+  top: 3px;
+  z-index: 0;
+}
+
+.registry-tab.active {
+  background: var(--green-content);
+  color: #fff;
+  padding: 8px 16px;
+  top: 0;
+  z-index: 2;
+  /* Pulled down by its own border width to sit flush on .table-scroll's
+     top border, erasing the seam between tab and table entirely. */
+  margin-bottom: -1px;
+}
+
+.registry-tab-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.registry-tab-icon-active {
+  display: none;
+}
+
+/* The inactive icon is the same white glyph, just faded to match the
+   mock's muted look (see chat), rather than a separately recolored
+   asset. */
+.registry-tab-icon-inactive {
+  opacity: 0.55;
+}
+
+.registry-tab.active .registry-tab-icon-active {
+  display: inline-block;
+}
+
+.registry-tab.active .registry-tab-icon-inactive {
+  display: none;
+}
+
+.btn-add-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 999px;
+  /* Same fill as a selected Method/RFID toggle segment (see chat -
+     "match the color of the add button to the fill color of
+     method"), not the page's gold accent. */
+  background: var(--toggle-active);
+  color: var(--green-dark);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  /* Basic spacing/HCI fix (see chat - "the add button is sticking
+     close to the data table"): the tabs are deliberately flush with
+     the table (they're meant to read as an extension of it), but a
+     plain action button sitting flush against the same edge reads as
+     a layout mistake, not a design choice - it needs its own
+     breathing room away from the table it's floating above. */
+  margin-bottom: 14px;
+}
+
+.btn-add-pill:hover {
+  background: #FDE29B;
+}
+
+.btn-add-pill-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+/* The overlay itself: a fixed, full-viewport backdrop with the existing
+   .form-layout (form-card + preview-panel) centered inside it, instead
+   of that same markup sitting inline in the page flow. Toggled via
+   style.display in the view's script, same pattern as the kiosk's own
+   PIN-gate overlay (logbook.css .kiosk-admin-overlay). */
+.reg-overlay {
+  position: fixed;
+  inset: 0;
+  /* Neutral dark backdrop, not a green tint - every modal in the app
+     (kiosk PIN gates included, see logbook.css) uses this same
+     rgba(0,0,0,0.6) + blur recipe now, so modals look consistent
+     instead of each page inventing its own overlay color. */
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px;
+  overflow-y: auto;
+  z-index: 200;
+}
+
+.reg-overlay .form-layout {
+  margin-top: 0;
+  width: 100%;
+  max-width: 980px;
+  position: relative;
+}
+
+.reg-overlay-close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  color: var(--text-dark);
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.reg-overlay-close:hover {
+  background: var(--grey-border);
+}
+
+@media (max-width: 820px) {
+  .reg-overlay {
+    padding: 20px 14px;
+  }
+
+  .reg-overlay-close {
+    top: -10px;
+    right: 6px;
+  }
+}
+
+
+
+
+/* ---------------- Pagination (Attendance / Register Student / Register
+   Item registries) - classic numbered pager, square-ish buttons with a
+   small border radius, Prev/Next on the ends, themed with the brand
+   colors (gold = current page, teal = hover, white/grey = idle). ---- */
+/* Outer row: "Showing page X of Y" on the left, the button group on
+   the right - built by CLabTapPagination.render() in admin.js. */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.pagination-info {
+  font-family: "Public Sans", sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--grey-sub);
+}
+
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px; /* pixel-matched to the reference screenshot's button
+               spacing (see chat) - was 8px */
+}
+
+.page-btn {
+  min-width: 32px; /* pixel-matched to the reference screenshot's button
+                       size (see chat) - was 36px */
+  height: 32px;
+  padding: 0 10px;
+  border: 1.5px solid var(--grey-border);
+  border-radius: 9px; /* rounded square, per chat - not a circle/pill */
+  background: #ffffff;
+  color: var(--green-dark);
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Prev/Next stay Public Sans (inherited); only the numbered page
+   buttons switch to Roboto, per the font spec from chat. */
+.page-btn:not(.page-nav) {
+  font-family: "Roboto", sans-serif;
+}
+
+/* Prev/Next: chevron + label ("< Prev" / "Next >"), quieter than the
+   numbered buttons - thin border, muted grey text (see chat reference). */
+.page-btn.page-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0 12px 0 8px;
+  border-width: 1px;
+  color: var(--grey-sub);
+  font-weight: 700;
+}
+
+/* Next has its chevron on the right, so mirror the padding. */
+.page-btn.page-nav:last-child {
+  padding: 0 8px 0 12px;
+}
+
+.page-nav-chevron {
+  flex: 0 0 auto;
+}
+
+.page-btn:hover:not(.active):not(:disabled) {
+  background: var(--teal-logout);
+  border-color: var(--teal-logout);
+  color: #ffffff;
+}
+
+.page-btn.active {
+  /* Sampled directly from the reference screenshot: the filled pixel is
+     #1F4D3C, an exact match for --green-dark already in this file - not
+     gold. The active page is also a touch bigger than its neighbors
+     (see chat), so it's sized up instead of matching the base 32px box. */
+  min-width: 38px;
+  height: 38px;
+  font-size: 0.92rem;
+  background: var(--green-dark);
+  border-color: var(--green-dark);
+  color: #ffffff;
+  cursor: default;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-ellipsis {
+  min-width: 20px;
+  text-align: center;
+  color: var(--grey-sub);
+  font-weight: 700;
+}
+
+/* ---------------- Register Student: slightly shorter table rows ----------------
+   Scoped to the table right after the toolbar that holds #addStudentBtn,
+   so Register Item and the other tables keep their current row height. */
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .data-table tbody td {
+  padding-top: 5.5px;
+  padding-bottom: 5.5px;
+}
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .btn-icon {
+  width: auto;
+  height: 28px;
+}
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .btn-icon img,
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .btn-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ---------------- Register Student: column widths follow the content ----------------
+   Columns size themselves to what's in them (table-layout: auto), so a long
+   name widens the Name column and the other columns give up space for it.
+   Every cell stays on one line so all rows keep the same 40px height.
+   Actions shrinks to its buttons,
+   starts under its header like every other column, and keeps clear of the
+   table's right edge. If nothing more can give, the table scrolls sideways
+   inside its box instead of columns overlapping. Register Student only. */
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .data-table {
+  table-layout: auto;
+}
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .data-table th:nth-child(n),
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .data-table td:nth-child(n) {
+  width: auto;
+}
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .data-table th:nth-child(n),
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .data-table td:nth-child(n) {
+  white-space: nowrap;
+}
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .data-table th:last-child,
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .data-table td:last-child {
+  width: 1%;
+  text-align: left;
+  padding-left: 16px;
+  padding-right: 34px;
+}
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .registry-actions {
+  justify-content: flex-start;
+}
+
+/* Register Student: "Date Removed" column - Archived tab only (the page's
+   script adds .is-archived to the table when that tab is showing). */
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .data-table .col-removed {
+  display: none;
+}
+.registry-toolbar:has(#addStudentBtn) + .table-scroll .data-table.is-archived .col-removed {
+  display: table-cell;
+}
+
+/* Register Student: "Date Removed" filter only shows on the Archived tab
+   (the page's script removes .is-hidden there). The other filters shrink
+   sideways to make room, so the filter bar stays the same height. */
+.filter-fields-row .reg-removed-filter.is-hidden {
+  display: none;
+}
+
+/* =====================================================================
+   Register Student form (overlay) - card layout from the sketch:
+   green header, rounded grey-bordered fields, divider before the RFID
+   fob, Clear + Register on the bottom right. Each field shows its state
+   (focus / valid / error) and a short message under it; the form has a
+   message banner at the top and a toast confirms saves after it closes.
+   ===================================================================== */
+.regf-card {
+  margin: auto; /* centers vertically, but still scrolls if the screen is short */
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  border: 1px solid var(--grey-border);
+  border-radius: 14px;
+  box-shadow: 0 18px 50px rgba(15, 46, 32, 0.28);
+  overflow: hidden;
+  animation: regf-pop 0.18s ease-out;
+}
+
+@keyframes regf-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.regf-header {
+  background: var(--green-dark);
+  color: #ffffff;
+  padding: 22px 22px 20px 26px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.regf-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.regf-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: #CFE0D8;
+  line-height: 1.4;
+}
+
+.regf-close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.regf-close:hover { background: rgba(255, 255, 255, 0.25); }
+.regf-close:focus-visible { outline: 2px solid #FFECB2; outline-offset: 2px; }
+
+/* Compact variant of the regf-card - Register Item's form has far
+   fewer fields than Register Student's, so it skips the subtitle, the
+   live preview strip, and the numbered step dividers; this trims the
+   header/body padding a bit to match, without touching the shared
+   .regf-card rules Register Student still uses at full size. */
+.regf-card--compact .regf-header { padding: 18px 20px 16px 22px; }
+.regf-card--compact .regf-body { padding: 16px 22px 18px; gap: 10px; }
+
+/* Change PIN is just three short digit fields + a code field - no
+   reason for it to be as wide as the Change Password modal.
+   Specificity bumped (.regf-card.regf-card--pin, not just
+   .regf-card--pin) so it beats the later ".regf-card { max-width:
+   clamp(480px, 40vw, 760px) }" rule for Register Student - same
+   specificity + later in the file was silently winning before. */
+.regf-card.regf-card--pin { max-width: 360px; }
+
+/* Change Password: one field at a time (current, then new/confirm/otp)
+   - same oversized-for-Register-Student issue as Change PIN above, same
+   specificity-bump fix. */
+.regf-card.regf-card--password { max-width: 420px; }
+.regf-row--pins { margin-bottom: 16px; }
+.regf-row--pins .regf-field { flex: 1 1 0; min-width: 0; }
+.regf-row--pins .regf-input { text-align: center; letter-spacing: 2px; }
+
+/* Change PIN: more breathing room between the Current PIN row, the
+   New/Confirm + code block, and the action buttons - the default
+   compact-card gap (10px) was tuned for short label/input pairs
+   stacking directly, not rows that also carry a dash meter under
+   them. Specificity bumped (.regf-card.regf-card--pin, not just
+   .regf-card--pin) for the same reason as the max-width fix above. */
+.regf-card.regf-card--pin .regf-body { gap: 22px; }
+
+/* "Forgot PIN?" under the Current PIN field - skips straight to the
+   New/Confirm step instead of requiring the (forgotten) current one;
+   see changePinForgotBtn in admin.js. Plain text link, not a pill
+   button, so it doesn't compete with Verify for attention. */
+.regf-link-btn {
+  display: block;
+  margin: 6px 0 0 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--teal-logout);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.regf-link-btn:hover { color: var(--green-dark); }
+
+/* Password show/hide eye toggle - added automatically to every
+   type="password" input site-wide (see wwwroot/js/password-toggle.js),
+   not just ones built with this in mind from the start. */
+.pwd-wrap { position: relative; display: block; width: 100%; }
+.pwd-wrap input { padding-right: 38px; }
+.pwd-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--grey-sub, #8a8a8a);
+  cursor: pointer;
+}
+.pwd-toggle:hover { color: var(--text-dark, #2a2a2a); }
+.pwd-toggle svg { width: 18px; height: 18px; display: block; }
+
+/* PIN-entry meter (see wwwroot/js/pin-dots.js) - same small dash-segment
+   look as Register Student's 12-digit LRN meter (.regf-meter just
+   above), reused at 4 segments for PIN fields. Segments light up as
+   digits are typed; the input itself is untouched. */
+.pin-meter { display: flex; gap: 6px; margin: 9px 2px 6px; }
+.pin-meter i {
+  flex: 1 1 0;
+  height: 5px;
+  border-radius: 3px;
+  background: transparent;
+  border: 1px solid var(--grey-border);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+/* Fill colors matched to the logbook's pin meter (var(--lb-gold) / var(--lb-green-dark)) so PIN inputs look identical everywhere */
+.pin-meter i.on { background: #B88939; border-color: #B88939; }
+.pin-meter.is-full i { background: #1F4D3C; border-color: #1F4D3C; }
+
+/* PIN inputs: centered, larger, more spaced-out digits than a regular
+   text field - the dots/numbers were cramped and left-aligned before.
+   !important because this needs to win over every base class a PIN
+   input might carry (.regf-input, .settings-input,
+   .kiosk-admin-pin-input) without re-litigating specificity per class. */
+input[data-pin-dots] {
+  text-align: center !important;
+  font-size: 1.5rem !important;
+  letter-spacing: 10px !important;
+  font-weight: 700 !important;
+}
+
+.regf-head-title-row { display: flex; align-items: center; gap: 10px; }
+.regf-head-icon {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #FFECB2;
+  display: grid;
+  place-items: center;
+}
+
+.regf-body {
+  padding: 22px 26px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.regf-row {
+  display: flex;
+  gap: 12px;
+}
+.regf-grow { flex: 1 1 auto; min-width: 0; }
+.regf-gender,
+.regf-suffix { flex: 0 0 128px; }
+.regf-half { flex: 1 1 0; min-width: 0; }
+
+.regf-row--otp { align-items: flex-end; }
+.regf-otp-send-btn { flex: 0 0 auto; white-space: nowrap; }
+
+.regf-field label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 5px 4px;
+}
+.regf-req { color: var(--red-timeout); }
+
+.regf-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 16px;
+  border: 1.5px solid #CFCFCF;
+  border-radius: 999px;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.regf-input::placeholder { color: #A3A3A3; font-weight: 400; }
+.regf-input:hover { border-color: #A9A9A9; }
+.regf-input:focus {
+  outline: none;
+  border-color: var(--teal-logout);
+  box-shadow: 0 0 0 3px rgba(72, 151, 123, 0.18);
+}
+select.regf-input {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23555555' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+.regf-input[readonly] { background: #F7F7F5; cursor: default; }
+
+.regf-help {
+  min-height: 1.15em;
+  margin: 4px 0 6px 14px;
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: #7A7A7A;
+  line-height: 1.3;
+}
+
+/* valid / invalid states */
+.regf-field.is-valid .regf-input { border-color: var(--teal-logout); }
+.regf-field.is-valid .regf-help { color: var(--teal-logout); }
+.regf-field.is-invalid .regf-input {
+  border-color: #B3261E;
+  background: #FFF8F7;
+}
+.regf-field.is-invalid .regf-input:focus { box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.15); }
+.regf-field.is-invalid .regf-help { color: #B3261E; font-weight: 600; }
+.regf-field.is-invalid {
+  animation: toastShake 0.4s ease;
+}
+
+/* divider before RFID */
+.regf-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 10px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--green-dark);
+}
+.regf-divider::before,
+.regf-divider::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: #E2E2E2;
+  border-radius: 2px;
+}
+.regf-divider::before { flex: 0 0 14px; }
+
+.regf-scan-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.regf-scan-row .regf-input { flex: 1 1 auto; min-width: 0; }
+
+.regf-field.is-scanning .regf-input {
+  border-color: var(--gold);
+  background: #FFFBEF;
+  animation: regf-pulse 1.4s ease-in-out infinite;
+}
+@keyframes regf-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(184, 137, 57, 0.35); }
+  50% { box-shadow: 0 0 0 5px rgba(184, 137, 57, 0); }
+}
+
+.regf-scan-status {
+  margin: 6px 0 4px 14px;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: #7A7A7A;
+  font-weight: 400;
+  padding-left: 18px;
+  position: relative;
+}
+.regf-scan-status::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.32em;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #C4C4C4;
+}
+.regf-scan-status[data-state="waiting"] { color: #8A6A1F; font-weight: 600; }
+.regf-scan-status[data-state="waiting"]::before { background: var(--gold); animation: regf-blink 1s ease-in-out infinite; }
+.regf-scan-status[data-state="success"] { color: var(--teal-logout); font-weight: 600; }
+.regf-scan-status[data-state="success"]::before { background: var(--teal-logout); }
+.regf-scan-status[data-state="error"] { color: #B3261E; font-weight: 600; }
+.regf-scan-status[data-state="error"]::before { background: #B3261E; }
+@keyframes regf-blink { 50% { opacity: 0.25; } }
+
+/* buttons */
+.regf-btn {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
+}
+.regf-btn:active:not(:disabled) { transform: translateY(1px); }
+.regf-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(72, 151, 123, 0.3); }
+.regf-btn:disabled { opacity: 0.6; cursor: progress; }
+
+.regf-btn-outline {
+  background: #ffffff;
+  border: 1.5px solid #CFCFCF;
+  color: var(--text-dark);
+}
+.regf-btn-outline:hover:not(:disabled) { border-color: var(--green-dark); color: var(--green-dark); background: #F3F8F5; }
+#rfidScanBtn[aria-pressed="true"] { border-color: var(--gold); color: #8A6A1F; background: #FFFBEF; }
+
+.regf-btn-primary {
+  background: var(--gold);
+  border: 1.5px solid var(--gold);
+  color: #ffffff;
+}
+.regf-btn-primary:hover:not(:disabled) { background: var(--gold-hover); border-color: var(--gold-hover); }
+.regf-btn-primary.is-loading {
+  padding-left: 40px;
+  background-image: radial-gradient(circle, transparent 5px, transparent 5px);
+  position: relative;
+}
+.regf-btn-primary.is-loading::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: regf-spin 0.7s linear infinite;
+}
+@keyframes regf-spin { to { transform: rotate(360deg); } }
+
+/* "Send code" waiting state - same spinner-on-the-left treatment as
+   the primary button's .is-loading above, recolored for the outline
+   button (white background, dark text) instead of the gold/white
+   primary one. Shown while the OTP email request is in flight (see
+   wireSendOtpButton in admin.js) - otherwise clicking "Send code" gave
+   no feedback at all until the email either sent or failed. */
+.regf-btn-outline.is-loading {
+  padding-left: 40px;
+  position: relative;
+}
+.regf-btn-outline.is-loading::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  border: 2px solid rgba(22, 58, 44, 0.25);
+  border-top-color: var(--green-dark);
+  border-radius: 50%;
+  animation: regf-spin 0.7s linear infinite;
+}
+
+.regf-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* message banner at the top of the form - shakes briefly each time a
+   new message is shown (see wwwroot/js/admin.js showMsg), so an error
+   or success line actually catches the eye instead of just quietly
+   changing text above the form. Reuses the same toastShake keyframes
+   as the invalid-field shake below. */
+.regf-message.regf-message--shake { animation: toastShake 0.4s ease; }
+
+.regf-message {
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-bottom: 8px;
+  background: #EEF6F2;
+  color: var(--green-dark);
+  border: 1px solid #CFE3D9;
+}
+.regf-message[data-type="error"] {
+  background: #FDECEA;
+  color: #8C1D16;
+  border-color: #F3C2BD;
+}
+
+.regf-sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* toast - confirmations after the form closes and for table actions */
+.regf-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 300;
+  max-width: 380px;
+  padding: 12px 18px 12px 40px;
+  border-radius: 12px;
+  background: var(--green-dark);
+  color: #ffffff;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.35;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  /* Starts noticeably smaller/lower than it lands, not just a few px
+     off - that's what makes the pop on arrival read as a pop rather
+     than a fade (see chat: wants more exaggerated feedback). */
+  transform: scale(0.75) translateY(18px);
+  transform-origin: bottom right;
+}
+.regf-toast::before {
+  content: "\2713";
+  position: absolute;
+  left: 16px;
+  top: 11px;
+  font-weight: 800;
+  color: #FFECB2;
+  display: inline-block;
+}
+.regf-toast.is-error { background: #8C1D16; }
+.regf-toast.is-error::before { content: "!"; color: #ffffff; left: 19px; }
+.regf-toast.is-showing {
+  opacity: 1;
+  transform: none;
+  /* A spring/overshoot curve (it sails slightly past scale 1 before
+     settling) instead of a linear ease - "bounce-in", not "fade-in". */
+  transition: opacity 0.2s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.regf-toast.is-showing::before {
+  animation: toastIconPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both;
+}
+.regf-toast.is-error.is-showing {
+  animation: toastShake 0.4s ease 0.15s;
+}
+@keyframes toastIconPop {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+@keyframes toastShake {
+  0%, 100% { transform: none; }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .regf-card, .regf-field.is-scanning .regf-input,
+  .regf-scan-status[data-state="waiting"]::before,
+  .regf-btn-primary.is-loading::before,
+  .regf-btn-outline.is-loading::before,
+  .regf-toast.is-showing::before,
+  .regf-toast.is-error.is-showing,
+  .regf-field.is-invalid,
+  .regf-message.regf-message--shake { animation: none; }
+}
+
+@media (max-width: 520px) {
+  .regf-body { padding: 18px 18px; }
+  .regf-row { flex-direction: column; gap: 0; }
+  .regf-gender,
+  .regf-suffix { flex: 1 1 auto; }
+}
+
+/* Register Student: Gender filter sits with the other student filters.
+   To make room, the two total cards give up some width on this page
+   (they only hold a short label and one number). */
+.filter-fields-row .reg-gender-filter {
+  flex: 0.7 1 clamp(86px, 9vw, 115px);
+  min-width: 86px; /* always wide enough to show "Female" */
+}
+@media (min-width: 981px) {
+  .stat-filter-row:has(#regFilterGender) .stat-cards {
+    flex: 0 1 clamp(264px, 44vw - 335px, 605px); /* the filter box gets the rest */
+    min-width: 264px; /* grows with the screen; never below two 125px cards + gap */
+  }
+  .stat-filter-row:has(#regFilterGender) .filter-bar {
+    min-width: 0;
+  }
+  .stat-filter-row:has(#regFilterGender) .stat-card {
+    min-width: 125px;
+    flex-basis: 125px;
+  }
+}
+
+/* Register Student form: Section suggestions (search-box style list) */
+.regf-combo {
+  position: relative;
+}
+.regf-suggest {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 10;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: #ffffff;
+  border: 1.5px solid #CFCFCF;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  max-height: 220px;
+  overflow-y: auto;
+}
+.regf-suggest li {
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+.regf-suggest li mark {
+  background: none;
+  color: var(--green-dark);
+  font-weight: 800;
+}
+.regf-suggest li.is-active {
+  background: #EEF6F2;
+  color: var(--green-dark);
+}
+.regf-help.is-new {
+  color: #8A6A1F;
+  font-weight: 600;
+}
+
+/* Register Student form: scales with the screen. Wider card, and
+   taller fields / larger text on big screens; back to the compact
+   size (480px card) on small ones. */
+.regf-card {
+  max-width: clamp(480px, 40vw, 760px);
+}
+.regf-header {
+  padding: clamp(22px, 1.6vw, 30px) clamp(22px, 2vw, 36px);
+}
+.regf-title { font-size: clamp(1.25rem, 1.3vw, 1.6rem); }
+.regf-subtitle { font-size: clamp(0.82rem, 0.78vw, 0.95rem); }
+.regf-body {
+  padding: clamp(22px, 1.7vw, 32px) clamp(26px, 2.2vw, 40px);
+  gap: clamp(6px, 0.5vw, 10px);
+}
+.regf-row { gap: clamp(12px, 1vw, 18px); }
+.regf-field label { font-size: clamp(0.8rem, 0.76vw, 0.92rem); }
+.regf-input,
+.regf-btn {
+  height: clamp(40px, 2.6vw, 50px);
+  font-size: clamp(0.88rem, 0.86vw, 1rem);
+}
+.regf-help,
+.regf-scan-status { font-size: clamp(0.74rem, 0.7vw, 0.86rem); }
+.regf-gender,
+.regf-suffix { flex-basis: clamp(128px, 9vw, 170px); }
+.regf-btn { padding: 0 clamp(20px, 1.5vw, 28px); }
+.regf-suggest li { font-size: clamp(0.88rem, 0.86vw, 1rem); }
+
+/* "Still needed: ..." next to the disabled Register button */
+.regf-actions {
+  align-items: center;
+}
+.regf-submit-hint {
+  margin: 0 auto 0 4px;
+  font-size: clamp(0.74rem, 0.7vw, 0.86rem);
+  font-weight: 500;
+  color: #8A6A1F;
+  line-height: 1.3;
+}
+.regf-btn-primary:disabled:not(.is-loading) {
+  background: #D9CBB0;
+  border-color: #D9CBB0;
+  color: #ffffff;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+/* Register Student form header: same green gradient as the old preview
+   panel, starting a shade darker. */
+.regf-header {
+  background: linear-gradient(160deg, var(--green-darker), var(--green-dark) 55%, var(--green-content));
+}
+
+/* Attendance: Gender filter. The total
+   cards give up some width on wide screens to make room, same as on
+   Register Student. */
+.attendance-filter-fields .attendance-gender-filter {
+  flex: 0.8 1 clamp(84px, 7vw, 110px);
+  min-width: 84px; /* always wide enough to show "Female" */
+}
+@media (min-width: 981px) {
+  .stat-filter-row:has(#filterGender) .stat-cards {
+    flex: 0 1 clamp(264px, 44vw - 335px, 605px);
+    min-width: 264px;
+  }
+  .stat-filter-row:has(#filterGender) .stat-card {
+    min-width: 125px;
+    flex-basis: 125px;
+  }
+  .stat-filter-row:has(#filterGender) .filter-bar {
+    min-width: 0;
+  }
+}
+
+/* Add Student button: "pops out" from the page - same pale-gold fill as a
+   selected toggle (kept from before), now with a gold edge, a soft
+   shadow that lifts on hover and presses on click, and the icon set in
+   a white chip. No breathing glow: that stays reserved for Open
+   Logbook, so the two don't compete for attention. */
+.btn-add-pill {
+  position: relative;
+  gap: 10px;
+  padding: 7px 20px 7px 7px;
+  border: 1.5px solid #E7C873;
+  background: linear-gradient(180deg, #FFF3CC, var(--toggle-active));
+  box-shadow: 0 3px 10px rgba(184, 137, 57, 0.28), 0 1px 2px rgba(31, 77, 60, 0.12);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.btn-add-pill-icon {
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  padding: 6px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(31, 77, 60, 0.18);
+  transition: transform 0.2s ease;
+}
+.btn-add-pill:hover {
+  background: linear-gradient(180deg, #FFEDB5, #FDE29B);
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(184, 137, 57, 0.35), 0 2px 4px rgba(31, 77, 60, 0.12);
+}
+.btn-add-pill:hover .btn-add-pill-icon {
+  transform: rotate(90deg) scale(1.05);
+}
+.btn-add-pill:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(184, 137, 57, 0.3);
+}
+.btn-add-pill:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px rgba(72, 151, 123, 0.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-add-pill,
+  .btn-add-pill-icon { transition: none; }
+  .btn-add-pill:hover { transform: none; }
+  .btn-add-pill:hover .btn-add-pill-icon { transform: none; }
+}
+
+/* Open Logbook: squared-off corners instead of a full pill. */
+.btn-logbook {
+  border-radius: 10px;
+}
+
+/* ---------- Fill-on-hover animations ----------
+   A colour sweeps in from the left on hover and drains back out when the
+   pointer leaves. Add Student gets a strong gold sweep (it's the page's
+   main action); Open Logbook is left alone - it's already solid
+   gold with its own glow. */
+
+/* Add Student */
+.btn-add-pill {
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-add-pill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  /* a deeper gold, still light enough that the dark-green label keeps
+     well over 4.5:1 contrast */
+  background: linear-gradient(90deg, #F4D27A, #EBC261);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.btn-add-pill:hover::before,
+.btn-add-pill:focus-visible::before {
+  transform: scaleX(1);
+}
+.btn-add-pill:hover {
+  /* the sweep supplies the colour change now, not the background */
+  background: linear-gradient(180deg, #FFF3CC, var(--toggle-active));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-add-pill::before { transition: none; }
+}
+
+/* Attendance filter row: keep every filter readable.
+   - Gender only needs room for "Female", so it stops growing early.
+   - Grade never gets narrower than "All" / "12" plus its arrow.
+   - Method / Status never shrink below their own text, so "Manual" and
+     "Time Out" can't run into the next filter; the date and section
+     fields give up space instead. */
+.attendance-filter-fields .attendance-gender-filter {
+  flex: 0.35 1 90px;
+  min-width: 86px;
+}
+@media (min-width: 1400px) {
+  .attendance-filter-fields .attendance-grade-filter {
+    min-width: 72px;
+  }
+  .attendance-filter-fields .attendance-method-filter,
+  .attendance-filter-fields .attendance-status-filter {
+    min-width: fit-content;
+  }
+  .attendance-filter-fields .attendance-method-filter .toggle-option,
+  .attendance-filter-fields .attendance-status-filter .toggle-option {
+    white-space: nowrap;
+  }
+  .attendance-filter-fields .attendance-method-filter .toggle-option,
+  .attendance-filter-fields .attendance-status-filter .toggle-option {
+    padding-left: clamp(6px, 1.2vw - 12px, 14px);
+    padding-right: clamp(6px, 1.2vw - 12px, 14px);
+  }
+}
+
+/* Date filters: "Choose date" stops before the calendar icon instead of
+   running underneath it (all pages). */
+.date-filter-placeholder {
+  right: 30px;
+}
+
+/* Attendance at mid-size screens (about 1400-1700px wide): make room so
+   the date boxes can show "Choose date" / a picked date in full.
+   Toggle words keep a smaller side gap, and the total cards grow a bit
+   more slowly on this page. */
+@media (min-width: 1500px) {
+  .attendance-filter-fields .attendance-method-filter .toggle-option,
+  .attendance-filter-fields .attendance-status-filter .toggle-option {
+    padding-left: clamp(6px, 1.2vw - 12px, 14px);
+    padding-right: clamp(6px, 1.2vw - 12px, 14px);
+  }
+  .attendance-filter-fields .attendance-date-filter {
+    min-width: 122px;
+  }
+  .attendance-filter-fields .attendance-section-filter {
+    min-width: 84px;
+  }
+}
+
+#filterMethod .toggle-option {
+  border-right: none;
+}
+@media (min-width: 981px) {
+  .stat-filter-row:has(#filterGender) .stat-cards {
+    flex-basis: clamp(264px, 52vw - 480px, 605px);
+  }
+}
+
+/* =====================================================================
+   Register Student form - redesign (see chat): numbered sections with
+   check marks, tap-to-pick chips for Gender and Grade (7-10) instead of
+   dropdowns, an optional "+ Add suffix", an LRN progress meter, a live
+   student-card preview in the header, and a scan-style RFID panel.
+   Field IDs are unchanged, so the form's script still drives everything;
+   Gender / Grade keep a hidden <select> that the chips write into.
+   ===================================================================== */
+.regf-field[hidden] { display: none; }
+
+/* shared control height, same clamp the inputs use */
+.regf-card { --regf-h: clamp(40px, 2.6vw, 50px); }
+
+/* header: title + subtitle + live student card */
+.regf-head-main { flex: 1 1 auto; min-width: 0; }
+.regf-idcard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 10px 14px 10px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.11);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  min-width: 0;
+}
+.regf-idcard-avatar {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #FFECB2;
+  color: var(--green-dark);
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.4px;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+.regf-idcard[data-empty="true"] .regf-idcard-avatar {
+  background: rgba(255, 255, 255, 0.16);
+  color: #CFE0D8;
+}
+.regf-idcard.is-bump .regf-idcard-avatar { transform: scale(1.08); }
+.regf-idcard-text { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.regf-idcard-name {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.regf-idcard[data-empty="true"] .regf-idcard-name { color: #CFE0D8; font-weight: 600; }
+.regf-idcard-meta {
+  font-size: 0.78rem;
+  color: #CFE0D8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* numbered section headings */
+.regf-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 6px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--green-dark);
+}
+#regStep1 { margin-top: 0; }
+.regf-step::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: #E8E8E8;
+}
+.regf-step-num {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #E9EFEC;
+  color: var(--green-dark);
+  font-size: 0.74rem;
+  letter-spacing: 0;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+.regf-step::after { order: 4; }
+.regf-step.is-done .regf-step-num {
+  background: var(--teal-logout);
+  color: #ffffff;
+  font-size: 0;
+  transform: scale(1.06);
+}
+.regf-step.is-done .regf-step-num::before { content: "\2713"; font-size: 0.82rem; font-weight: 800; }
+.regf-step > .regf-step-tag {
+  order: 3;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #F1F1EE;
+  color: #7A7A7A;
+  font-size: 0.66rem;
+  letter-spacing: 0.4px;
+}
+
+/* labels for chip groups look like the normal field labels */
+.regf-field .regf-label {
+  display: block;
+  font-size: clamp(0.8rem, 0.76vw, 0.92rem);
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 5px 4px;
+}
+.regf-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 5px;
+}
+.regf-label-row label { margin: 0 0 0 4px; }
+.regf-link {
+  border: none;
+  background: none;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #3C8268;
+  cursor: pointer;
+}
+.regf-link:hover { color: var(--green-dark); text-decoration: underline; }
+.regf-link:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(72, 151, 123, 0.3); }
+
+.regf-row--identity { align-items: flex-start; }
+.regf-row .regf-gender { flex: 0 0 clamp(158px, 12vw, 210px); }
+.regf-row .regf-grade { flex: 0 0 clamp(204px, 17vw, 270px); }
+.regf-row .regf-suffix { flex: 0 0 clamp(96px, 7vw, 130px); }
+
+/* tap-to-pick chips */
+.regf-chips { display: flex; gap: 8px; }
+
+/* Scrollable checklist of items in Item Lending's "Log a Borrow" modal
+   (see Views/ItemLending/_Content.cshtml) - a plain checkbox per
+   available unit, same visual language as the rest of the form. */
+.regf-item-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--grey-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.regf-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+
+.regf-item-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--green-dark);
+}
+
+.regf-item-row small {
+  color: var(--grey-sub);
+}
+
+/* Category chips sit right above the product list in Item Lending's
+   "Log a Borrow" modal - a little breathing room before the list. */
+.lend-category-chips {
+  margin-bottom: 12px;
+}
+
+/* One row per product, quantity instead of a checkbox (see
+   Views/ItemLending/_Content.cshtml) - cursor stays default since the
+   row itself isn't clickable, only the qty input is. */
+.lend-product-row {
+  justify-content: space-between;
+  cursor: default;
+}
+
+.lend-product-qty {
+  width: 56px;
+  height: 30px;
+  border: 1.5px solid var(--grey-border);
+  border-radius: 8px;
+  text-align: center;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+}
+
+.lend-product-qty:focus-visible {
+  outline: none;
+  border-color: var(--green-dark);
+  box-shadow: 0 0 0 3px rgba(72, 151, 123, 0.3);
+}
+
+/* Borrow Details / Edit modal (see Views/ItemLending/_Content.cshtml -
+   "edit button where I can see the borrowed [items] and also that's
+   where I can press the returned") - a read-only summary line up top,
+   then one row per item with its own Return action (or a "Returned"
+   label once it's been returned). */
+.lend-detail-meta {
+  margin-bottom: 14px;
+}
+
+.lend-detail-borrower {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--text-dark);
+  margin: 0 0 2px;
+}
+
+.lend-detail-sub {
+  font-size: 0.8rem;
+  color: var(--grey-sub);
+  font-weight: 600;
+  margin: 0;
+}
+
+.lend-detail-list {
+  max-height: 320px;
+}
+
+.lend-detail-item {
+  justify-content: space-between;
+  cursor: default;
+}
+
+.lend-detail-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lend-detail-item-name {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--text-dark);
+}
+
+.lend-detail-item-code {
+  font-size: 0.74rem;
+  color: var(--grey-sub);
+}
+
+/* Actions side of a Borrow Details row: optional quantity stepper
+   (only when a group has more than one unit) next to Return. */
+.lend-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.lend-qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lend-qty-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--grey-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text-dark);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lend-qty-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.lend-qty-val {
+  min-width: 22px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text-dark);
+}
+
+.lend-detail-returned {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--grey-sub);
+  white-space: nowrap;
+}
+
+/* Borrow Details modal bigger overall (see chat - "cant read stuff
+   whats inside") - wider card and larger text/spacing than the compact
+   "Log a Borrow" form it otherwise shares a shell with. Specificity
+   bumped (.regf-card.regf-card--lend-detail) for the same reason as
+   the PIN/Password modals above - a later same-specificity rule in
+   this file would otherwise silently win. */
+.regf-card.regf-card--lend-detail { max-width: 680px; }
+.regf-card--lend-detail .regf-header { padding: 20px 26px 18px; }
+.regf-card--lend-detail .regf-title { font-size: 1.6rem; }
+.regf-card--lend-detail .regf-body { padding: 22px 30px 26px; }
+
+.regf-card--lend-detail .lend-detail-meta { margin-bottom: 16px; }
+.regf-card--lend-detail .lend-detail-borrower { font-size: 1.25rem; }
+.regf-card--lend-detail .lend-detail-sub { font-size: 0.95rem; }
+
+.regf-card--lend-detail .lend-detail-list {
+  max-height: 440px;
+  padding: 16px 18px;
+  gap: 12px;
+}
+
+.regf-card--lend-detail .lend-detail-item-name { font-size: 1.1rem; }
+.regf-card--lend-detail .lend-detail-item-code { font-size: 0.88rem; }
+.regf-card--lend-detail .lend-detail-returned { font-size: 0.92rem; }
+
+.regf-card--lend-detail .btn-icon-activate {
+  font-size: 0.86rem;
+  padding: 8px 20px;
+}
+
+/* Combobox - a text field that filters down to a short dropdown list
+   instead of the big main table (see Item Lending's "Log a Borrow"
+   student field). */
+.regf-combobox {
+  position: relative;
+}
+.regf-combobox-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+  max-height: 200px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--grey-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(31, 77, 60, 0.16);
+  padding: 6px;
+}
+.regf-combobox-option {
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+.regf-combobox-option:hover,
+.regf-combobox-option:focus {
+  background: #F3F8F5;
+}
+.regf-combobox-option small {
+  display: block;
+  color: var(--grey-sub);
+  font-weight: 500;
+}
+.regf-combobox-empty {
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  color: var(--grey-sub);
+}
+
+/* Staged reveal - the item checklist fades/slides in once a borrower
+   has actually been identified, instead of sitting there meaning
+   nothing before that (see chat: one thing at a time). */
+.lend-items-stage {
+  animation: rowFadeIn 220ms ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lend-items-stage { animation: none; }
+}
+.regf-chip {
+  flex: 1 1 0;
+  min-width: 0;
+  height: var(--regf-h);
+  border: 1.5px solid #CFCFCF;
+  border-radius: 999px;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: clamp(0.88rem, 0.86vw, 1rem);
+  font-weight: 600;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+}
+.regf-chip:hover { border-color: var(--green-dark); background: #F3F8F5; }
+.regf-chip:active { transform: scale(0.96); }
+.regf-chip:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(72, 151, 123, 0.3); }
+.regf-chip[aria-checked="true"] {
+  background: var(--toggle-active);
+  border-color: var(--gold);
+  color: #3B2E0E;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(184, 137, 57, 0.25);
+}
+
+/* LRN progress meter: 12 segments in three groups of four */
+.regf-meter { display: flex; gap: 3px; margin: 7px 6px 0; }
+.regf-meter i {
+  flex: 1 1 0;
+  height: 5px;
+  border-radius: 3px;
+  background: #E6E6E3;
+  transition: background 0.15s ease;
+}
+.regf-meter i:nth-child(4n):not(:last-child) { margin-right: 7px; }
+.regf-meter i.on { background: var(--gold); }
+.regf-meter.is-full i { background: var(--teal-logout); }
+.regf-meter + .regf-help { margin-top: 5px; }
+
+/* RFID panel */
+.regf-fob {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1.5px dashed #D5D5D0;
+  border-radius: 16px;
+  background: #FAFAF8;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.regf-fob-icon {
+  position: relative;
+  width: var(--regf-h);
+  height: var(--regf-h);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #EDEDEA;
+  color: #8C9A93;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.regf-fob-icon svg { width: 56%; height: 56%; }
+.regf-fob-icon .regf-fob-check {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.regf-fob .regf-input { background: #ffffff; }
+.regf-fob .regf-input[readonly] { background: #ffffff; }
+.regf-fob .regf-scan-status { grid-column: 1 / -1; margin: 0 0 0 2px; }
+
+.regf-fob:has(.regf-scan-status[data-state="waiting"]) { border-color: var(--gold); border-style: solid; background: #FFFBEF; }
+.regf-fob:has(.regf-scan-status[data-state="waiting"]) .regf-fob-icon { background: #FFECB2; color: var(--gold); }
+.regf-fob:has(.regf-scan-status[data-state="waiting"]) .regf-fob-wave { animation: regf-wave 1.2s ease-in-out infinite; }
+.regf-fob:has(.regf-scan-status[data-state="waiting"]) .regf-fob-wave-2 { animation-delay: 0.2s; }
+.regf-fob:has(.regf-scan-status[data-state="waiting"]) .regf-fob-wave-3 { animation-delay: 0.4s; }
+@keyframes regf-wave { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+
+.regf-fob:has(.regf-scan-status[data-state="success"]) { border-color: var(--teal-logout); border-style: solid; background: #F2F9F6; }
+.regf-fob:has(.regf-scan-status[data-state="success"]) .regf-fob-icon { background: var(--teal-logout); color: #ffffff; }
+.regf-fob:has(.regf-scan-status[data-state="success"]) .regf-fob-icon svg:not(.regf-fob-check) { opacity: 0; }
+.regf-fob:has(.regf-scan-status[data-state="success"]) .regf-fob-check { opacity: 1; transform: none; }
+
+.regf-fob:has(.regf-scan-status[data-state="error"]) { border-color: #B3261E; border-style: solid; background: #FFF8F7; }
+.regf-fob:has(.regf-scan-status[data-state="error"]) .regf-fob-icon { background: #FBE3E0; color: #B3261E; }
+
+/* hint beside the Register button */
+.regf-submit-hint.is-ready { color: var(--teal-logout); font-weight: 700; }
+
+/* short screens: the card is tall now, so trim the header */
+@media (max-height: 780px) {
+  .regf-subtitle { display: none; }
+  .regf-idcard { margin-top: 10px; padding: 7px 12px 7px 8px; }
+  .regf-idcard-avatar { width: 34px; height: 34px; font-size: 0.82rem; }
+}
+@media (max-height: 640px) {
+  .regf-idcard-meta { display: none; }
+  .regf-step { margin-top: 8px; }
+}
+
+@media (max-width: 520px) {
+  .regf-row .regf-gender,
+  .regf-row .regf-grade,
+  .regf-row .regf-suffix { flex: 1 1 auto; }
+  .regf-row--identity .regf-gender { margin-top: 8px; }
+  .regf-row .regf-grade { margin-bottom: 8px; }
+  .regf-fob { grid-template-columns: auto minmax(0, 1fr); }
+  .regf-fob .regf-btn { grid-column: 1 / -1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .regf-fob:has(.regf-scan-status[data-state="waiting"]) .regf-fob-wave { animation: none; }
+  .regf-chip, .regf-step-num, .regf-idcard-avatar, .regf-fob-check { transition: none; }
+}
+
+/* Register Student: "Leave without saving?" dialog (sits over the card) */
+.regf-confirm {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 46, 32, 0.55);
+  backdrop-filter: blur(2px);
+  animation: regf-fade 0.15s ease-out;
+}
+.regf-confirm[hidden] { display: none; }
+@keyframes regf-fade { from { opacity: 0; } to { opacity: 1; } }
+.regf-confirm-box {
+  width: 100%;
+  max-width: 400px;
+  padding: 24px 22px 20px;
+  border-radius: 18px;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 18px 44px rgba(15, 46, 32, 0.35);
+  animation: regf-pop 0.18s ease-out;
+}
+.regf-confirm-icon {
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #FFECB2;
+  color: #8A6A1F;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+.regf-confirm-title {
+  margin: 0 0 6px;
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: var(--text-dark);
+}
+.regf-confirm-text {
+  margin: 0 0 18px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #5F5F5F;
+}
+.regf-confirm-text strong { color: var(--text-dark); }
+.regf-confirm-actions { display: flex; gap: 10px; }
+.regf-confirm-actions .regf-btn { flex: 1 1 0; min-width: 0; padding: 0 12px; }
+.regf-btn-outline.regf-btn-discard:hover:not(:disabled) {
+  border-color: #B3261E;
+  color: #B3261E;
+  background: #FFF8F7;
+}
+@media (prefers-reduced-motion: reduce) {
+  .regf-confirm, .regf-confirm-box { animation: none; }
+}
+
+/* Class Category chips in the Register Student form */
+.regf-row .regf-category { flex: 1 1 0; min-width: 0; }
+@media (max-width: 520px) {
+  .regf-row .regf-category { flex: 1 1 auto; margin-bottom: 8px; }
+}
+
+/* Small STE / Regular tag after "Grade & Section" in the tables */
+.cat-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+.cat-tag--ste { background: #FFF6DA; color: #7A5A12; }
+.cat-tag--regular { background: #E3EFE9; color: #1F4D3C; }
+
+/* =====================================================================
+   Shared filter bar (Register Student, Attendance, Item Lending) -
+   see chat. Row 1: search + "Filters (n)" + Apply. Row 2: the two
+   quick filters everyone uses (Category, Grade) as one-click segmented
+   controls. Everything else sits in the "Filters" popover, and the
+   filters currently applied show as removable chips underneath.
+   ===================================================================== */
+.filter-bar.fbar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch; /* the old .filter-bar grid rule sets align-items: end,
+                          which in a column pushed every row to the right and
+                          shrank it to its content */
+  gap: 12px;
+  min-width: 0;
+}
+.filter-bar.fbar > * { min-width: 0; }
+.fbar-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.fbar-top .search-combo { flex: 1 1 auto; min-width: 0; }
+.fbar-top .btn-apply {
+  height: 42px;
+  padding: 0 clamp(18px, 2.4vw, 32px);
+}
+.fbar-more-wrap { position: relative; flex: 0 0 auto; }
+.fbar-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 14px;
+  border: 1.5px solid var(--grey-border);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--text-dark);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.fbar-more:hover { border-color: var(--green-dark); background: #F3F8F5; }
+.fbar-more[aria-expanded="true"] { border-color: var(--green-dark); background: #EEF6F2; }
+.fbar-more:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(72, 151, 123, 0.3); }
+.fbar-more-icon { width: 16px; height: 16px; flex: 0 0 auto; }
+.fbar-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: var(--green-dark);
+  color: #FFECB2;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.fbar-badge[hidden] { display: none; }
+
+/* quick filters */
+.fbar-quick {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 14px;
+}
+.fbar-quick .filter-field { min-width: 0; }
+.fbar-quick .toggle-group { height: 38px; }
+
+/* popover with the remaining filters */
+.fbar-panel {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(620px, calc(100vw - 48px));
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 16px;
+  border: 1.5px solid var(--grey-border);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(15, 46, 32, 0.22);
+  animation: regf-pop 0.14s ease-out;
+}
+.fbar-panel[hidden] { display: none; }
+.fbar-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+.fbar-panel-grid .filter-field { min-width: 0; }
+.fbar-panel-grid .filter-field.is-hidden { display: none; }
+.fbar-panel-grid .fbar-span2 { grid-column: 1 / -1; }
+.fbar-panel-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1.5px solid #EEEEEA;
+}
+.fbar-panel-foot .btn-apply { height: 38px; padding: 0 22px; }
+.fbar-btn-ghost {
+  height: 38px;
+  padding: 0 18px;
+  border: 1.5px solid var(--grey-border);
+  border-radius: 50px;
+  background: #ffffff;
+  color: var(--text-dark);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.fbar-btn-ghost:hover { border-color: var(--green-dark); color: var(--green-dark); background: #F3F8F5; }
+@media (max-width: 560px) {
+  .fbar-panel-grid { grid-template-columns: 1fr; }
+  .fbar-top { flex-wrap: wrap; }
+  .fbar-top .search-combo { flex: 1 1 100%; }
+}
+
+/* applied-filter chips */
+.fbar-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-height: 68px;
+  overflow-y: auto;
+}
+.fbar-chips[hidden] { display: none; }
+.fbar-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 4px 0 12px;
+  border: 1.5px solid #EBD28A;
+  border-radius: 999px;
+  background: #FFF6DA;
+  color: #5C4610;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.fbar-chip-x {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #5C4610;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.fbar-chip-x:hover { background: rgba(92, 70, 16, 0.14); }
+.fbar-chip-x:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(72, 151, 123, 0.5); }
+.fbar-clearall {
+  border: none;
+  background: none;
+  padding: 4px 6px;
+  color: #3C8268;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.fbar-clearall:hover { color: var(--green-dark); text-decoration: underline; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fbar-panel { animation: none; }
+}
+
+/* =====================================================================
+   Filter bar v2 - ONE fixed-height row. The most-used filters sit in
+   front (search + Category + Grade + one page-specific toggle), every
+   other filter lives in the "Filters" panel, and the applied-filter
+   chips now live at the top of that panel - so applying filters never
+   adds a line of height to the page.
+   ===================================================================== */
+.filter-bar.fbar {
+  display: block;
+  padding: 10px 12px;
+  border-width: 1px;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(15, 46, 32, 0.05);
+  container-type: inline-size;
+}
+.fbar-top { flex-wrap: nowrap; gap: 8px; min-height: 42px; }
+.fbar-top .search-combo { flex: 1 1 160px; min-width: 140px; }
+.fbar-quick {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.fbar-quick .filter-field.fbar-seg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  height: 42px;
+  padding: 0 4px 0 12px;
+  border: 1px solid var(--grey-border);
+  border-radius: 12px;
+  background: #ffffff;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.fbar-quick .filter-field.fbar-seg:hover { border-color: #BBD6C9; }
+.fbar-quick .filter-field.fbar-seg > label {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8A8A84;
+  white-space: nowrap;
+}
+.fbar-quick .toggle-group {
+  height: 32px;
+  border: 0;
+  border-radius: 9px;
+  background: #F2F3EF;
+  margin: 0;
+}
+.fbar-quick .toggle-option { padding-inline: 10px; font-size: 0.8rem; }
+/* a segment with a value picked reads as "on" at a glance */
+.fbar-quick .filter-field.fbar-seg:has(.toggle-group:not([data-value="All"])) {
+  border-color: #8FBFA9;
+  background: #F3F8F5;
+}
+.fbar-quick .filter-field.fbar-seg:has(.toggle-group:not([data-value="All"])) > label { color: #1F4D3C; }
+.fbar-more { border-width: 1px; border-radius: 12px; }
+.fbar-more.has-active {
+  border-color: #8FBFA9;
+  background: #E3EFE9;
+  color: #1F4D3C;
+}
+.fbar-badge { background: #1F4D3C; }
+.fbar-top .btn-apply { margin-left: 2px; }
+
+/* applied chips: top of the panel, green to match the "on" states */
+.fbar-chips--panel {
+  max-height: none;
+  margin: 0 0 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #EEEEEA;
+}
+.fbar-chips--panel[hidden] { display: none; }
+.fbar-chip { border-width: 1px; border-color: #BBD6C9; background: #E3EFE9; color: #1F4D3C; }
+.fbar-chip-x { color: #1F4D3C; }
+.fbar-chip-x:hover { background: rgba(31, 77, 60, 0.14); }
+.fbar-panel { border-width: 1px; border-radius: 18px; box-shadow: 0 18px 44px rgba(15, 46, 32, 0.2); }
+
+/* narrow content area: let the row wrap rather than squeeze controls */
+@container (max-width: 980px) {
+  .fbar-top { flex-wrap: wrap; }
+  .fbar-top .search-combo { flex: 1 1 100%; }
+  .fbar-quick { flex-wrap: wrap; }
+}
+
+/* v2 tweaks: no gray track, no dividers, no tint on picked segments;
+   applied-filter chips back to the original amber. */
+.fbar-quick .toggle-group { background: transparent; }
+.fbar-quick .toggle-option { border-right: none; background: transparent; }
+.fbar-quick .filter-field.fbar-seg:has(.toggle-group:not([data-value="All"])) {
+  border-color: var(--grey-border);
+  background: #ffffff;
+}
+.fbar-quick .filter-field.fbar-seg:has(.toggle-group:not([data-value="All"])) > label { color: #8A8A84; }
+.fbar-chip { border: 1.5px solid #EBD28A; background: #FFF6DA; color: #5C4610; }
+.fbar-chip-x { color: #5C4610; }
+.fbar-chip-x:hover { background: rgba(92, 70, 16, 0.14); }
+
+/* Applied-filter strip: a reserved, fixed-height slot under the row, so
+   the bar is always the same height whether 0 or 8 filters are applied.
+   Chips stay on one line and scroll sideways if there are too many. */
+.fbar-chips--slot {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  margin-top: 8px;
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.fbar-chips--slot::-webkit-scrollbar { display: none; }
+.fbar-chips--slot:empty::before {
+  content: "No filters applied";
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #A3A39C;
+}
+.fbar-chips--slot .fbar-chip,
+.fbar-chips--slot .fbar-clearall { flex: 0 0 auto; }
+
+/* Always exactly two lines: line 1 = search + quick filters + Filters,
+   line 2 = applied-filter strip + the small Apply button. Never wraps. */
+.fbar-foot { display: flex; align-items: center; gap: 10px; margin-top: 8px; min-width: 0; }
+.fbar-foot .fbar-chips--slot { flex: 1 1 auto; min-width: 0; margin-top: 0; }
+.fbar-foot .btn-apply { flex: 0 0 auto; height: 30px; padding: 0 16px; font-size: 0.8rem; }
+.fbar-top { flex-wrap: nowrap !important; }
+.fbar-top .search-combo { flex: 1 1 120px !important; min-width: 110px !important; }
+/* Forcing this row to never wrap was the bug (see chat: "CATEGORY A A D E S A STATUS A"
+   overlapping, unreadable text on Attendance) - three segmented filters plus Apply simply
+   don't fit on one line at normal content widths, and min-width:0 on their toggle-groups
+   let them get crushed below their own text instead of wrapping. Letting this row wrap
+   fixes both: a line that doesn't fit now drops to a second line instead of overlapping. */
+.fbar-quick { flex-wrap: wrap; row-gap: 10px; }
+
+/* Two lines + a small strip ("two and a half"): line 1 = search + Filters,
+   line 2 = quick filters, then a slim strip with applied chips + Apply. */
+.fbar-top { min-height: 42px; }
+.fbar-top .search-combo { flex: 1 1 auto !important; }
+.fbar-quick { margin-top: 8px; }
+.fbar-foot { margin-top: 8px; }
+.fbar-foot .fbar-chips--slot { height: 24px; }
+.fbar-foot .fbar-chip { height: 22px; font-size: 0.72rem; }
+.fbar-foot .fbar-chip-x { width: 18px; height: 18px; font-size: 0.9rem; }
+.fbar-foot .fbar-chips--slot:empty::before { font-size: 0.72rem; }
+.fbar-foot .btn-apply { height: 26px; padding: 0 14px; font-size: 0.74rem; }
+
+/* Apply button on its own line under the strip (not beside it), and the
+   Filters panel opens BELOW the whole bar so it never covers Apply. */
+.fbar-foot { flex-direction: column; align-items: stretch; gap: 8px; }
+.fbar-foot .fbar-chips--slot { flex: 0 0 auto; width: 100%; }
+.fbar-foot .btn-apply { align-self: flex-end; }
+.fbar-more-wrap { position: static; }
+.filter-bar.fbar { position: relative; }
+.fbar-panel { top: calc(100% + 8px); right: 0; }
+
+/* Apply sits at the right end of line 2, level with the segmented filters */
+.fbar-quick .btn-apply { margin-left: auto; flex: 0 0 auto; height: 34px; padding: 0 18px; font-size: 0.8rem; }
+
+/* Apply hugs the last segmented filter (no gap); the Filters panel opens
+   at the left edge, starting at the 3rd line (the strip). */
+.fbar-quick .btn-apply { margin-left: 0; }
+.fbar-panel { left: 12px; right: auto; top: 110px; }
+@media (max-width: 560px) { .fbar-panel { left: 8px; right: 8px; width: auto; } }
+
+/* Line 2 fills the full width: the segmented filters share the spare room
+   so there's no empty gap anywhere, and Apply ends flush right (level with
+   the Filters button above). The Filters panel opens at the right. */
+.fbar-quick { flex: 1 1 auto; width: 100%; }
+.fbar-quick .filter-field.fbar-seg { flex: 1 1 auto; }
+.fbar-quick .filter-field.fbar-seg .toggle-group { flex: 1 1 auto; width: auto; min-width: 0; }
+.fbar-panel { left: auto; right: 12px; top: 110px; }
+
+/* Line 2 fills the full width: the segmented filters share the spare room,
+   so Apply sits at the right edge with no gap before it. The Filters panel
+   opens at the right, starting at line 3. */
+.fbar-quick { width: 100%; }
+.fbar-quick .filter-field.fbar-seg { flex: 1 1 auto; }
+.fbar-quick .filter-field.fbar-seg .toggle-group { flex: 1 1 auto; width: auto; }
+.fbar-panel { left: auto; right: 12px; top: 110px; }
+
+/* Grade & Section + category tag: the section text gets a fixed minimum
+   width and every tag the same width, so STE / Regular line up in a column. */
+.gs-text { display: inline-block; min-width: 9.5em; vertical-align: middle; }
+.cat-tag { display: inline-block; min-width: 62px; text-align: center; box-sizing: border-box; vertical-align: middle; }
+
+/* Apply filters: same height as the Category/Grade/RFID containers (42px). */
+.fbar-quick .btn-apply { height: 42px; }
+.search-combo { align-items: stretch; min-height: 42px; }
+.search-combo input { padding: 0 4px 0 12px; }
+
+/* ===== Button feedback: Clear / Apply / Filters ===== */
+
+/* Apply filters: ~25% wider than its natural text width, so it reads
+   as a deliberate action button rather than matching its neighbors. */
+.fbar-quick .btn-apply { min-width: 150px; }
+
+/* Apply: a quick confirm pulse - the button scales up on click, like a
+   button being pressed down then springing back, telling you the action
+   landed. */
+@keyframes fbarApplyPulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(0.94); }
+  100% { transform: scale(1); }
+}
+.btn-apply { transition: transform 0.12s ease, box-shadow 0.15s ease; }
+.btn-apply:active { animation: fbarApplyPulse 0.22s ease; }
+.btn-apply:focus-visible { box-shadow: 0 0 0 3px rgba(31, 77, 60, 0.28); }
+
+/* Reset-all: a plain icon button at the end of the top row, after
+   Filters - separate from the search box, so it reads as acting on the
+   whole bar (search + every filter) rather than looking like a per-field
+   clear glued to just the search input. */
+.fbar-reset {
+  flex: 0 0 auto;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0 12px;
+  border: 1px solid var(--grey-border);
+  border-radius: 12px;
+  background: #ffffff;
+  color: #6B6B64;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.12s ease, gap 0.18s ease;
+}
+.fbar-reset-icon { width: 24px; height: 24px; flex: 0 0 auto; display: block; }
+/* this icon is already green in its source file, so don't let the hover
+   red recolor logic below affect it - only the label/border do that */
+/* "Reset" label stays collapsed (zero width, clipped) until hover, then
+   expands open - the button widens on hover, so neighboring controls in
+   the row shift left to make room, same as a filter-field getting a
+   value. */
+.fbar-reset-label {
+  display: inline-block;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition: max-width 0.22s ease;
+}
+.fbar-reset:hover {
+  background: #FFFAEC; /* lighter tint than the amber fill behind a
+                           selected Method/Status option (#FFECB2) */
+  color: var(--green-dark); /* dark green label on hover */
+  border-color: #F3E4B8;
+  gap: 6px;
+}
+.fbar-reset:hover .fbar-reset-label { max-width: 60px; }
+.fbar-reset:active { transform: scale(0.96); }
+.fbar-reset:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(180, 69, 60, 0.35); }
+
+/* Filters: the funnel icon tilts and the button lifts slightly on hover,
+   so it reads as "opens something" before you even click it. */
+.fbar-more { transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease; }
+.fbar-more:hover { transform: translateY(-1px); }
+.fbar-more-icon { transition: transform 0.2s ease; }
+.fbar-more:hover .fbar-more-icon { transform: rotate(-12deg); }
+.fbar-more[aria-expanded="true"] .fbar-more-icon { transform: rotate(0deg) scale(0.92); }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-apply, .btn-apply:active,
+  .fbar-reset, .fbar-reset:active,
+  .fbar-more, .fbar-more:hover, .fbar-more-icon, .fbar-more:hover .fbar-more-icon {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* Delete-student confirm dialog: same visual language as the "leave
+   without saving?" one, but --fixed (covers the whole page, since the
+   delete button lives in the registry table, outside the form card) and
+   --danger (red icon instead of amber, since this is destructive). */
+.regf-confirm--fixed { position: fixed; z-index: 200; }
+.regf-confirm-icon--danger { background: #FBEAEA; color: #B3261E; }
+.regf-confirm-icon--danger svg { width: 22px; height: 22px; }
+.regf-btn-danger {
+  background: #B3261E;
+  color: #ffffff;
+  border: 1.5px solid #B3261E;
+}
+.regf-btn-danger:hover:not(:disabled) { background: #961F18; border-color: #961F18; }
+.regf-btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ===== Settings ("More" page) ============================================
+   Four independent cards: Branding, Privacy Notice, Staff Accounts,
+   Login History. Reuses the same look as the register-student form
+   (.regf-input etc.) rather than inventing a second visual language. */
+/* Branding, Privacy Notice and Staff Accounts are kiosk-style tiles -
+   press one, its form opens in a modal (see chat: "like the fillup
+   form in the regist stud"). Login History stays a plain full-width
+   card below, always visible. */
+.settings-tile-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 16px 2px 20px;
+}
+@media (max-width: 760px) {
+  .settings-tile-row { grid-template-columns: 1fr; }
+}
+.settings-tile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 110px;
+  padding: 18px 20px;
+  border: none;
+  border-radius: 16px;
+  background: var(--green-dark);
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.settings-tile:hover { background: rgb(26, 65, 51); box-shadow: 0 6px 16px rgba(15, 46, 32, 0.22); }
+.settings-tile:active { transform: scale(0.98); }
+.settings-tile:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(72, 151, 123, 0.4); }
+.settings-tile-icon {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.settings-tile-icon svg { width: 24px; height: 24px; }
+.settings-tile-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.settings-tile-label { font-family: "Poppins", sans-serif; font-size: 1rem; font-weight: 700; }
+.settings-tile-sub { font-size: 0.78rem; color: #CFE0D8; }
+
+/* Settings modals (Branding / Privacy Notice / Staff Accounts) - same
+   dim-backdrop + white-card-with-green-header recipe as the Register
+   Student "Add Student" dialog, so pressing a tile feels consistent
+   with the rest of the app. */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px;
+  overflow-y: auto;
+  z-index: 200;
+}
+.settings-modal {
+  margin: auto;
+  width: 100%;
+  max-width: 620px;
+  background: #ffffff;
+  border: 1px solid var(--grey-border);
+  border-radius: 14px;
+  box-shadow: 0 18px 50px rgba(15, 46, 32, 0.28);
+  overflow: hidden;
+  animation: regf-pop 0.18s ease-out;
+}
+.settings-modal-header {
+  background: var(--green-dark);
+  color: #ffffff;
+  padding: 20px 22px 18px 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settings-modal-title { margin: 0; font-size: 1.2rem; font-weight: 800; letter-spacing: 0.2px; }
+.settings-modal-subtitle { margin: 4px 0 0; font-size: 0.8rem; font-weight: 400; color: #CFE0D8; line-height: 1.4; max-width: 46ch; }
+.settings-modal-close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.settings-modal-close:hover { background: rgba(255, 255, 255, 0.25); }
+.settings-modal-close:focus-visible { outline: 2px solid #FFECB2; outline-offset: 2px; }
+.settings-modal-body {
+  padding: 22px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 76vh;
+  overflow-y: auto;
+}
+@media (max-width: 680px) {
+  .settings-overlay { padding: 20px 14px; }
+}
+
+/* Privacy Notice is a document to be printed, not a short settings
+   form - give it real page size instead of the compact modal width. */
+.settings-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid var(--grey-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 20px 22px;
+  min-width: 0;
+}
+/* Login History + Accounts side by side, always visible underneath
+   the kiosk tiles. */
+.settings-bottom-grid {
+  display: grid;
+  grid-template-columns: 7fr 3fr; /* Login History 70 / Accounts 30 - see chat */
+  gap: 18px;
+  margin: 0 2px 24px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .settings-bottom-grid { grid-template-columns: 1fr; }
+}
+
+/* Admin / Staff tag, same recipe as the STE / Regular tag elsewhere. */
+.role-tag {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+.role-tag--admin { background: #FFF6DA; color: #7A5A12; }
+.role-tag--staff { background: #E3EFE9; color: #1F4D3C; }
+.settings-panel-head {
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--grey-border);
+}
+.settings-panel-head .settings-card-title {
+  color: var(--green-dark);
+}
+.settings-panel-head .settings-card-subtitle {
+  color: #6B6B64;
+}
+.settings-card-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+.settings-card-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+.settings-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.settings-form { display: flex; flex-direction: column; gap: 12px; }
+.settings-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.settings-grow { flex: 1 1 220px; min-width: 0; }
+
+.settings-field label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 5px 4px;
+}
+
+.settings-req { color: var(--red-timeout); }
+
+.settings-input,
+.settings-textarea {
+  width: 100%;
+  padding: 0 16px;
+  border: 1.5px solid #CFCFCF;
+  border-radius: 999px;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.settings-input { height: 40px; }
+.settings-textarea {
+  border-radius: 14px;
+  padding: 12px 16px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.settings-input:hover,
+.settings-textarea:hover { border-color: #A9A9A9; }
+.settings-input:focus,
+.settings-textarea:focus {
+  outline: none;
+  border-color: var(--teal-logout);
+  box-shadow: 0 0 0 3px rgba(72, 151, 123, 0.18);
+}
+
+/* Branding previews: big enough to actually judge the image you're
+   about to put on the login screen and kiosk (see chat - the old
+   56x56 thumbnail cropped the background photo into an unreadable
+   square). Logo stays round (matches the sidebar seal it becomes);
+   background gets a wide box closer to its real on-screen shape. */
+.settings-preview-img {
+  display: block;
+  object-fit: cover;
+  border: 1px solid var(--grey-border);
+  background: #F7F7F5;
+  margin-bottom: 8px;
+}
+.settings-preview-logo {
+  width: 150px;
+  height: 150px;
+  border-radius: 999px;
+}
+.settings-preview-bg {
+  width: 100%;
+  max-width: 280px;
+  height: 150px;
+  border-radius: 12px;
+}
+.settings-preview-caption {
+  margin: 0 0 10px;
+  font-size: 0.76rem;
+  color: #8A8A84;
+}
+/* The logo (150x150 circle) and the background photo (280x150 rect)
+   have different natural widths, and flex items default to a min-width
+   based on their own content - so the logo column was quietly ending
+   up narrower than the background column, with its caption wrapping
+   differently and the "Choose file" row sitting right under the
+   circle with almost no gap (see chat: "not balanced" / "almost out of
+   the circle"). Forcing both columns to the exact same width (grid,
+   not flex) and giving the upload row a fixed, generous top margin -
+   instead of margin-top:auto, which can shrink to ~0 - fixes both. */
+.settings-row--branding {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+}
+.settings-field--media {
+  display: flex;
+  flex-direction: column;
+}
+.settings-field--media .settings-upload {
+  margin-top: 18px;
+}
+.settings-file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+.settings-upload {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.settings-upload-btn {
+  height: 34px;
+  padding: 0 16px;
+  font-size: 0.8rem;
+}
+.settings-upload-filename {
+  font-size: 0.78rem;
+  color: #7A7A7A;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.settings-btn {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.05s ease;
+}
+/* Submit buttons ("Save branding" / "Add account") sit at the end of a
+   column-flex form, so without this they default to filling the row's
+   full cross-axis (stretch) - this is what used to be a left-aligned
+   align-self:flex-start on .settings-btn itself, but that rule was
+   also hijacking .settings-upload-btn's alignment inside the Choose-
+   file row below (see chat - "choose file text should align to its
+   button"), so it's scoped to just the submit buttons now. */
+.settings-form > .settings-btn-primary {
+  align-self: flex-end;
+}
+.settings-btn:active { transform: translateY(1px); }
+.settings-btn-primary {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #ffffff;
+}
+.settings-btn-primary:hover { background: var(--gold-hover); border-color: var(--gold-hover); }
+.settings-btn-outline {
+  background: #ffffff;
+  border-color: #CFCFCF;
+  color: var(--text-dark);
+}
+.settings-btn-outline:hover { border-color: var(--green-dark); color: var(--green-dark); background: #F3F8F5; }
+
+.settings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+.settings-table th {
+  text-align: left;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #7A7A7A;
+  padding: 0 10px 8px;
+  border-bottom: 1px solid var(--grey-border);
+}
+.settings-table td {
+  padding: 10px 10px;
+  border-bottom: 1px solid #EFEFEF;
+  color: var(--text-dark);
+}
+.settings-table-actions { width: 44px; text-align: right; }
+
+/* Keeps a wide Login History/Accounts table scrolling within its own
+   box on a narrow screen instead of forcing the whole Settings card
+   (and the page behind it) to scroll sideways - same idea as
+   .table-scroll elsewhere, just without that class's green border/
+   min-height, which don't belong on a plain white settings card. */
+.settings-table-scroll {
+  overflow-x: auto;
+}
+
+.settings-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #7A7A7A;
+}
+.settings-error {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #B3261E;
+}
+/* Account view/remove and Add Account now live in their own separate
+   tiles + modals (see chat), so the Role toggle on the add form no
+   longer sits under a record table it could be mistaken for part of. */
+.settings-add-staff { display: flex; flex-direction: column; gap: 16px; }
+
+/* Phone-width tier for the Settings ("More") page - everything above
+   already stacks/shrinks down to tablet width (760-900px, see the
+   .settings-tile-row / .settings-bottom-grid rules), but nothing
+   trimmed the tile/card/modal padding further for an actual phone
+   screen, so things felt cramped there (see chat). */
+@media (max-width: 520px) {
+  .settings-tile {
+    min-height: 92px;
+    padding: 14px 16px;
+    gap: 12px;
+  }
+  .settings-tile-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .settings-card {
+    padding: 16px 16px 18px;
+  }
+  .settings-modal-body {
+    padding: 18px 16px 20px;
+  }
+  .settings-row {
+    gap: 10px;
+  }
+}
+
+/* ---------------- Staggered row entrance (CLabTapStagger, admin.js) ---------------- */
+/* Each row fades/slides in slightly after the one before it - the JS
+   just staggers *when* this starts per row via animation-delay. */
+@keyframes rowFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.row-enter {
+  animation: rowFadeIn 220ms ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .row-enter { animation: none; }
+}
+
+/* ---------------- Shared-element morph (CLabTapMorph, admin.js) ---------------- */
+/* Tunes the native View Transition's default timing for the
+   Add/Edit-button-into-modal morph - a touch quicker than the
+   browser's own default, to feel snappy rather than slow. */
+::view-transition-group(clabtap-morph) {
+  animation-duration: 220ms;
+  animation-timing-function: ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(clabtap-morph) { animation: none; }
+}
