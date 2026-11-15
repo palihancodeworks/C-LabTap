@@ -85,8 +85,11 @@ button { font-family: inherit; }
 /* ---------------- Tab bar + seal, overlapping the card below ---------------- */
 .kiosk-navwrap {
   position: relative;
-  width: 68%;
-  max-width: 700px;
+  width: 80%; /* was 68% - left a big gap on either side instead of
+                 sitting close to the card's own edges (see chat:
+                 "topbar should be close to the edges... about 10%
+                 of the edge") */
+  max-width: 860px;
   margin: 25px auto -30px; /* was 30px auto -25px - less top gap under
                                the clock/brand line, and a bigger
                                negative bottom margin pulls the card
@@ -99,8 +102,9 @@ button { font-family: inherit; }
   left: -2px;
   top: 50%;
   transform: translateY(-50%);
-  width: 110px;
-  height: 110px;
+  width: 126px; /* was 110px - scaled up with the wider navwrap (see
+                    chat: "make the elements inside those bigger") */
+  height: 126px;
   border-radius: 50%;
   background: #ffffff;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
@@ -111,8 +115,8 @@ button { font-family: inherit; }
 }
 
 .kiosk-seal img {
-  width: 100px;
-  height: 100px;
+  width: 114px; /* was 100px */
+  height: 114px;
   object-fit: contain;
   border-radius: 50%;
 }
@@ -120,28 +124,29 @@ button { font-family: inherit; }
 .kiosk-tabs {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 32px; /* was 28px */
   background: var(--lb-header-bg);
   border: 2px solid var(--lb-gold);
   border-radius: 50px;
-  padding: 10px 0px 10px 120px;
+  padding: 13px 0px 13px 136px; /* was 10px 0px 10px 120px - left offset
+                                    grows with the bigger seal above */
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
 }
 
-/* .kiosk-tab (defined below) sets padding: 6px 4px at the same
+/* .kiosk-tab (defined below) sets padding: 8px 6px at the same
    specificity and wins by source order, which silently cancelled this
    padding-right - doubling the class keeps the gap. */
 .kiosk-tab.kiosk-tab-admin {
   margin-left: auto;
-  padding-right: 42px;
+  padding-right: 46px; /* was 42px */
 }
 
 .kiosk-tab {
   display: flex;
   align-items: center;
-  padding: 6px 4px;
+  padding: 8px 6px; /* was 6px 4px */
   border-radius: 100px;
-  font-size: 0.88rem;
+  font-size: 1rem; /* was 0.88rem */
   font-weight: 700;
   color: #CFE0D8;
 }
@@ -153,7 +158,7 @@ button { font-family: inherit; }
   background: #ffffff;
   color: #000000;
   border-radius: 100px;
-  padding: 6px 18px;
+  padding: 8px 20px; /* was 6px 18px */
 }
 
 /* Attendance specifically sits right next to the round seal, so its
@@ -164,9 +169,9 @@ button { font-family: inherit; }
    the seal too. Scoped to .kiosk-tab-attendance only now, and placed
    after the generic rule so its more specific selector wins. */
 .kiosk-tab-attendance.active {
-  width: 100px;
-  margin-left: -120px;   /* extend the SAME rounded box left, under the seal */
-  padding-left: 124px;   /* pushes the "Attendance" text back to its original spot */
+  width: 110px; /* was 100px - fits the bigger font */
+  margin-left: -136px;   /* was -120px - matches .kiosk-tabs' new left padding, extends the SAME rounded box left, under the seal */
+  padding-left: 140px;   /* was 124px - pushes the "Attendance" text back to its original spot */
   padding-right: 6px;
   box-sizing: content-box;
 }/* ---------------- Responsive nav (small screens) ----------------
@@ -251,7 +256,7 @@ button { font-family: inherit; }
 .logbook-card {
   background: #ffffff;
   border-radius: 18px;
-  width: 50%;
+  width: 55%;
   max-width: 9                                                                                                               00px;
   min-height: 480px;
   display: grid;
@@ -448,7 +453,10 @@ button { font-family: inherit; }
 
 .logbook-no-activity {
   color: var(--lb-grey-sub);
-  font-size: 1.05rem;
+  font-size: 1.4rem; /* was 1.05rem - this is the main thing a student/
+                         staff member checks after tapping, so it needs
+                         to actually read as the focal point (see chat:
+                         "it should be wht is seen") */
   font-weight: 600;
 }
 
@@ -467,7 +475,7 @@ button { font-family: inherit; }
 
 .logbook-result-title {
   font-family: "Fraunces", serif;
-  font-size: 1.75rem;
+  font-size: 2.1rem; /* was 1.75rem - same "should be what is seen" reason */
   font-weight: 700;
   margin: 0 0 16px;
   text-align: center;
@@ -481,11 +489,11 @@ button { font-family: inherit; }
   border-radius: 8px;
   padding: 8px 20px;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.3rem; /* was 1rem */
 }
 
 .logbook-result-sub {
-  font-size: 0.92rem;
+  font-size: 1.1rem; /* was 0.92rem */
   color: var(--lb-grey-sub);
   font-weight: 600;
   text-align: center;
