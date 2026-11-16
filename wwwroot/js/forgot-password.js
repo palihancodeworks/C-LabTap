@@ -78,6 +78,14 @@
     if (e.key === "Escape" && overlay.style.display !== "none") closeOverlay();
   });
 
+  // Landed here via the signed-in Change Password modal's "Forgot your
+  // current password?" link (AccountController.Logout(openForgot: true))
+  // - open this overlay right away instead of making them find and click
+  // "Forgot password?" again themselves.
+  if (/(?:^|[?&])openForgot=true(?:&|$)/i.test(window.location.search)) {
+    openOverlay();
+  }
+
   if (sendBtn) {
     sendBtn.addEventListener("click", function () {
       var username = usernameInput ? usernameInput.value.trim() : "";

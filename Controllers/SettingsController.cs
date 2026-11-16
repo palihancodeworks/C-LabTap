@@ -2,6 +2,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using C_LabTap.Models;
 using C_LabTap.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -19,11 +20,13 @@ public class SettingsController : Controller
 {
     private readonly SupabaseService _supabase;
     private readonly IWebHostEnvironment _env;
+    private readonly EmailService _email;
 
-    public SettingsController(SupabaseService supabase, IWebHostEnvironment env)
+    public SettingsController(SupabaseService supabase, IWebHostEnvironment env, EmailService email)
     {
         _supabase = supabase;
         _env = env;
+        _email = email;
     }
 
     public override void OnActionExecuting(ActionExecutingContext context)
@@ -45,7 +48,7 @@ public class SettingsController : Controller
 
         if (IsAjax) return PartialView("_Content", model);
 
-        ViewData["Title"] = "More";
+        ViewData["Title"] = "Settings";
         ViewData["Active"] = "Settings";
         return View(model);
     }
@@ -125,20 +128,27 @@ public class SettingsController : Controller
 
         // No separate Username field in the form anymore (see chat) - the
         // Gmail address doubles as the login username. staff_accounts.username
-        // is still the unique column everything (Login, ForgotPassword) keys
-        // off, so check for a clash on that same value here.
+        // is still the column Login/ForgotPassword key off, but the DB only
+        // enforces uniqueness among ACTIVE rows (see migration) - a removed
+        // (is_active = false) account's email is free to reuse. Check the
+        // same thing here so we show a clean message instead of letting a
+        // DB unique-violation bubble up.
         var username = email;
-        var existing = await _supabase.GetAsync("staff_accounts", $"select=id&username=eq.{Uri.EscapeDataString(username)}&limit=1");
+        var existing = await _supabase.GetAsync("staff_accounts", $"select=id&username=eq.{Uri.EscapeDataString(username)}&is_active=eq.true&limit=1");
         if (existing.Count > 0)
         {
             TempData["StaffError"] = $"An account with the email \"{email}\" already exists.";
             return RedirectToAction("Index");
         }
 
-        var passwordHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(password))).ToLowerInvariant();
-        var pinHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(pin))).ToLowerInvariant();
+        // Salted hashes - see SecretHasher.
+        var passwordHash = SecretHasher.Hash(password);
+        var pinHash = SecretHasher.Hash(pin);
 
-        await _supabase.InsertAsync("staff_accounts", new
+        // email_verified starts false: the account exists but can't log in
+        // (or use its PIN at the kiosk) until the address's owner opens
+        // the link emailed right below - see EmailVerification.
+        var inserted = await _supabase.InsertAsync("staff_accounts", new
         {
             full_name = fullName,
             username = username,
@@ -147,7 +157,21 @@ public class SettingsController : Controller
             pin_hash = pinHash,
             role = resolvedRole,
             is_active = true,
+            email_verified = false,
         });
+
+        var newId = inserted?.GetValueOrDefault("id") is JsonElement idEl ? idEl.GetInt64() : 0;
+        try
+        {
+            if (newId <= 0) throw new InvalidOperationException("The new account's id wasn't returned.");
+            await EmailVerification.SendAsync(
+                _supabase, _email, newId, email, fullName, $"{Request.Scheme}://{Request.Host}");
+            TempData["StaffNotice"] = $"Account created. A verification link was emailed to {email} - it has to be opened before that account can log in.";
+        }
+        catch (Exception)
+        {
+            TempData["StaffError"] = $"Account created, but the verification email to {email} couldn't be sent. Check the server's email settings - a new link is sent automatically when they try to log in.";
+        }
 
         return RedirectToAction("Index");
     }
@@ -204,7 +228,7 @@ public class SettingsController : Controller
 
         var staff = await _supabase.GetAsync(
             "staff_accounts",
-            "select=id,full_name,username,role,is_active,created_at&is_active=eq.true&order=created_at.asc");
+            "select=id,full_name,username,role,is_active,email_verified,created_at&is_active=eq.true&order=created_at.asc");
 
         return new SettingsViewModel
         {
@@ -212,6 +236,7 @@ public class SettingsController : Controller
             BackgroundFile = customization?.GetValueOrDefault("background_file")?.ToString(),
             Staff = staff,
             StaffError = TempData["StaffError"] as string,
+            StaffNotice = TempData["StaffNotice"] as string,
         };
     }
 

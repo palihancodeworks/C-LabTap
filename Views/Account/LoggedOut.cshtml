@@ -1,4 +1,5 @@
 @inject C_LabTap.Services.SupabaseService Supabase
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     ViewData["Title"] = "Log In";
     Layout = null;
@@ -19,9 +20,13 @@
     <link rel="icon" type="image/x-icon" href="~/C-LabTap.icon.ico" asp-append-version="true" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=Public+Sans:ital,wght@0,400;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=Public+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+    <!-- Anti-forgery token for fetch() POSTs - see wwwroot/js/csrf.js,
+         which must load before any other script on the page. -->
+    <meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
+    <script src="~/js/csrf.js" asp-append-version="true"></script>
 </head>
 <body class="login-body" style="background: linear-gradient(rgba(10, 26, 20, 0.5), rgba(10, 26, 20, 0.5)), url('@brandBgUrl') center / cover no-repeat;">
     <div class="login-card">
@@ -46,7 +51,11 @@
             }
             @if (!string.IsNullOrEmpty(loginError))
             {
-                <p class="login-error">@loginError</p>
+                <p class="login-error" role="alert">@loginError</p>
+            }
+            @if (TempData["LoginNotice"] is string loginNotice && loginNotice.Length > 0)
+            {
+                <p class="login-notice" role="status">@loginNotice</p>
             }
             <form class="login-form" method="post" asp-controller="Account" asp-action="Login">
                 <label class="login-label" for="username">Gmail address</label>

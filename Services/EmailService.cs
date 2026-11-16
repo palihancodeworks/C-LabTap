@@ -82,4 +82,67 @@ public class EmailService
 
         await client.SendMailAsync(message);
     }
+
+    // Sent once when an admin creates a staff account (and again if the
+    // person tries to log in before confirming) - see EmailVerification.
+    // A link rather than a typed code, because the recipient isn't signed
+    // in anywhere yet and has no screen waiting for a code.
+    public async Task SendVerificationEmailAsync(string toEmail, string fullName, string link)
+    {
+        if (!IsConfigured)
+        {
+            throw new InvalidOperationException("Email sending isn't configured yet (missing Gmail address/App Password in appsettings).");
+        }
+
+        var safeName = WebUtility.HtmlEncode(fullName);
+        var safeLink = WebUtility.HtmlEncode(link);
+
+        var plainTextBody =
+            $"Hello {fullName},\n\n" +
+            "An administrator created a C-LabTap account for this email address.\n" +
+            "Open this link to confirm the address is yours, then log in with the password you were given:\n\n" +
+            $"{link}\n\n" +
+            "The link works once and expires in 24 hours. If you weren't expecting this, you can ignore this email.";
+
+        var htmlBody = $@"
+<div style=""font-family: 'Segoe UI', Roboto, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1f2d24;"">
+  <div style=""background: #16342a; padding: 20px 28px; border-radius: 12px 12px 0 0;"">
+    <span style=""color: #e8c468; font-weight: 700; font-size: 1.05rem; letter-spacing: 0.5px;"">C-LabTap</span>
+  </div>
+  <div style=""border: 1px solid #e3e3e3; border-top: none; border-radius: 0 0 12px 12px; padding: 28px;"">
+    <p style=""margin: 0 0 6px; font-size: 0.95rem;"">Hello {safeName},</p>
+    <p style=""margin: 0 0 22px; font-size: 0.95rem; line-height: 1.5;"">
+      An administrator created a C-LabTap account for this email address.
+      Confirm the address is yours, then log in with the password you were given.
+    </p>
+    <div style=""text-align: center; margin: 0 0 22px;"">
+      <a href=""{safeLink}"" style=""display: inline-block; background: #16342a; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 0.95rem; border-radius: 999px; padding: 12px 28px;"">Verify email address</a>
+    </div>
+    <p style=""margin: 0 0 4px; font-size: 0.85rem; color: #5a6b60;"">The link works once and expires in 24 hours.</p>
+    <p style=""margin: 0 0 14px; font-size: 0.85rem; color: #5a6b60;"">If you weren't expecting this, you can ignore this email.</p>
+    <p style=""margin: 0; font-size: 0.78rem; color: #5a6b60; word-break: break-all;"">Button not working? Copy this address into your browser: {safeLink}</p>
+  </div>
+  <p style=""text-align: center; font-size: 0.75rem; color: #9aa39d; margin-top: 16px;"">
+    Aurelio Arago Memorial National High School &middot; C-LabTap Computer Laboratory Logbook
+  </p>
+</div>";
+
+        using var message = new MailMessage
+        {
+            From = new MailAddress(_options.GmailAddress, "C-LabTap"),
+            Subject = "Verify your C-LabTap account email",
+            Body = plainTextBody,
+            IsBodyHtml = false,
+        };
+        message.To.Add(toEmail);
+        message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(htmlBody, null, "text/html"));
+
+        using var client = new SmtpClient("smtp.gmail.com", 587)
+        {
+            EnableSsl = true,
+            Credentials = new NetworkCredential(_options.GmailAddress, _options.AppPassword),
+        };
+
+        await client.SendMailAsync(message);
+    }
 }

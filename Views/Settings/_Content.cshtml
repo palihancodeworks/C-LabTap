@@ -73,6 +73,17 @@
             <p class="settings-card-subtitle">Everyone who can log in, as Admin or Staff.</p>
         </div>
         <div class="settings-card-body">
+            @* Result of the last Add account attempt. Shown here, on the
+               always-visible Accounts card, because the form's modal is
+               closed again once the page reloads. *@
+            @if (!string.IsNullOrEmpty(Model.StaffNotice))
+            {
+                <p class="settings-notice" role="status">@Model.StaffNotice</p>
+            }
+            @if (!string.IsNullOrEmpty(Model.StaffError))
+            {
+                <p class="settings-error" role="alert">@Model.StaffError</p>
+            }
             @if (Model.Staff.Count == 0)
             {
                 <p class="settings-empty">No accounts yet.</p>
@@ -91,11 +102,18 @@
                                 var name = row.GetValueOrDefault("full_name")?.ToString();
                                 var username = row.GetValueOrDefault("username")?.ToString();
                                 var role = row.GetValueOrDefault("role")?.ToString() ?? "Staff";
+                                var unverified = string.Equals(row.GetValueOrDefault("email_verified")?.ToString(), "false", StringComparison.OrdinalIgnoreCase);
                                 <tr>
-                                    <td>@name</td>
+                                    <td>
+                                        @name
+                                        @if (unverified)
+                                        {
+                                            <span class="role-tag role-tag--pending" title="Hasn't opened the verification email yet - can't log in until they do">Email not verified</span>
+                                        }
+                                    </td>
                                     <td><span class="role-tag role-tag--@(role.ToLowerInvariant())">@role</span></td>
                                     <td class="settings-table-actions">
-                                        <form method="post" asp-controller="Settings" asp-action="RemoveStaff" onsubmit="return confirm('Remove @username?');">
+                                        <form method="post" asp-controller="Settings" asp-action="RemoveStaff" class="js-remove-staff-form" data-staff-name="@name" data-staff-role="@role">
                                             <input type="hidden" name="id" value="@id" />
                                             <button type="submit" class="btn-icon btn-icon-delete" title="Remove" aria-label="Remove @username">
                                                 <img src="@Url.Content("~/images/icons/delete.icon.png")" alt="" />
@@ -208,7 +226,61 @@
     </div>
 </div>
 
+<!-- Confirm-before-remove dialog for staff/admin accounts (replaces the
+     browser's plain confirm() box). Opened by the .js-remove-staff-form
+     handler in the script below; submits the original form on Remove. -->
+<div class="reg-overlay" id="removeStaffOverlay" style="display:none;">
+    <div class="regf-card regf-card--compact regf-card--password" role="alertdialog" aria-modal="true" aria-labelledby="removeStaffTitle" aria-describedby="removeStaffText">
+        <div class="regf-header">
+            <div class="regf-head-main regf-head-title-row">
+                <h2 class="regf-title" id="removeStaffTitle">Remove account?</h2>
+            </div>
+            <button type="button" class="regf-close" id="removeStaffClose" aria-label="Close" title="Close (Esc)">&times;</button>
+        </div>
+        <div class="regf-body">
+            <p id="removeStaffText" style="margin:0;font-weight:500;"></p>
+            <div class="regf-actions">
+                <button type="button" class="regf-btn regf-btn-outline" id="removeStaffCancel">Cancel</button>
+                <button type="button" class="regf-btn regf-btn-danger" id="removeStaffConfirm">Remove</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    (function () {
+        // Remove-staff confirmation modal (see #removeStaffOverlay above).
+        var rsOverlay = document.getElementById("removeStaffOverlay");
+        var rsText = document.getElementById("removeStaffText");
+        var rsCancel = document.getElementById("removeStaffCancel");
+        var rsClose = document.getElementById("removeStaffClose");
+        var rsConfirm = document.getElementById("removeStaffConfirm");
+        var rsPendingForm = null;
+        function rsHide() { rsOverlay.style.display = "none"; rsPendingForm = null; }
+        document.querySelectorAll(".js-remove-staff-form").forEach(function (f) {
+            f.addEventListener("submit", function (e) {
+                e.preventDefault();
+                rsPendingForm = f;
+                var role = f.getAttribute("data-staff-role") || "Staff";
+                rsText.textContent = "Remove the " + role + " account \"" + (f.getAttribute("data-staff-name") || "") +
+                    "\"? They won't be able to log in anymore.";
+                rsOverlay.style.display = "flex";
+                rsCancel.focus();
+            });
+        });
+        rsCancel.addEventListener("click", rsHide);
+        rsClose.addEventListener("click", rsHide);
+        rsConfirm.addEventListener("click", function () {
+            var f = rsPendingForm;
+            if (!f) return;
+            rsConfirm.disabled = true;
+            f.submit(); // native submit skips the listener above; page reloads
+        });
+        rsOverlay.addEventListener("click", function (e) { if (e.target === rsOverlay) rsHide(); });
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && rsOverlay.style.display !== "none") rsHide();
+        });
+    })();
     (function () {
         // Custom file-upload buttons (replacing the native "Choose File"
         // control): show the picked filename, and swap the thumbnail to

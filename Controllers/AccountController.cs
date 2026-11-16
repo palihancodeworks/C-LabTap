@@ -82,18 +82,27 @@ public class AccountController : Controller
             return RedirectToAction("LoggedOut");
         }
 
+        // is_active=eq.true is in the query itself, not just checked after -
+        // a removed account's email can now be reused by a new active
+        // account (see chat), so the two can briefly share a username.
+        // Filtering here means we always get the live account, never the
+        // old removed one that happens to still be sitting in the table.
         var rows = await _supabase.GetAsync(
             "staff_accounts",
-            $"select=id,full_name,username,password_hash,role,is_active&username=eq.{Uri.EscapeDataString(username)}&limit=1");
+            $"select=id,full_name,username,password_hash,role,is_active,email,email_verified&username=eq.{Uri.EscapeDataString(username)}&is_active=eq.true&limit=1");
 
         var account = rows.Count > 0 ? rows[0] : null;
         var isActive = account != null && account["is_active"] is JsonElement activeEl
             && activeEl.ValueKind == JsonValueKind.True;
 
-        var enteredHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(password))).ToLowerInvariant();
+        // Salted hash check - see SecretHasher. needsRehash comes back true
+        // when this account still holds an old unsalted hash, so it can be
+        // replaced below now that the plain password is in hand.
         var storedHash = account?["password_hash"]?.ToString() ?? "";
+        var needsRehash = false;
+        var passwordOk = account != null && SecretHasher.Verify(storedHash, password, out needsRehash);
 
-        if (account == null || !isActive || !string.Equals(storedHash, enteredHash, StringComparison.OrdinalIgnoreCase))
+        if (account == null || !isActive || !passwordOk)
         {
             var justLockedFor = await LoginAttemptGuard.RecordFailureAsync(_supabase, "login", loginAttemptKey);
             TempData["LoginError"] = justLockedFor != null
@@ -108,8 +117,95 @@ public class AccountController : Controller
         var fullName = account["full_name"]?.ToString() ?? username;
         var role = account["role"]?.ToString() ?? "Staff";
 
+        if (needsRehash)
+        {
+            await _supabase.UpdateAsync("staff_accounts", $"id=eq.{id}", new { password_hash = SecretHasher.Hash(password) });
+        }
+
+        // A new account can't be used until its owner has clicked the
+        // link emailed when an admin created it (see EmailVerification).
+        // The password was right, so it's safe to tell them that much -
+        // and to send a fresh link, in case the first one expired or got
+        // lost. Skipped if one already went out in the last two minutes
+        // so repeated attempts can't flood the inbox.
+        var emailVerified = !(account.GetValueOrDefault("email_verified") is JsonElement verifiedEl
+            && verifiedEl.ValueKind == JsonValueKind.False);
+        if (!emailVerified)
+        {
+            var accountEmail = account.GetValueOrDefault("email")?.ToString();
+            if (!string.IsNullOrWhiteSpace(accountEmail))
+            {
+                var twoMinutesAgo = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddMinutes(-2).ToString("o"));
+                var recent = await _supabase.GetAsync(
+                    "otp_codes",
+                    $"select=id&staff_id=eq.{id}&purpose=eq.{EmailVerification.Purpose}&created_at=gt.{twoMinutesAgo}&limit=1");
+                if (recent.Count == 0)
+                {
+                    try
+                    {
+                        await EmailVerification.SendAsync(
+                            _supabase, _email, id, accountEmail!, fullName, $"{Request.Scheme}://{Request.Host}");
+                    }
+                    catch (Exception)
+                    {
+                        // The message below still tells them what's needed.
+                    }
+                }
+            }
+
+            TempData["LoginError"] = "Verify your email before logging in. We sent a verification link to your inbox - open it, then log in again.";
+            return RedirectToAction("LoggedOut");
+        }
+
         await SignInStaffAsync(id, fullName, role, username);
         return RedirectToAction("Index", "Attendance");
+    }
+
+    // Where the link in the verification email lands (see
+    // EmailVerification.SendAsync). Marks the account's email as
+    // confirmed so Login will accept it, then sends the person to the
+    // login page - it deliberately does NOT sign them in: the link proves
+    // the mailbox, the password still proves the person.
+    [HttpGet]
+    public async Task<IActionResult> VerifyEmail(long uid, string? token)
+    {
+        if (uid <= 0 || string.IsNullOrWhiteSpace(token))
+        {
+            TempData["LoginError"] = "That verification link isn't valid.";
+            return RedirectToAction("LoggedOut");
+        }
+
+        var nowIso = Uri.EscapeDataString(DateTimeOffset.UtcNow.ToString("o"));
+        var tokenHash = EmailVerification.HashToken(token.Trim());
+        var rows = await _supabase.GetAsync(
+            "otp_codes",
+            $"select=id&staff_id=eq.{uid}&purpose=eq.{EmailVerification.Purpose}&code_hash=eq.{tokenHash}&consumed=eq.false&expires_at=gt.{nowIso}&limit=1");
+
+        if (rows.Count == 0)
+        {
+            var accountRows = await _supabase.GetAsync(
+                "staff_accounts", $"select=email_verified&id=eq.{uid}&limit=1");
+            var alreadyVerified = accountRows.Count > 0
+                && accountRows[0].GetValueOrDefault("email_verified") is JsonElement el
+                && el.ValueKind == JsonValueKind.True;
+
+            if (alreadyVerified)
+            {
+                TempData["LoginNotice"] = "This email is already verified. You can log in.";
+            }
+            else
+            {
+                TempData["LoginError"] = "That verification link has expired or was already used. Log in with your password and we'll email you a new one.";
+            }
+            return RedirectToAction("LoggedOut");
+        }
+
+        var rowId = ((JsonElement)rows[0]["id"]!).GetInt64();
+        await _supabase.UpdateAsync("otp_codes", $"id=eq.{rowId}", new { consumed = true });
+        await _supabase.UpdateAsync("staff_accounts", $"id=eq.{uid}", new { email_verified = true });
+
+        TempData["LoginNotice"] = "Email verified. You can log in now.";
+        return RedirectToAction("LoggedOut");
     }
 
     // "Forgot password" on the login page - unauthenticated by nature
@@ -200,8 +296,10 @@ public class AccountController : Controller
             return Json(new { error = "Invalid or expired code. Request a new one and try again." });
         }
 
-        var newHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(newPassword))).ToLowerInvariant();
-        await _supabase.UpdateAsync("staff_accounts", $"id=eq.{staffId}", new { password_hash = newHash });
+        // The code just consumed was emailed to this account's address,
+        // so the mailbox is proven too - no separate verification needed.
+        var newHash = SecretHasher.Hash(newPassword);
+        await _supabase.UpdateAsync("staff_accounts", $"id=eq.{staffId}", new { password_hash = newHash, email_verified = true });
 
         return Json(new { success = true });
     }
@@ -412,8 +510,7 @@ public class AccountController : Controller
         }
 
         var storedHash = rows[0]["password_hash"]?.ToString() ?? "";
-        var enteredHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(currentPassword ?? ""))).ToLowerInvariant();
-        if (!string.Equals(storedHash, enteredHash, StringComparison.OrdinalIgnoreCase))
+        if (!SecretHasher.Verify(storedHash, currentPassword ?? "", out _))
         {
             return Json(new { error = "Current password is incorrect." });
         }
@@ -451,8 +548,7 @@ public class AccountController : Controller
         }
 
         var storedHash = rows[0]["pin_hash"]?.ToString() ?? "";
-        var enteredHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes((currentPin ?? "").Trim()))).ToLowerInvariant();
-        if (storedHash.Length > 0 && !string.Equals(storedHash, enteredHash, StringComparison.OrdinalIgnoreCase))
+        if (storedHash.Length > 0 && !SecretHasher.Verify(storedHash, (currentPin ?? "").Trim(), out _))
         {
             var justLockedFor = await LoginAttemptGuard.RecordFailureAsync(_supabase, "change_pin", lockAttemptKey);
             return Json(new
@@ -505,8 +601,7 @@ public class AccountController : Controller
         }
 
         var storedHash = rows[0]["password_hash"]?.ToString() ?? "";
-        var enteredHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(currentPassword))).ToLowerInvariant();
-        if (!string.Equals(storedHash, enteredHash, StringComparison.OrdinalIgnoreCase))
+        if (!SecretHasher.Verify(storedHash, currentPassword, out _))
         {
             return Json(new { error = "Current password is incorrect." });
         }
@@ -516,7 +611,7 @@ public class AccountController : Controller
             return Json(new { error = "Invalid or expired code. Send a new code and try again." });
         }
 
-        var newHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(newPassword))).ToLowerInvariant();
+        var newHash = SecretHasher.Hash(newPassword);
         await _supabase.UpdateAsync("staff_accounts", $"id=eq.{staffId}", new { password_hash = newHash });
 
         return Json(new { success = true });
@@ -563,8 +658,7 @@ public class AccountController : Controller
         if (!forgotPin)
         {
             var storedHash = rows[0]["pin_hash"]?.ToString() ?? "";
-            var enteredHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(currentPin))).ToLowerInvariant();
-            if (storedHash.Length > 0 && !string.Equals(storedHash, enteredHash, StringComparison.OrdinalIgnoreCase))
+            if (storedHash.Length > 0 && !SecretHasher.Verify(storedHash, currentPin, out _))
             {
                 return Json(new { error = "Current PIN is incorrect." });
             }
@@ -575,7 +669,7 @@ public class AccountController : Controller
             return Json(new { error = "Invalid or expired code. Send a new code and try again." });
         }
 
-        var newHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(newPin))).ToLowerInvariant();
+        var newHash = SecretHasher.Hash(newPin);
         await _supabase.UpdateAsync("staff_accounts", $"id=eq.{staffId}", new { pin_hash = newHash });
 
         return Json(new { success = true });
@@ -728,7 +822,12 @@ public class AccountController : Controller
         return id;
     }
 
-    public async Task<IActionResult> Logout()
+    // openForgot lets the "Forgot your current password?" link inside the
+    // signed-in Change Password modal (_AdminLayout.cshtml) sign the user
+    // out and land back on the login page with the Forgot Password overlay
+    // already open (see forgot-password.js), instead of making them close
+    // the modal, log out by hand, and find that link themselves.
+    public async Task<IActionResult> Logout(bool openForgot = false)
     {
         if (User.Identity?.IsAuthenticated == true)
         {
@@ -743,6 +842,8 @@ public class AccountController : Controller
         }
 
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        return RedirectToAction("LoggedOut");
+        return openForgot
+            ? RedirectToAction("LoggedOut", new { openForgot = true })
+            : RedirectToAction("LoggedOut");
     }
 }

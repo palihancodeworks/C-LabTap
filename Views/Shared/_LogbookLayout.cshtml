@@ -15,7 +15,7 @@
     <link rel="icon" type="image/x-icon" href="~/C-LabTap.icon.ico" asp-append-version="true" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700&family=Poppins:wght@700&family=Public+Sans:wght@700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=Public+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/logbook.css" asp-append-version="true" />
 </head>
 <body>
@@ -40,7 +40,11 @@
                    asp-controller="Logbook" asp-action="Index">Attendance</a>
                 <a class="kiosk-tab kiosk-tab-equipment @(kioskTab == "Equipment" ? "active" : "")"
                    asp-controller="Logbook" asp-action="Equipment">Equipment</a>
-                <a class="kiosk-tab kiosk-tab-admin" href="#" id="kioskAdminTab">Admin</a>
+                @* No "Admin" tab here any more. This page is public and
+                   unattended, so it shouldn't advertise a way into the admin
+                   side. Staff open the PIN gate below with Ctrl+Alt+A, or
+                   just go to the site's main address, which is the login
+                   page. Either way the login page still follows. *@
             </nav>
         </div>
 
@@ -49,10 +53,10 @@
         </main>
     </div>
 
-    <!-- Admin PIN gate: tapping "Admin" above shows this instead of
-         navigating straight in, so a student can't just tap their way
-         into the admin area. Checked server-side against the hash in
-         Supabase's settings table (key "admin_pin_hash"). -->
+    <!-- Admin PIN gate, opened with Ctrl+Alt+A (there is deliberately no
+         visible link to it on this public page). A correct staff PIN -
+         checked server-side, see LogbookController.VerifyAdminPin - only
+         forwards to the admin area, which still asks for a real login. -->
     <div class="kiosk-admin-overlay" id="kioskAdminOverlay" style="display:none;">
         <div class="kiosk-admin-panel" role="dialog" aria-modal="true">
             <div class="kiosk-admin-header">
@@ -100,7 +104,6 @@
         })();
 
         (function () {
-            var adminTab = document.getElementById("kioskAdminTab");
             var overlay = document.getElementById("kioskAdminOverlay");
             var pinInput = document.getElementById("kioskAdminPinInput");
             var errorMsg = document.getElementById("kioskAdminError");
@@ -109,7 +112,7 @@
             var closeBtn = document.getElementById("kioskAdminClose");
             if (closeBtn) closeBtn.addEventListener("click", function () { cancelBtn.click(); });
 
-            if (!adminTab || !overlay) return;
+            if (!overlay) return;
 
             // The Logbook page keeps an invisible always-focused input
             // (#logbookRfidCatcher) that steals focus back every ~50ms
@@ -163,9 +166,13 @@
                     });
             }
 
-            adminTab.addEventListener("click", function (e) {
-                e.preventDefault();
-                openPanel();
+            // Ctrl+Alt+A opens the PIN gate. Listening on the document
+            // (not an input) so it works while the RFID catcher has focus.
+            document.addEventListener("keydown", function (e) {
+                if (e.ctrlKey && e.altKey && !e.shiftKey && e.code === "KeyA") {
+                    e.preventDefault();
+                    if (overlay.style.display === "none") openPanel();
+                }
             });
 
             cancelBtn.addEventListener("click", closePanel);

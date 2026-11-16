@@ -158,6 +158,8 @@
       // reload (see data-title on each nav link, set in
       // _AdminLayout.cshtml).
       if (topbarTitle) topbarTitle.textContent = link.dataset.title || "";
+      var breadcrumbCurrent = document.getElementById("breadcrumbCurrent");
+      if (breadcrumbCurrent) breadcrumbCurrent.textContent = link.dataset.title || "";
 
       if (pendingActivateTimer) clearTimeout(pendingActivateTimer);
       pendingActivateTimer = setTimeout(function () {

@@ -12,15 +12,9 @@ namespace C_LabTap.Controllers;
 [AllowAnonymous]
 public class HomeController : Controller
 {
-    public IActionResult Index()
-    {
-        return View();
-    }
-
-    public IActionResult Privacy()
-    {
-        return View();
-    }
+    // Index()/Privacy() were the dotnet-new-mvc scaffolding pages ("Welcome
+    // / Learn about building Web apps") - removed, the only thing this
+    // controller still serves is the error page below.
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()

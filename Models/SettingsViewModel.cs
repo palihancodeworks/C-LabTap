@@ -16,4 +16,7 @@ public class SettingsViewModel
     public List<Dictionary<string, object?>> Staff { get; set; } = new();
 
     public string? StaffError { get; set; }
+
+    // Shown after an account is created - says a verification email went out.
+    public string? StaffNotice { get; set; }
 }

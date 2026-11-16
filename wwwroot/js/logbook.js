@@ -16,7 +16,11 @@
     var titleEl = document.getElementById("logbookTitle");
     var subtitleEl = document.getElementById("logbookSubtitle");
 
-    var RESET_DELAY_MS = 2000;
+    var RESET_DELAY_MS = 2000;       // success: name + Time In/Out, glanceable
+    var ERROR_RESET_DELAY_MS = 5000; // "Not Recognized" + a sentence of help
+                                     // needs reading time - and the student's
+                                     // eyes were on the reader, not the screen,
+                                     // when it appeared.
     var resetTimer = null;
     var mode = "idle"; // "idle" (RFID-ready) | "manual"
     var lastLookedUpLrn = null;
@@ -235,7 +239,7 @@
                 setInputLocked(false);
                 lrnInput.focus();
             }
-        }, RESET_DELAY_MS);
+        }, recognized ? RESET_DELAY_MS : ERROR_RESET_DELAY_MS);
     }
 
     showIdleMode();

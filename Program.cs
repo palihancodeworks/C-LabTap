@@ -2,6 +2,7 @@ using C_LabTap.Models;
 using C_LabTap.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Extensions.Options;
 
@@ -14,6 +15,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AuthorizeFilter());
+
+    // CSRF protection: every POST must carry the anti-forgery token this
+    // app issued to the browser, or it's rejected with 400 before the
+    // action runs. Forms get the token as a hidden field automatically;
+    // fetch() calls send it as a header (see wwwroot/js/csrf.js). The
+    // public kiosk opts out - see LogbookController for why.
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
+
+// The header name csrf.js sends the token under.
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
 });
 
 // "External" is a short-lived cookie that only ever holds a Google

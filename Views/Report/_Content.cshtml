@@ -1,5 +1,14 @@
+@using System.Security.Claims
+@inject C_LabTap.Services.SupabaseService Supabase
 @{
     Layout = null;
+
+    // For the printed report's letterhead and its "Prepared by" line
+    // (see the Print Report handler at the bottom of this file).
+    string reportLogoUrl = C_LabTap.Models.BrandingHelper.DefaultLogoUrl;
+    try { reportLogoUrl = await C_LabTap.Models.BrandingHelper.GetLogoUrlAsync(Supabase); } catch { /* keep the default logo */ }
+    string preparedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "";
+    string preparedRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
 }
 <div class="stat-filter-row">
     <div class="stat-cards report-stat-cards">
@@ -152,7 +161,7 @@
     <div class="table-empty" id="reportTableEmpty" style="display:none;">No activity in this range.</div>
     <div class="pagination" id="reportTablePagination"></div>
 
-    <div id="reportPrintArea" class="report-print-area"></div>
+    <div id="reportPrintArea" class="report-print-area" data-logo="@reportLogoUrl" data-prepared-by="@preparedBy" data-prepared-role="@preparedRole"></div>
 </div>
 
 <script>
@@ -340,6 +349,19 @@
             });
         }
 
+        // A blank canvas after a failed fetch is indistinguishable from
+        // "no data in this range" - put a one-line notice in the chart area
+        // so an admin knows it's the request that broke, not the lab.
+        function showChartError(canvasId) {
+            var canvas = document.getElementById(canvasId);
+            var wrap = canvas && canvas.parentElement;
+            if (!wrap || wrap.querySelector(".report-chart-error")) return;
+            var note = document.createElement("p");
+            note.className = "report-chart-error";
+            note.textContent = "Couldn't load this chart. Reload the page to try again.";
+            wrap.appendChild(note);
+        }
+
         function loadTopItems(days) {
             fetch("/Report/TopItems?limit=6&days=" + days, { headers: { "X-Requested-With": "XMLHttpRequest" } })
                 .then(function (res) { return res.json(); })
@@ -349,14 +371,14 @@
                     }
                     renderTopItemsChart(items);
                 })
-                .catch(function () { /* chart just stays empty */ });
+                .catch(function () { showChartError("reportTopItemsChart"); });
         }
 
         function loadHours(days) {
             fetch("/Report/PeakHours?days=" + days, { headers: { "X-Requested-With": "XMLHttpRequest" } })
                 .then(function (res) { return res.json(); })
                 .then(function (hours) { renderHoursChart(hours || []); })
-                .catch(function () { /* chart just stays empty */ });
+                .catch(function () { showChartError("reportHoursChart"); });
         }
 
         // The day-by-day table can hold up to 90 rows (one per day at the
@@ -456,14 +478,79 @@
         // ---- Print Report (browser print/PDF - see .report-print-area
         // rules in admin.css, which hide everything else on the page
         // while printing) ----
+        // The printed page is a formal document, not a screenshot of the
+        // screen: school letterhead (logo + name), report title, the period
+        // covered, who prepared it and when, the tables, then signature
+        // lines. The page footer (report name + "Page X of Y") comes from
+        // the @@page rule in admin.css.
+        //
+        // While printing, the print area is moved to sit directly under
+        // <body> and everything else is display:none (admin.css, @@media
+        // print). Printing it in place didn't paginate reliably: it lives
+        // inside the admin shell's fixed-height, scroll-clipped content
+        // pane. It's put back (and emptied) as soon as the print dialog
+        // closes.
+        var printHome = printArea ? printArea.parentNode : null;
+        var printHomeNext = printArea ? printArea.nextSibling : null;
+
+        function restorePrintArea() {
+            window.removeEventListener("afterprint", restorePrintArea);
+            printArea.innerHTML = "";
+            if (printHome && printHome.isConnected) {
+                printHome.insertBefore(printArea, printHomeNext && printHomeNext.parentNode === printHome ? printHomeNext : null);
+            } else {
+                printArea.remove();
+            }
+        }
+
+        function printReport(html) {
+            printArea.innerHTML = html;
+            document.body.appendChild(printArea);
+            window.addEventListener("afterprint", restorePrintArea);
+
+            // Wait for the letterhead logo so it isn't missing from the page.
+            var logo = printArea.querySelector(".report-print-logo");
+            var go = function () { window.print(); };
+            if (logo && !logo.complete) {
+                logo.addEventListener("load", go, { once: true });
+                logo.addEventListener("error", go, { once: true });
+            } else {
+                go();
+            }
+        }
+
         if (printBtn) {
             printBtn.addEventListener("click", function () {
                 var sections = getCheckedSections();
 
                 Promise.all(sections.map(fetchSectionRows)).then(function (results) {
-                    var html = "<h1>C-LabTap Report</h1>" +
-                        "<p class=\"report-print-meta\">Generated " + escapeHtml(new Date().toLocaleString()) +
-                        " &middot; Last " + currentDays + " days</p>";
+                    var now = new Date();
+                    var start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (currentDays - 1));
+                    var longDate = { year: "numeric", month: "long", day: "numeric" };
+                    var preparedBy = printArea.dataset.preparedBy || "";
+                    var preparedRole = printArea.dataset.preparedRole || "";
+
+                    var html =
+                        "<header class=\"report-print-letterhead\">" +
+                            "<img class=\"report-print-logo\" src=\"" + escapeHtml(printArea.dataset.logo || "") + "\" alt=\"\" />" +
+                            "<div class=\"report-print-org\">" +
+                                "<p class=\"report-print-school\">Aurelio Arago Memorial National High School</p>" +
+                                "<p class=\"report-print-unit\">Junior High School Computer Laboratory</p>" +
+                                "<p class=\"report-print-system\">C-LabTap Computer Laboratory Logbook System</p>" +
+                            "</div>" +
+                        "</header>" +
+                        "<h1 class=\"report-print-title\">Laboratory Usage Report</h1>" +
+                        "<dl class=\"report-print-meta\">" +
+                            "<div><dt>Period covered</dt><dd>" +
+                                escapeHtml(start.toLocaleDateString(undefined, longDate)) + " to " +
+                                escapeHtml(now.toLocaleDateString(undefined, longDate)) +
+                                " (" + currentDays + " days)</dd></div>" +
+                            "<div><dt>Date generated</dt><dd>" + escapeHtml(now.toLocaleString(undefined, {
+                                year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "2-digit"
+                            })) + "</dd></div>" +
+                            "<div><dt>Prepared by</dt><dd>" + escapeHtml(preparedBy || "-") +
+                                (preparedRole ? ", " + escapeHtml(preparedRole) : "") + "</dd></div>" +
+                        "</dl>";
 
                     html += "<h2>Daily Summary</h2>" + buildPrintTable(
                         ["Date", "Entries", "Items Borrowed", "Items Returned"],
@@ -475,8 +562,21 @@
                             buildPrintTable(section.headers, rows.map(section.row));
                     });
 
-                    printArea.innerHTML = html;
-                    window.print();
+                    html +=
+                        "<section class=\"report-print-signatures\">" +
+                            "<div class=\"report-print-sign\">" +
+                                "<p class=\"report-print-sign-label\">Prepared by</p>" +
+                                "<p class=\"report-print-sign-name\">" + escapeHtml(preparedBy || "") + "</p>" +
+                                "<p class=\"report-print-sign-role\">" + escapeHtml(preparedRole || "Signature over printed name") + "</p>" +
+                            "</div>" +
+                            "<div class=\"report-print-sign\">" +
+                                "<p class=\"report-print-sign-label\">Noted by</p>" +
+                                "<p class=\"report-print-sign-name\">&nbsp;</p>" +
+                                "<p class=\"report-print-sign-role\">Signature over printed name</p>" +
+                            "</div>" +
+                        "</section>";
+
+                    printReport(html);
                 });
             });
         }

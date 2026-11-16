@@ -17,7 +17,16 @@ namespace C_LabTap.Controllers;
 // Public on purpose (Program.cs's global AuthorizeFilter would otherwise
 // require a signed-in staff/admin account, same as the rest of the admin
 // app) - this is the unsupervised kiosk terminal students tap in on.
+//
+// Also opted out of the app-wide anti-forgery check (Program.cs). That
+// check protects actions that trust the visitor's LOGIN COOKIE; nothing
+// here does - every kiosk action is authorised by what's typed or tapped
+// in the request itself (an RFID tag, an LRN, a staff PIN), which a
+// forged cross-site request wouldn't have. And the kiosk page stays open
+// all day: a token issued at 7am would stop matching the moment a staff
+// member signed in or out in the same browser, silently breaking taps.
 [AllowAnonymous]
+[IgnoreAntiforgeryToken]
 public class LogbookController : Controller
 {
     private readonly SupabaseService _supabase;
@@ -51,9 +60,10 @@ public class LogbookController : Controller
     // Gates the kiosk's "Admin" tab. Every active staff/admin now has
     // their own PIN (staff_accounts.pin_hash, set when the account is
     // created and changeable from the profile menu afterward) instead
-    // of one shared PIN - the PIN is never stored in plain text, only
-    // its SHA-256 hash, and we hash whatever was typed here and compare
-    // against every active account's hash rather than any raw value.
+    // of one shared PIN - the PIN is never stored in plain text, only a
+    // salted hash (see SecretHasher), and whatever was typed here is
+    // checked against every active account's hash in turn (see
+    // AnyActiveStaffPinMatchesAsync below).
     [HttpPost]
     public async Task<IActionResult> VerifyAdminPin([FromForm] string pin)
     {
@@ -73,12 +83,7 @@ public class LogbookController : Controller
             return Json(new { ok = false, message = $"Too many failed attempts. {LoginAttemptGuard.FormatWait(lockedFor.Value)}" });
         }
 
-        var enteredHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(pin.Trim()))).ToLowerInvariant();
-
-        var rows = await _supabase.GetAsync(
-            "staff_accounts", $"select=id&is_active=eq.true&pin_hash=eq.{enteredHash}&limit=1");
-
-        if (rows.Count == 0)
+        if (!await AnyActiveStaffPinMatchesAsync(pin.Trim()))
         {
             var justLockedFor = await LoginAttemptGuard.RecordFailureAsync(_supabase, "kiosk_admin_pin", kioskKey);
             return Json(new
@@ -98,6 +103,32 @@ public class LogbookController : Controller
     // to one staff account (see VerifyAdminPin/ReturnEquipment) - the
     // connecting IP, since each kiosk is one shared physical device on
     // the school network, not a personal one.
+    // True if the typed PIN belongs to any active, email-verified staff
+    // account. A salted hash can't be looked up with "pin_hash = X" the
+    // way the old unsalted one was (the same PIN hashes differently for
+    // every account), so this loads the handful of active accounts and
+    // checks each. An account still on the old hash format is upgraded
+    // to a salted one the moment its PIN is used.
+    private async Task<bool> AnyActiveStaffPinMatchesAsync(string pin)
+    {
+        var rows = await _supabase.GetAsync(
+            "staff_accounts", "select=id,pin_hash&is_active=eq.true&email_verified=eq.true&pin_hash=not.is.null");
+
+        foreach (var row in rows)
+        {
+            var stored = row.GetValueOrDefault("pin_hash")?.ToString();
+            if (!SecretHasher.Verify(stored, pin, out var needsRehash)) continue;
+
+            if (needsRehash && row.GetValueOrDefault("id") is JsonElement idEl)
+            {
+                await _supabase.UpdateAsync(
+                    "staff_accounts", $"id=eq.{idEl.GetInt64()}", new { pin_hash = SecretHasher.Hash(pin) });
+            }
+            return true;
+        }
+        return false;
+    }
+
     private string KioskIdentifier()
     {
         return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -413,10 +444,7 @@ public class LogbookController : Controller
             return Json(new { ok = false, reason = "pin", message = $"Too many failed attempts. {LoginAttemptGuard.FormatWait(lockedFor.Value)}" });
         }
 
-        var enteredHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(pin.Trim()))).ToLowerInvariant();
-        var staffRows = await _supabase.GetAsync(
-            "staff_accounts", $"select=id&is_active=eq.true&pin_hash=eq.{enteredHash}&limit=1");
-        if (staffRows.Count == 0)
+        if (!await AnyActiveStaffPinMatchesAsync(pin.Trim()))
         {
             var justLockedFor = await LoginAttemptGuard.RecordFailureAsync(_supabase, "return_pin", kioskKey);
             return Json(new

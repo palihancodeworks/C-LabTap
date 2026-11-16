@@ -1,5 +1,6 @@
 @using System.Security.Claims
 @inject C_LabTap.Services.SupabaseService Supabase
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     string active = ViewData["Active"] as string ?? "";
     Func<string, string> navClass = (page) => page == active ? "nav-link active" : "nav-link";
@@ -54,8 +55,12 @@
     <link rel="icon" type="image/x-icon" href="~/C-LabTap.icon.ico" asp-append-version="true" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700&family=Poppins:wght@700&family=Public+Sans:wght@400;700;800&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=Public+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <!-- Anti-forgery token for fetch() POSTs - see wwwroot/js/csrf.js,
+         which must load before any other script on the page. -->
+    <meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
+    <script src="~/js/csrf.js" asp-append-version="true"></script>
 </head>
 <body data-role="@staffRole">
     <div class="app-shell">
@@ -78,9 +83,9 @@
                         new { Key = "Attendance", Label = "Attendance", Controller = "Attendance", Icon = "attendance.png", IconActive = "attendance-active.png" },
                         new { Key = "ItemLending", Label = "Item Lending", Controller = "ItemLending", Icon = "item-lending.png", IconActive = "item-lending-active.png" },
                         new { Key = "RegisterStudent", Label = "Register Student", Controller = "RegisterStudent", Icon = "register-student.png", IconActive = "register-student-active.png" },
-                        new { Key = "RegisterItem", Label = "Register item", Controller = "RegisterItem", Icon = "register-item.png", IconActive = "register-item-active.png" },
+                        new { Key = "RegisterItem", Label = "Register Item", Controller = "RegisterItem", Icon = "register-item.png", IconActive = "register-item-active.png" },
                         new { Key = "Report", Label = "Report", Controller = "Report", Icon = "report.png", IconActive = "report-active.png" },
-                        new { Key = "Settings", Label = "More", Controller = "Settings", Icon = "more.png", IconActive = "more-active.png" },
+                        new { Key = "Settings", Label = "Settings", Controller = "Settings", Icon = "more.png", IconActive = "more-active.png" },
                     };
                     var activeItem = navItems.FirstOrDefault(n => n.Key == active);
                     // Settings ("More") is Admin-only (see chat and
@@ -155,7 +160,19 @@
 
         <div class="main-col">
             <div class="topbar">
-                <h1 class="topbar-page-title" id="topbarPageTitle">@(activeItem?.Label ?? ViewData["Title"])</h1>
+                <div class="topbar-heading">
+                    @* Breadcrumb trail: where this page sits, with a way back
+                       to the starting page. The last item is the current
+                       page; admin.js keeps it in step with the title when
+                       pages are swapped without a full reload. *@
+                    <nav class="breadcrumb" aria-label="Breadcrumb">
+                        <ol>
+                            <li><a asp-controller="Attendance" asp-action="Index">Home</a></li>
+                            <li aria-current="page" id="breadcrumbCurrent">@(activeItem?.Label ?? ViewData["Title"])</li>
+                        </ol>
+                    </nav>
+                    <h1 class="topbar-page-title" id="topbarPageTitle">@(activeItem?.Label ?? ViewData["Title"])</h1>
+                </div>
                 <a class="btn-logbook" asp-controller="Logbook" asp-action="Index">
                     <span class="btn-logbook-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -190,6 +207,13 @@
                         <label for="cpCurrent">Current Password <span class="regf-req" aria-hidden="true">*</span></label>
                         <input type="password" class="regf-input" id="cpCurrent" autocomplete="current-password" />
                     </div>
+                </div>
+                <div class="regf-row" id="cpForgotRow">
+                    <!-- Don't remember the current password? Signs the account out and
+                         lands back on the login page with "Forgot password?" already open
+                         (see forgot-password.js), instead of making them close this modal,
+                         log out by hand, then find that link themselves. -->
+                    <a href="/Account/Logout?openForgot=true" class="regf-link" id="cpForgotPasswordLink" style="text-decoration: none;">Forgot your current password?</a>
                 </div>
                 <div id="cpStep2" hidden>
                     <div class="regf-row">

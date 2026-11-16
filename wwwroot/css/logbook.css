@@ -3,12 +3,16 @@
    Standalone - does NOT reuse admin.css's sidebar shell.
    ========================================================= */
 :root {
-  --lb-green-dark: #1F4D3C;
-  --lb-green-darker: #173A2D;
+  --lb-green-dark: #1B4535;   /* was #1F4D3C - a touch darker, matches admin */
+  --lb-green-darker: #133126; /* was #173A2D */
   --lb-header-bg: #082213;
   --lb-gold: #B88939;
   --lb-text-dark: #333333;
-  --lb-grey-sub: #979797;
+  --lb-grey-sub: #6B6B6B; /* was #979797 (2.9:1 on white - failed WCAG AA);
+                              #6B6B6B is 5.3:1. This grey carries real
+                              instructions on the kiosk ("tap your RFID",
+                              "Not Recognized" help text) so it has to read
+                              under lab glare. */
   --lb-grey-border: #D9D9D9;
   --lb-green-timein: #31BC00;
   --lb-red-timeout: #F70000;
@@ -21,7 +25,8 @@ html, body {
   height: 100%;
   margin: 0;
   font-family: "Public Sans", sans-serif;
-  font-weight: 700;
+  font-weight: 500; /* was 700 - see admin.css; the kiosk's headline
+                       elements set their own weight */
   color: #ffffff;
   /* Dark fallback matching the kiosk background's own overlay tint (see
      .kiosk-shell's inline gradient in _LogbookLayout.cshtml) - without
@@ -66,15 +71,15 @@ button { font-family: inherit; }
 }
 
 .kiosk-time {
-  font-family: "Poppins", sans-serif;
+  font-family: "Public Sans", sans-serif;
   font-size: 48px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 1px;
   line-height: 1;
 }
 
 .kiosk-date {
-  font-family: "Poppins", sans-serif;
+  font-family: "Public Sans", sans-serif;
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 1px;
@@ -127,7 +132,7 @@ button { font-family: inherit; }
   gap: 32px; /* was 28px */
   background: var(--lb-header-bg);
   border: 2px solid var(--lb-gold);
-  border-radius: 50px;
+  border-radius: 999px;
   padding: 13px 0px 13px 136px; /* was 10px 0px 10px 120px - left offset
                                     grows with the bigger seal above */
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
@@ -145,7 +150,7 @@ button { font-family: inherit; }
   display: flex;
   align-items: center;
   padding: 8px 6px; /* was 6px 4px */
-  border-radius: 100px;
+  border-radius: 999px;
   font-size: 1rem; /* was 0.88rem */
   font-weight: 700;
   color: #CFE0D8;
@@ -157,7 +162,7 @@ button { font-family: inherit; }
 .kiosk-tab.active {
   background: #ffffff;
   color: #000000;
-  border-radius: 100px;
+  border-radius: 999px;
   padding: 8px 20px; /* was 6px 18px */
 }
 
@@ -255,7 +260,7 @@ button { font-family: inherit; }
 
 .logbook-card {
   background: #ffffff;
-  border-radius: 18px;
+  border-radius: 14px;
   width: 55%;
   max-width: 9                                                                                                               00px;
   min-height: 480px;
@@ -366,7 +371,7 @@ button { font-family: inherit; }
   width: 100%;
   max-width: 220px;
   border: 1.5px solid var(--lb-grey-border);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 10px 14px;
   font-weight: 700;
   font-size: 0.95rem;
@@ -379,7 +384,7 @@ button { font-family: inherit; }
   background: var(--lb-green-dark);
   color: #ffffff;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 10px 28px;
   font-weight: 700;
   cursor: pointer;
@@ -418,7 +423,7 @@ button { font-family: inherit; }
   background: var(--lb-green-dark);
   color: #ffffff;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 10px 28px;
   font-weight: 700;
   cursor: pointer;
@@ -521,7 +526,7 @@ button { font-family: inherit; }
   justify-content: space-between;
   gap: 10px;
   border: 1.5px solid var(--lb-grey-border);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 10px 14px;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
@@ -615,7 +620,7 @@ button { font-family: inherit; }
   background: var(--lb-green-dark);
   color: #ffffff;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 12px 0;
   font-weight: 800;
   font-size: 0.9rem;
@@ -696,7 +701,7 @@ button { font-family: inherit; }
    list and the Return Selected button. */
 .logbook-equip-cart {
   border: 1.5px solid var(--lb-grey-border);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 10px 14px;
   margin-bottom: 14px;
 }
@@ -756,7 +761,9 @@ button { font-family: inherit; }
   /* Neutral black, not green: the kiosk photo behind it is already
      green, so a green tint just looked muddy. */
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(2px);
+  /* no backdrop-filter: a 2px blur was invisible under the scrim but forced
+     the browser to re-blur the entire page behind the modal on every
+     frame - the "screen lags when opening modals" from chat */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -912,7 +919,7 @@ input[data-pin-dots] {
 }
 
 .kiosk-admin-error {
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 10px 14px;
   font-size: 0.82rem;
   font-weight: 600;
