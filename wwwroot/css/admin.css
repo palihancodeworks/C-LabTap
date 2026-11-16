@@ -1345,6 +1345,35 @@ select.input-outline {
   min-height: 230px;
 }
 
+/* Item Lending only: the table box fills the height left under the
+   filters (down to the pagination bar) and scrolls inside itself when a
+   page's rows run taller (sessions with several items are tall), so the
+   pagination bar never gets pushed off-screen. #main-content becomes a
+   column that is allowed to shrink, the section takes the leftover
+   height, and the table box grows/scrolls within it. Scoped with :has()
+   on #lendingRows so the other table pages are untouched. */
+#main-content:has(#lendingRows) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+#main-content:has(#lendingRows) > .registry-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.registry-section:has(#lendingRows) > .table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.registry-section:has(#lendingRows) .data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 /* The Registered/Archived tabs sit directly on this corner (see chat -
    tabs as "an extension part" of the table), so it's flattened only
    where a toolbar actually has tabs in it (Register Student). Register

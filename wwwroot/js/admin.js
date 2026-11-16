@@ -415,6 +415,27 @@ window.CLabTapRowFit = {
     if (probe) tbody.removeChild(probe);
     if (!rowHeight) return fallbackRows;
 
+    // opts.averageRow: for tables whose rows differ in height (Item
+    // Lending - a session with 3 items is about 3x taller than one with
+    // 1). Measuring just the first row made the row count depend on
+    // which page was showing, and since a changed count resets to
+    // page 1, going to page 4 could bounce back to page 1. Instead the
+    // average height of the rows on screen the first time real rows
+    // are available is remembered on opts (until the next resize) and
+    // reused, so the count settles and stays put. The table box scrolls
+    // inside itself for pages whose rows happen to run taller.
+    if (opts.averageRow && !probe) {
+      if (!opts._rowHeight) {
+        var total = 0, counted = 0;
+        for (var r = tbody.firstElementChild; r; r = r.nextElementSibling) {
+          var h = r.getBoundingClientRect().height;
+          if (h > 0) { total += h; counted++; }
+        }
+        if (counted) opts._rowHeight = total / counted;
+      }
+      if (opts._rowHeight) rowHeight = opts._rowHeight;
+    }
+
     // The real scroll boundary is .main-col (height: 100vh; overflow-y:
     // auto - see admin.css), not #main-content: #main-content has no
     // height of its own (flex: 1) and just grows to fit whatever's put
@@ -454,7 +475,18 @@ window.CLabTapRowFit = {
       sideScrollbar;
 
     var rows = Math.floor(available / rowHeight);
-    return Math.max(minRows, isFinite(rows) && rows > 0 ? rows : fallbackRows);
+    var result = Math.max(minRows, isFinite(rows) && rows > 0 ? rows : fallbackRows);
+
+    // averageRow tables: once real rows have been measured, freeze the
+    // count until the next resize. The measurement above depends on
+    // things that shift while paging (the table box scrolling inside
+    // itself, a scrollbar appearing), and any change in the count
+    // reloads page 1 - which made paging past page 5 snap back to 1.
+    if (opts.averageRow && !probe) {
+      if (opts._lockedRows) return opts._lockedRows;
+      opts._lockedRows = result;
+    }
+    return result;
   },
 
   // Recomputes on load and again (debounced) on resize - including a
@@ -497,6 +529,7 @@ window.CLabTapRowFit = {
     var timer = null;
     function scheduleRecheck() {
       clearTimeout(timer);
+      if (opts) { opts._rowHeight = null; opts._lockedRows = null; } // sizes changed, re-learn (see averageRow)
       timer = setTimeout(recheckNow, 120);
     }
     window.addEventListener("resize", scheduleRecheck);
