@@ -382,29 +382,29 @@ public class ItemLendingController : Controller
             return Conflict(new { error = $"Already borrowed: {string.Join(", ", alreadyBorrowed)}." });
         }
 
-        var session = await _supabase.InsertAsync("borrow_sessions", new
+        // One database function (create_borrow, in Supabase) saves the
+        // session, its item rows, and each item's Borrowed status as a
+        // single transaction - all of it saves or none of it does. It
+        // also re-checks availability under a lock, so the check above
+        // can't be beaten by someone borrowing the same item a moment
+        // later (for example at the kiosk).
+        try
         {
-            student_id = studentId,
-            borrower_name = borrowerName,
-            method = "Staff",
-            time_out = DateTime.UtcNow
-        });
-
-        if (session == null || session["id"] is not JsonElement sessionIdEl)
+            await _supabase.RpcAsync("create_borrow", new
+            {
+                p_student_id = studentId,
+                p_borrower_name = borrowerName,
+                p_method = "Staff",
+                p_item_ids = request.ItemIds
+            });
+        }
+        catch (SupabaseRpcException ex) when (ex.Message.StartsWith("ITEM_BORROWED", StringComparison.Ordinal))
+        {
+            return Conflict(new { error = "One of those items was just borrowed by someone else. Reload and choose again." });
+        }
+        catch (SupabaseRpcException)
         {
             return StatusCode(500, new { error = "Could not create the borrow session." });
-        }
-        var sessionId = sessionIdEl.GetInt64();
-
-        foreach (var itemId in request.ItemIds)
-        {
-            await _supabase.InsertAsync("borrow_session_items", new
-            {
-                session_id = sessionId,
-                item_id = itemId,
-                status = "Borrowed"
-            });
-            await _supabase.UpdateAsync("items", $"id=eq.{itemId}", new { status = "Borrowed" });
         }
 
         return Json(new { success = true });
@@ -433,14 +433,16 @@ public class ItemLendingController : Controller
             return Json(new { success = true });
         }
 
-        var itemId = ((JsonElement)rows[0]["item_id"]!).GetInt64();
-
-        await _supabase.UpdateAsync("borrow_session_items", $"id=eq.{sessionItemId}", new
+        // Marks the borrow row Returned and frees the item in one
+        // database transaction (return_borrowed_items, in Supabase).
+        try
         {
-            status = "Returned",
-            time_in = DateTime.UtcNow
-        });
-        await _supabase.UpdateAsync("items", $"id=eq.{itemId}", new { status = "Available" });
+            await _supabase.RpcAsync("return_borrowed_items", new { p_session_item_ids = new[] { sessionItemId } });
+        }
+        catch (SupabaseRpcException)
+        {
+            return StatusCode(500, new { error = "Could not mark this item as returned." });
+        }
 
         return Json(new { success = true });
     }

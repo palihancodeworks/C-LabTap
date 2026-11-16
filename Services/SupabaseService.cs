@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace C_LabTap.Services;
 
@@ -88,4 +89,43 @@ public class SupabaseService
         var response = await _http.DeleteAsync($"{table}?{filter}");
         response.EnsureSuccessStatusCode();
     }
+
+    // Calls a Postgres function (Supabase "RPC"). A function runs as ONE
+    // database transaction, so a multi-step change (borrowing: session +
+    // item rows + item status) either fully saves or not at all - that is
+    // what separate Insert/Update calls cannot guarantee. Arguments are
+    // sent by name as JSON. If the function raises an error (for example
+    // 'ITEM_BORROWED'), its message is thrown as a SupabaseRpcException.
+    public async Task<JsonElement> RpcAsync(string function, object args)
+    {
+        var response = await _http.PostAsJsonAsync($"rpc/{function}", args);
+        var body = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var message = body;
+            try
+            {
+                using var doc = JsonDocument.Parse(body);
+                if (doc.RootElement.TryGetProperty("message", out var m))
+                {
+                    message = m.GetString() ?? body;
+                }
+            }
+            catch (JsonException)
+            {
+                // Not JSON - keep the raw text.
+            }
+            throw new SupabaseRpcException(message);
+        }
+
+        using var ok = JsonDocument.Parse(string.IsNullOrWhiteSpace(body) ? "null" : body);
+        return ok.RootElement.Clone();
+    }
+}
+
+// Thrown by SupabaseService.RpcAsync when the database function fails.
+public class SupabaseRpcException : Exception
+{
+    public SupabaseRpcException(string message) : base(message) { }
 }

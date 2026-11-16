@@ -391,27 +391,29 @@ public class LogbookController : Controller
             return Conflict(new { error = $"Already borrowed: {string.Join(", ", alreadyBorrowed)}." });
         }
 
-        var session = await _supabase.InsertAsync("borrow_sessions", new
+        // One database function (create_borrow, in Supabase) saves the
+        // session, its item rows, and each item's Borrowed status as a
+        // single transaction: all of it saves or none of it does, so a
+        // failure halfway can't leave a session with no items or an item
+        // marked Borrowed with no record. It also re-checks availability
+        // under a lock, so two people can't take the same item at once.
+        try
         {
-            student_id = studentId,
-            method = method == "RFID" ? "RFID" : "Manual",
-            time_out = DateTime.UtcNow
-        });
-        if (session == null || session["id"] is not JsonElement sessionIdEl)
+            await _supabase.RpcAsync("create_borrow", new
+            {
+                p_student_id = studentId,
+                p_borrower_name = (string?)null,
+                p_method = method == "RFID" ? "RFID" : "Manual",
+                p_item_ids = itemIds
+            });
+        }
+        catch (SupabaseRpcException ex) when (ex.Message.StartsWith("ITEM_BORROWED", StringComparison.Ordinal))
+        {
+            return Conflict(new { error = "One of those items was just borrowed by someone else. Reload and choose again." });
+        }
+        catch (SupabaseRpcException)
         {
             return StatusCode(500, new { error = "Could not create the borrow session." });
-        }
-        var sessionId = sessionIdEl.GetInt64();
-
-        foreach (var itemId in itemIds)
-        {
-            await _supabase.InsertAsync("borrow_session_items", new
-            {
-                session_id = sessionId,
-                item_id = itemId,
-                status = "Borrowed"
-            });
-            await _supabase.UpdateAsync("items", $"id=eq.{itemId}", new { status = "Borrowed" });
         }
 
         return Json(new { success = true });
@@ -458,22 +460,17 @@ public class LogbookController : Controller
         }
         await LoginAttemptGuard.RecordSuccessAsync(_supabase, "return_pin", kioskKey);
 
-        foreach (var sessionItemId in sessionItemIds)
+        // One database function (return_borrowed_items) marks every
+        // chosen borrow row Returned and frees its item in a single
+        // transaction. Rows that are missing or already returned are
+        // skipped, same as before.
+        try
         {
-            var rows = await _supabase.GetAsync(
-                "borrow_session_items", $"select=id,item_id,status&id=eq.{sessionItemId}&limit=1");
-            if (rows.Count == 0 || rows[0]["status"]?.ToString() == "Returned")
-            {
-                continue;
-            }
-
-            var itemId = ((JsonElement)rows[0]["item_id"]!).GetInt64();
-            await _supabase.UpdateAsync("borrow_session_items", $"id=eq.{sessionItemId}", new
-            {
-                status = "Returned",
-                time_in = DateTime.UtcNow
-            });
-            await _supabase.UpdateAsync("items", $"id=eq.{itemId}", new { status = "Available" });
+            await _supabase.RpcAsync("return_borrowed_items", new { p_session_item_ids = sessionItemIds });
+        }
+        catch (SupabaseRpcException)
+        {
+            return StatusCode(500, new { error = "Could not mark those items as returned." });
         }
 
         return Json(new { ok = true });

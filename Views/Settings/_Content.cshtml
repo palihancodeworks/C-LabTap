@@ -9,6 +9,10 @@
         ? BrandingHelper.DefaultBackgroundUrl
         : $"/images/branding/{Model.BackgroundFile}";
 }
+@if (!string.IsNullOrEmpty(Model.BrandingError))
+{
+    <p class="settings-error" role="alert">@Model.BrandingError</p>
+}
 <!-- Branding and Accounts are kiosk-style tiles - press one and its
      form opens in a modal (same pattern as "Add Student" on Register
      Student). Login History + the Accounts overview sit below as plain
@@ -149,7 +153,7 @@
                         <p class="settings-preview-caption">Shown in the sidebar, the login screen, and the kiosk seal.</p>
                         <div class="settings-upload">
                             <label for="brandingLogo" class="settings-btn settings-btn-outline settings-upload-btn">Choose file</label>
-                            <input type="file" id="brandingLogo" name="logo" accept="image/*" class="settings-file-input-hidden" />
+                            <input type="file" id="brandingLogo" name="logo" accept="image/png,image/jpeg,image/webp" class="settings-file-input-hidden" />
                             <span class="settings-upload-filename" id="brandingLogoFilename">No file chosen</span>
                         </div>
                     </div>
@@ -159,7 +163,7 @@
                         <p class="settings-preview-caption">Shown behind the login screen and the Logbook kiosk.</p>
                         <div class="settings-upload">
                             <label for="brandingBg" class="settings-btn settings-btn-outline settings-upload-btn">Choose file</label>
-                            <input type="file" id="brandingBg" name="background" accept="image/*" class="settings-file-input-hidden" />
+                            <input type="file" id="brandingBg" name="background" accept="image/png,image/jpeg,image/webp" class="settings-file-input-hidden" />
                             <span class="settings-upload-filename" id="brandingBgFilename">No file chosen</span>
                         </div>
                     </div>

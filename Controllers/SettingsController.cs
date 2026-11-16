@@ -53,12 +53,88 @@ public class SettingsController : Controller
         return View(model);
     }
 
+    private const long MaxLogoBytes = 2 * 1024 * 1024;        // 2 MB
+    private const long MaxBackgroundBytes = 5 * 1024 * 1024;  // 5 MB
+
+    // Checks an uploaded branding image before anything is saved:
+    //  1. size is under the limit,
+    //  2. the file name ends in .png / .jpg / .jpeg / .webp,
+    //  3. the first bytes of the file really are that kind of image
+    //     (a renamed .html or .exe fails here even with a .png name).
+    // Returns the extension to save it under - always one of our own
+    // fixed values, never whatever the uploader typed - or an error
+    // message for the admin.
+    private static async Task<(string? Extension, string? Error)> ValidateImageAsync(
+        IFormFile file, string label, long maxBytes)
+    {
+        if (file.Length > maxBytes)
+        {
+            return (null, $"The {label} is too large. The limit is {maxBytes / (1024 * 1024)} MB.");
+        }
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (ext == ".jpeg") ext = ".jpg";
+        if (ext != ".png" && ext != ".jpg" && ext != ".webp")
+        {
+            return (null, $"The {label} must be a PNG, JPG, or WebP image.");
+        }
+
+        var header = new byte[12];
+        int read;
+        await using (var stream = file.OpenReadStream())
+        {
+            read = await stream.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false);
+        }
+
+        var looksRight = ext switch
+        {
+            ".png" => read >= 8 && header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47,
+            ".jpg" => read >= 3 && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF,
+            // WebP = "RIFF" + 4 size bytes + "WEBP"
+            ".webp" => read >= 12
+                && header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46
+                && header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50,
+            _ => false,
+        };
+        if (!looksRight)
+        {
+            return (null, $"The {label} isn't a real {ext.TrimStart('.').ToUpperInvariant()} image. Choose a different file.");
+        }
+
+        return (ext, null);
+    }
+
     // Admin uploads a new logo and/or background image. Either field can
     // be left empty to leave that one as-is. Saved with a timestamp in
     // the filename so the browser never serves a stale cached copy.
+    // Both files are checked first; if either is rejected nothing is
+    // saved and the admin sees why (BrandingError on the page).
     [HttpPost]
     public async Task<IActionResult> SaveBranding(IFormFile? logo, IFormFile? background)
     {
+        string? logoExt = null, backgroundExt = null;
+
+        if (logo is { Length: > 0 })
+        {
+            var (ext, error) = await ValidateImageAsync(logo, "logo", MaxLogoBytes);
+            if (error != null)
+            {
+                TempData["BrandingError"] = error;
+                return RedirectToAction("Index");
+            }
+            logoExt = ext;
+        }
+        if (background is { Length: > 0 })
+        {
+            var (ext, error) = await ValidateImageAsync(background, "background", MaxBackgroundBytes);
+            if (error != null)
+            {
+                TempData["BrandingError"] = error;
+                return RedirectToAction("Index");
+            }
+            backgroundExt = ext;
+        }
+
         var brandingDir = Path.Combine(_env.WebRootPath, "images", "branding");
         Directory.CreateDirectory(brandingDir);
         var stamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -66,7 +142,7 @@ public class SettingsController : Controller
         if (logo is { Length: > 0 })
         {
             var oldFile = await GetCustomizationFieldAsync("logo_file");
-            var fileName = $"logo_{stamp}{Path.GetExtension(logo.FileName)}";
+            var fileName = $"logo_{stamp}{logoExt}";
             await using (var stream = System.IO.File.Create(Path.Combine(brandingDir, fileName)))
             {
                 await logo.CopyToAsync(stream);
@@ -78,7 +154,7 @@ public class SettingsController : Controller
         if (background is { Length: > 0 })
         {
             var oldFile = await GetCustomizationFieldAsync("background_file");
-            var fileName = $"bg_{stamp}{Path.GetExtension(background.FileName)}";
+            var fileName = $"bg_{stamp}{backgroundExt}";
             await using (var stream = System.IO.File.Create(Path.Combine(brandingDir, fileName)))
             {
                 await background.CopyToAsync(stream);
@@ -237,6 +313,7 @@ public class SettingsController : Controller
             Staff = staff,
             StaffError = TempData["StaffError"] as string,
             StaffNotice = TempData["StaffNotice"] as string,
+            BrandingError = TempData["BrandingError"] as string,
         };
     }
 

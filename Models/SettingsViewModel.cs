@@ -19,4 +19,7 @@ public class SettingsViewModel
 
     // Shown after an account is created - says a verification email went out.
     public string? StaffNotice { get; set; }
+
+    // Shown when a logo/background upload is rejected (wrong type, too big).
+    public string? BrandingError { get; set; }
 }
