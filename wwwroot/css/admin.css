@@ -434,6 +434,28 @@ button { font-family: inherit; }
   display: none;
 }
 
+/* The report has a long, multi-section page; keep its main-column
+   scrollbar visible so the scrollable area is clear to users. */
+.main-col.report-page {
+  scrollbar-width: thin;
+  -ms-overflow-style: auto;
+}
+
+.main-col.report-page::-webkit-scrollbar {
+  display: block;
+  width: 10px;
+}
+
+.main-col.report-page::-webkit-scrollbar-thumb {
+  background: #9BA9A2;
+  border: 2px solid var(--panel-bg);
+  border-radius: 999px;
+}
+
+.main-col.report-page::-webkit-scrollbar-thumb:hover {
+  background: var(--green-dark);
+}
+
 .topbar {
   display: flex;
   align-items: center;

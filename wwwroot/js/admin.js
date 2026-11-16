@@ -15,6 +15,7 @@
   var nav = document.querySelector(".sidebar-nav");
   var indicator = document.querySelector(".nav-indicator");
   var mainContent = document.getElementById("main-content");
+  var mainCol = document.querySelector(".main-col");
   var topbarTitle = document.getElementById("topbarPageTitle");
   if (!nav || !indicator || !mainContent) return;
 
@@ -158,6 +159,7 @@
       // reload (see data-title on each nav link, set in
       // _AdminLayout.cshtml).
       if (topbarTitle) topbarTitle.textContent = link.dataset.title || "";
+      if (mainCol) mainCol.classList.toggle("report-page", link.dataset.page === "Report");
       var breadcrumbCurrent = document.getElementById("breadcrumbCurrent");
       if (breadcrumbCurrent) breadcrumbCurrent.textContent = link.dataset.title || "";
 
