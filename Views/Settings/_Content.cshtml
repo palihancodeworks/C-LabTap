@@ -226,60 +226,56 @@
     </div>
 </div>
 
-<!-- Confirm-before-remove dialog for staff/admin accounts (replaces the
-     browser's plain confirm() box). Opened by the .js-remove-staff-form
-     handler in the script below; submits the original form on Remove. -->
-<div class="reg-overlay" id="removeStaffOverlay" style="display:none;">
-    <div class="regf-card regf-card--compact regf-card--password" role="alertdialog" aria-modal="true" aria-labelledby="removeStaffTitle" aria-describedby="removeStaffText">
-        <div class="regf-header">
-            <div class="regf-head-main regf-head-title-row">
-                <h2 class="regf-title" id="removeStaffTitle">Remove account?</h2>
-            </div>
-            <button type="button" class="regf-close" id="removeStaffClose" aria-label="Close" title="Close (Esc)">&times;</button>
+<!-- Confirm-before-remove dialog for staff/admin accounts. Same shared
+     .regf-confirm component Register Student / Register Item use for
+     their delete confirmations, so all three look identical. Opened by
+     the .js-remove-staff-form handler below; submits the form on Remove. -->
+<div class="regf-confirm regf-confirm--fixed" id="removeStaffConfirmBox" role="alertdialog" aria-modal="true" aria-labelledby="removeStaffTitle" aria-describedby="removeStaffText" hidden>
+    <div class="regf-confirm-box">
+        <div class="regf-confirm-icon regf-confirm-icon--danger" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m2 0-1 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7h12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </div>
-        <div class="regf-body">
-            <p id="removeStaffText" style="margin:0;font-weight:500;"></p>
-            <div class="regf-actions">
-                <button type="button" class="regf-btn regf-btn-outline" id="removeStaffCancel">Cancel</button>
-                <button type="button" class="regf-btn regf-btn-danger" id="removeStaffConfirm">Remove</button>
-            </div>
+        <h3 class="regf-confirm-title" id="removeStaffTitle">Remove account?</h3>
+        <p class="regf-confirm-text" id="removeStaffText"></p>
+        <div class="regf-confirm-actions">
+            <button type="button" class="regf-btn regf-btn-outline" id="removeStaffCancel">Cancel</button>
+            <button type="button" class="regf-btn regf-btn-danger" id="removeStaffConfirm">Remove account</button>
         </div>
     </div>
 </div>
 
 <script>
     (function () {
-        // Remove-staff confirmation modal (see #removeStaffOverlay above).
-        var rsOverlay = document.getElementById("removeStaffOverlay");
-        var rsText = document.getElementById("removeStaffText");
-        var rsCancel = document.getElementById("removeStaffCancel");
-        var rsClose = document.getElementById("removeStaffClose");
-        var rsConfirm = document.getElementById("removeStaffConfirm");
-        var rsPendingForm = null;
-        function rsHide() { rsOverlay.style.display = "none"; rsPendingForm = null; }
+        // Remove-staff confirmation (see #removeStaffConfirmBox above).
+        var box = document.getElementById("removeStaffConfirmBox");
+        var text = document.getElementById("removeStaffText");
+        var cancelBtn = document.getElementById("removeStaffCancel");
+        var okBtn = document.getElementById("removeStaffConfirm");
+        var pendingForm = null;
+        function hide() { box.hidden = true; pendingForm = null; okBtn.disabled = false; }
         document.querySelectorAll(".js-remove-staff-form").forEach(function (f) {
             f.addEventListener("submit", function (e) {
                 e.preventDefault();
-                rsPendingForm = f;
+                pendingForm = f;
                 var role = f.getAttribute("data-staff-role") || "Staff";
-                rsText.textContent = "Remove the " + role + " account \"" + (f.getAttribute("data-staff-name") || "") +
-                    "\"? They won't be able to log in anymore.";
-                rsOverlay.style.display = "flex";
-                rsCancel.focus();
+                text.textContent = "";
+                text.appendChild(document.createTextNode("This removes the " + role + " account "));
+                var strong = document.createElement("strong");
+                strong.textContent = f.getAttribute("data-staff-name") || "";
+                text.appendChild(strong);
+                text.appendChild(document.createTextNode(". They won't be able to log in anymore."));
+                box.hidden = false;
+                cancelBtn.focus();
             });
         });
-        rsCancel.addEventListener("click", rsHide);
-        rsClose.addEventListener("click", rsHide);
-        rsConfirm.addEventListener("click", function () {
-            var f = rsPendingForm;
-            if (!f) return;
-            rsConfirm.disabled = true;
-            f.submit(); // native submit skips the listener above; page reloads
+        cancelBtn.addEventListener("click", hide);
+        okBtn.addEventListener("click", function () {
+            if (!pendingForm) return;
+            okBtn.disabled = true;
+            pendingForm.submit(); // native submit skips the listener above; page reloads
         });
-        rsOverlay.addEventListener("click", function (e) { if (e.target === rsOverlay) rsHide(); });
-        document.addEventListener("keydown", function (e) {
-            if (e.key === "Escape" && rsOverlay.style.display !== "none") rsHide();
-        });
+        box.addEventListener("click", function (e) { if (e.target === box) hide(); });
+        box.addEventListener("keydown", function (e) { if (e.key === "Escape") hide(); });
     })();
     (function () {
         // Custom file-upload buttons (replacing the native "Choose File"

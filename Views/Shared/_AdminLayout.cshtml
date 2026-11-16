@@ -192,6 +192,20 @@
         </div>
     </div>
 
+    <!-- Shared notice dialog: the app's replacement for the browser's
+         plain alert(). Same .regf-confirm design as the delete
+         confirmations; opened with window.CLabTapNotice(title, text). -->
+    <div class="regf-confirm regf-confirm--fixed" id="appNotice" role="alertdialog" aria-modal="true" aria-labelledby="appNoticeTitle" aria-describedby="appNoticeText" hidden>
+        <div class="regf-confirm-box">
+            <div class="regf-confirm-icon" aria-hidden="true">!</div>
+            <h3 class="regf-confirm-title" id="appNoticeTitle"></h3>
+            <p class="regf-confirm-text" id="appNoticeText"></p>
+            <div class="regf-confirm-actions">
+                <button type="button" class="regf-btn regf-btn-primary" id="appNoticeOk">OK</button>
+            </div>
+        </div>
+    </div>
+
     <div class="reg-overlay" id="changePasswordOverlay" style="display:none;">
         <div class="regf-card regf-card--compact regf-card--password" role="dialog" aria-modal="true" aria-labelledby="changePasswordTitle">
             <div class="regf-header">

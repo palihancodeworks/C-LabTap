@@ -1481,11 +1481,27 @@ function wireSendOtpButton(btn, purpose, showMsg, validate) {
 // actual redirect. Program.cs's AttendanceController etc. don't know
 // about this, so it's surfaced with a plain query flag instead of a
 // server-rendered message.
+// App notice dialog (see #appNotice in _AdminLayout.cshtml) - replaces
+// the browser's plain alert() with the same design as the delete confirms.
+window.CLabTapNotice = function (title, text) {
+  var box = document.getElementById("appNotice");
+  if (!box) return;
+  var ok = document.getElementById("appNoticeOk");
+  document.getElementById("appNoticeTitle").textContent = title;
+  document.getElementById("appNoticeText").textContent = text;
+  function close() { box.hidden = true; ok.onclick = null; box.onclick = null; box.onkeydown = null; }
+  ok.onclick = close;
+  box.onclick = function (e) { if (e.target === box) close(); };
+  box.onkeydown = function (e) { if (e.key === "Escape") close(); };
+  box.hidden = false;
+  ok.focus();
+};
+
 (function () {
   "use strict";
   var params = new URLSearchParams(window.location.search);
   if (params.get("notice") === "linkexpired") {
-    alert("That link expired or was already used - open the profile menu and try linking Google again.");
+    window.CLabTapNotice("Link expired", "That link expired or was already used. Open the profile menu and try linking Google again.");
     params.delete("notice");
     var newQuery = params.toString();
     var newUrl = window.location.pathname + (newQuery ? "?" + newQuery : "");
