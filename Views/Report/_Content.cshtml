@@ -9,6 +9,14 @@
     try { reportLogoUrl = await C_LabTap.Models.BrandingHelper.GetLogoUrlAsync(Supabase); } catch { /* keep the default logo */ }
     string preparedBy = User.FindFirst(ClaimTypes.Name)?.Value ?? "";
     string preparedRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+
+    // Default Date Start/Date End on first load - the last 14 days,
+    // same window the old preset Range buttons defaulted to (see chat:
+    // "remove this... since this can be set in the date" - the buttons
+    // are gone, but something still has to fill the fields the first
+    // time the page opens).
+    string defaultDateStart = DateTime.Now.Date.AddDays(-13).ToString("yyyy-MM-dd");
+    string defaultDateEnd = DateTime.Now.Date.ToString("yyyy-MM-dd");
 }
 <div class="stat-filter-row">
     <div class="stat-cards report-stat-cards">
@@ -82,18 +90,78 @@
 </div>
 
 <div class="registry-section">
-    <div class="registry-toolbar">
-        <div class="filter-field report-range-field">
-            <label>Range</label>
-            <div class="toggle-group toggle-group--sliding" id="reportRange" data-value="14">
-                <span class="toggle-slider"></span>
-                <button type="button" class="toggle-option" data-value="7">7 days</button>
-                <button type="button" class="toggle-option active" data-value="14">14 days</button>
-                <button type="button" class="toggle-option" data-value="30">30 days</button>
-                <button type="button" class="toggle-option" data-value="90">90 days</button>
+    <div class="registry-toolbar report-toolbar">
+        <!-- Exactly two rows (see chat: "the filters should only be in 2
+             lines... first line right side is the print and below tht is
+             export"), not one long wrapping row: When/Who on line 1 with
+             Print at its right edge, Roster/Borrow/Event on line 2 with
+             Export at its right edge. Each line is its own flex row
+             (space-between), so the button always sits flush right of
+             its own line regardless of how many fields are on it. -->
+        <div class="report-toolbar-line">
+            <div class="report-filters-row">
+                <!-- A direct Date Start/Date End pair, not a preset 7/14/30/90
+                     toggle (see chat: "remove this... since this can be set in
+                     the date") - same .date-filter-input/.date-filter-placeholder
+                     pattern Attendance/Item Lending/Register Student already use
+                     for their own date filters. -->
+                <div class="filter-field report-date-field">
+                    <label>Date Start</label>
+                    <div class="date-filter-input">
+                        <span class="date-filter-placeholder" aria-hidden="true">Choose date</span>
+                        <input type="date" id="reportDateStart" value="@defaultDateStart" />
+                    </div>
+                </div>
+                <div class="filter-field report-date-field">
+                    <label>Date End</label>
+                    <div class="date-filter-input">
+                        <span class="date-filter-placeholder" aria-hidden="true">Choose date</span>
+                        <input type="date" id="reportDateEnd" value="@defaultDateEnd" />
+                    </div>
+                </div>
+                <!-- Who the report covers, on top of when (see chat: "all girls,
+                     all boys, this section, this grade, this section with that
+                     grade, this date, like all"). Every chart, the day-by-day
+                     table, and the Full Student List/Attendance Log/Borrow-
+                     Return Log sections below all narrow to the same slice -
+                     every filter on both lines combines with the dates above
+                     and with each other. -->
+                <div class="filter-field report-demo-field">
+                    <label>Gender</label>
+                    <div class="toggle-group toggle-group--sliding" id="reportGender" data-value="All">
+                        <span class="toggle-slider"></span>
+                        <button type="button" class="toggle-option active" data-value="All">All</button>
+                        <button type="button" class="toggle-option" data-value="Male">Male</button>
+                        <button type="button" class="toggle-option" data-value="Female">Female</button>
+                    </div>
+                </div>
+                <div class="filter-field report-demo-field">
+                    <label>Grade</label>
+                    <div class="toggle-group toggle-group--sliding" id="reportGrade" data-value="All">
+                        <span class="toggle-slider"></span>
+                        <button type="button" class="toggle-option active" data-value="All">All</button>
+                        <button type="button" class="toggle-option" data-value="7">7</button>
+                        <button type="button" class="toggle-option" data-value="8">8</button>
+                        <button type="button" class="toggle-option" data-value="9">9</button>
+                        <button type="button" class="toggle-option" data-value="10">10</button>
+                    </div>
+                </div>
+                <div class="filter-field report-demo-field report-section-field">
+                    <label>Section</label>
+                    <select id="reportSection">
+                        <option value="All">All</option>
+                    </select>
+                </div>
+                <div class="filter-field report-demo-field">
+                    <label>Category</label>
+                    <div class="toggle-group toggle-group--sliding" id="reportCategory" data-value="All">
+                        <span class="toggle-slider"></span>
+                        <button type="button" class="toggle-option active" data-value="All">All</button>
+                        <button type="button" class="toggle-option" data-value="Regular">Regular</button>
+                        <button type="button" class="toggle-option" data-value="STE">STE</button>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="report-toolbar-actions">
             <button type="button" class="btn-add-pill" id="reportPrintBtn">
                 <svg class="btn-add-pill-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                     <path d="M6 9V3h12v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -102,6 +170,56 @@
                 </svg>
                 <span>Print Report</span>
             </button>
+        </div>
+        <div class="report-toolbar-line">
+            <div class="report-filters-row">
+                <!-- Archived vs active roster (see chat: "wht if i want he
+                     archive studs") - defaults to Active, same as every other
+                     page on the site shows by default; switch to Archived/All
+                     to bring removed students' data back into view. -->
+                <div class="filter-field report-demo-field">
+                    <label>Student</label>
+                    <div class="toggle-group toggle-group--sliding" id="reportStudentStatus" data-value="Active">
+                        <span class="toggle-slider"></span>
+                        <button type="button" class="toggle-option" data-value="All">All</button>
+                        <button type="button" class="toggle-option active" data-value="Active">Active</button>
+                        <button type="button" class="toggle-option" data-value="Archived">Archived</button>
+                    </div>
+                </div>
+                <!-- Borrow-only axes (see chat: "wht if i only want borrow or
+                     return, or specific item") - meaningless for attendance, so
+                     they only narrow the borrow-related charts, the day-by-day
+                     table's borrowed/returned counts, and the Borrow/Return Log
+                     itself; Entries/Attendance Log/Student List are unaffected. -->
+                <div class="filter-field report-demo-field">
+                    <label>Status</label>
+                    <div class="toggle-group toggle-group--sliding" id="reportStatus" data-value="All">
+                        <span class="toggle-slider"></span>
+                        <button type="button" class="toggle-option active" data-value="All">All</button>
+                        <button type="button" class="toggle-option" data-value="Borrowed">Borrowed</button>
+                        <button type="button" class="toggle-option" data-value="Returned">Returned</button>
+                    </div>
+                </div>
+                <div class="filter-field report-demo-field report-section-field">
+                    <label>Item</label>
+                    <select id="reportItem">
+                        <option value="All">All</option>
+                    </select>
+                </div>
+                <!-- Attendance-only axis (see chat: "time in, time out") -
+                     meaningless for borrow data, so it only narrows the
+                     Entries/Peak Hours charts (time_in only by default, same
+                     meaning as before this existed) and the Attendance Log. -->
+                <div class="filter-field report-demo-field">
+                    <label>Event</label>
+                    <div class="toggle-group toggle-group--sliding" id="reportEventType" data-value="All">
+                        <span class="toggle-slider"></span>
+                        <button type="button" class="toggle-option active" data-value="All">All</button>
+                        <button type="button" class="toggle-option" data-value="TimeIn">Time In</button>
+                        <button type="button" class="toggle-option" data-value="TimeOut">Time Out</button>
+                    </div>
+                </div>
+            </div>
             <button type="button" class="btn-add-pill" id="reportExportBtn">
                 <svg class="btn-add-pill-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                     <path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -115,6 +233,12 @@
     <div class="report-sections-field">
         <label>Include in Print / Export</label>
         <div class="report-sections-checks">
+            <!-- Opt-in like every other section now (see chat: "why is
+                 daily summary also in the report???? i did not choose
+                 it") - it used to be hardcoded into every Print/Export
+                 regardless of these checkboxes; now nothing appears
+                 unless its own box is ticked, same rule for all five. -->
+            <label class="report-section-check"><input type="checkbox" id="repSecSummary" value="summary"> Daily Summary</label>
             <label class="report-section-check"><input type="checkbox" id="repSecInventory" value="inventory"> Full Inventory</label>
             <label class="report-section-check"><input type="checkbox" id="repSecStudents" value="students"> Full Student List</label>
             <label class="report-section-check"><input type="checkbox" id="repSecAttendance" value="attendance"> Attendance Log (RFID)</label>
@@ -164,6 +288,40 @@
     <div id="reportPrintArea" class="report-print-area" data-logo="@reportLogoUrl" data-prepared-by="@preparedBy" data-prepared-role="@preparedRole"></div>
 </div>
 
+<!-- Export-to-Excel confirmation (see chat: "add confirmation if i want to
+     export the exel" / "why is it not a modal") - reuses the same
+     .regf-confirm dialog pattern Register Student's own delete/discard
+     confirmations use (admin.css), instead of the browser's native
+     confirm(), which can't be styled and looks out of place here. -->
+<div class="regf-confirm regf-confirm--fixed" id="reportExportConfirm" role="alertdialog" aria-modal="true" aria-labelledby="reportExportConfirmTitle" aria-describedby="reportExportConfirmText" hidden>
+    <div class="regf-confirm-box">
+        <div class="regf-confirm-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <h3 class="regf-confirm-title" id="reportExportConfirmTitle">Export to Excel?</h3>
+        <p class="regf-confirm-text" id="reportExportConfirmText"></p>
+        <div class="regf-confirm-actions">
+            <button type="button" class="regf-btn regf-btn-outline" id="reportExportConfirmCancel">Cancel</button>
+            <button type="button" class="regf-btn regf-btn-primary" id="reportExportConfirmOk">Export</button>
+        </div>
+    </div>
+</div>
+
+<!-- Shared "nothing ticked" notice for both Print and Export (see chat:
+     "the message tht there should be a picked in the include in print
+     export") - same dialog pattern, one OK button instead of two actions
+     since there's nothing to confirm, just something to go fix first. -->
+<div class="regf-confirm regf-confirm--fixed" id="reportNotice" role="alertdialog" aria-modal="true" aria-labelledby="reportNoticeTitle" aria-describedby="reportNoticeText" hidden>
+    <div class="regf-confirm-box">
+        <div class="regf-confirm-icon" aria-hidden="true">!</div>
+        <h3 class="regf-confirm-title" id="reportNoticeTitle"></h3>
+        <p class="regf-confirm-text" id="reportNoticeText"></p>
+        <div class="regf-confirm-actions">
+            <button type="button" class="regf-btn regf-btn-primary" id="reportNoticeOk">OK</button>
+        </div>
+    </div>
+</div>
+
 <script>
     (function () {
         function escapeHtml(value) {
@@ -172,14 +330,189 @@
             });
         }
 
-        var rangeGroup = document.getElementById("reportRange");
+        var dateStartInput = document.getElementById("reportDateStart");
+        var dateEndInput = document.getElementById("reportDateEnd");
+        var genderGroup = document.getElementById("reportGender");
+        var gradeGroup = document.getElementById("reportGrade");
+        var sectionSelect = document.getElementById("reportSection");
+        var statusGroup = document.getElementById("reportStatus");
+        var itemSelect = document.getElementById("reportItem");
+        var categoryGroup = document.getElementById("reportCategory");
+        var studentStatusGroup = document.getElementById("reportStudentStatus");
+        var eventTypeGroup = document.getElementById("reportEventType");
         var exportBtn = document.getElementById("reportExportBtn");
         var printBtn = document.getElementById("reportPrintBtn");
         var printArea = document.getElementById("reportPrintArea");
         var tableRows = document.getElementById("reportTableRows");
         var tableEmpty = document.getElementById("reportTableEmpty");
-        var currentDays = parseInt(rangeGroup.dataset.value, 10) || 14;
+        var reportTable = tableRows.closest("table");
+
+        // ---- Export confirm + "nothing ticked" notice (see chat: "why is
+        // it not a modal") - same open/close/focus-trap pattern Register
+        // Student's own regDeleteConfirm dialog uses, just reused here
+        // instead of the browser's native confirm()/alert(). ----
+        var exportConfirmEl = document.getElementById("reportExportConfirm");
+        var exportConfirmText = document.getElementById("reportExportConfirmText");
+        var exportConfirmCancel = document.getElementById("reportExportConfirmCancel");
+        var exportConfirmOk = document.getElementById("reportExportConfirmOk");
+        var exportConfirmReturnFocus = null;
+        var onExportConfirmed = null;
+
+        function closeExportConfirm(returnFocus) {
+            if (!exportConfirmEl || exportConfirmEl.hidden) return;
+            exportConfirmEl.hidden = true;
+            if (returnFocus && exportConfirmReturnFocus && exportConfirmReturnFocus.focus) exportConfirmReturnFocus.focus();
+            exportConfirmReturnFocus = null;
+            onExportConfirmed = null;
+        }
+
+        function openExportConfirm(message, onConfirm) {
+            if (!exportConfirmEl) { onConfirm(); return; }
+            exportConfirmText.textContent = message;
+            onExportConfirmed = onConfirm;
+            exportConfirmReturnFocus = document.activeElement;
+            exportConfirmEl.hidden = false;
+            exportConfirmOk.focus();
+        }
+
+        if (exportConfirmEl) {
+            exportConfirmCancel.addEventListener("click", function () { closeExportConfirm(true); });
+            exportConfirmOk.addEventListener("click", function () {
+                var run = onExportConfirmed;
+                closeExportConfirm(false);
+                if (run) run();
+            });
+            exportConfirmEl.addEventListener("click", function (e) {
+                if (e.target === exportConfirmEl) closeExportConfirm(true);
+            });
+            exportConfirmEl.addEventListener("keydown", function (e) {
+                if (e.key === "Escape") { closeExportConfirm(true); return; }
+                if (e.key !== "Tab") return;
+                var first = exportConfirmCancel, last = exportConfirmOk;
+                if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            });
+        }
+
+        var noticeEl = document.getElementById("reportNotice");
+        var noticeTitle = document.getElementById("reportNoticeTitle");
+        var noticeText = document.getElementById("reportNoticeText");
+        var noticeOk = document.getElementById("reportNoticeOk");
+        var noticeReturnFocus = null;
+
+        function closeNotice(returnFocus) {
+            if (!noticeEl || noticeEl.hidden) return;
+            noticeEl.hidden = true;
+            if (returnFocus && noticeReturnFocus && noticeReturnFocus.focus) noticeReturnFocus.focus();
+            noticeReturnFocus = null;
+        }
+
+        function showNotice(title, text) {
+            if (!noticeEl) { alert(text); return; }
+            noticeTitle.textContent = title;
+            noticeText.textContent = text;
+            noticeReturnFocus = document.activeElement;
+            noticeEl.hidden = false;
+            noticeOk.focus();
+        }
+
+        if (noticeEl) {
+            noticeOk.addEventListener("click", function () { closeNotice(true); });
+            noticeEl.addEventListener("click", function (e) {
+                if (e.target === noticeEl) closeNotice(true);
+            });
+            noticeEl.addEventListener("keydown", function (e) {
+                if (e.key === "Escape" || e.key === "Tab") { e.preventDefault(); if (e.key === "Escape") closeNotice(true); }
+            });
+        }
+        // CLabTapToggleGroup's own click listener (added later, in
+        // initAll below) is what keeps *Group.dataset.value live - but
+        // since it's added after this page's own listeners further
+        // down, reading dataset.value back out from inside one of THOSE
+        // listeners on the same click can still see last click's value.
+        // These two track the current choice directly instead, the same
+        // reason this page's own date/gender/grade listeners read the
+        // clicked button/input's own value rather than the group's.
+        var currentGender = (genderGroup && genderGroup.dataset.value) || "All";
+        var currentGrade = (gradeGroup && gradeGroup.dataset.value) || "All";
+        var currentSection = "All";
+        var currentStatus = (statusGroup && statusGroup.dataset.value) || "All";
+        var currentItem = "All";
+        var currentCategory = (categoryGroup && categoryGroup.dataset.value) || "All";
+        var currentStudentStatus = (studentStatusGroup && studentStatusGroup.dataset.value) || "Active";
+        var currentEventType = (eventTypeGroup && eventTypeGroup.dataset.value) || "All";
+        var currentDateStart = dateStartInput.value;
+        var currentDateEnd = dateEndInput.value;
         var lastTableData = []; // last response from /Report/Table - what Export/Print reads from
+
+        // Builds "?key=val&..." for a /Report/* fetch: whatever's passed
+        // in (limit, ...), the Date Start/Date End pair when this
+        // endpoint is date-ranged, and every toggle/dropdown whenever it
+        // isn't "All" - so every endpoint on this page narrows to the
+        // same slice (Status/Item only matter to the borrow-related
+        // endpoints, Event only to the attendance-related ones; the
+        // others simply ignore the axes that don't apply to them).
+        // Student is sent even at its own default ("Active"), same as
+        // every other non-"All" value, since that default itself narrows
+        // results (hides archived students) rather than being a no-op.
+        function reportQueryString(extra, includeDateRange) {
+            var params = [];
+            if (extra) {
+                Object.keys(extra).forEach(function (k) { params.push(k + "=" + encodeURIComponent(extra[k])); });
+            }
+            if (includeDateRange) {
+                params.push("dateStart=" + encodeURIComponent(currentDateStart));
+                params.push("dateEnd=" + encodeURIComponent(currentDateEnd));
+            }
+            if (currentGender !== "All") params.push("gender=" + encodeURIComponent(currentGender));
+            if (currentGrade !== "All") params.push("grade=" + encodeURIComponent(currentGrade));
+            if (currentSection !== "All") params.push("section=" + encodeURIComponent(currentSection));
+            if (currentCategory !== "All") params.push("category=" + encodeURIComponent(currentCategory));
+            if (currentStudentStatus !== "All") params.push("studentStatus=" + encodeURIComponent(currentStudentStatus));
+            if (currentStatus !== "All") params.push("status=" + encodeURIComponent(currentStatus));
+            if (currentItem !== "All") params.push("item=" + encodeURIComponent(currentItem));
+            if (currentEventType !== "All") params.push("eventType=" + encodeURIComponent(currentEventType));
+            return params.length ? "?" + params.join("&") : "";
+        }
+
+        // One short phrase describing who's included, for the printed
+        // report's meta line and the exported file name.
+        function filterSummaryText() {
+            var parts = [];
+            if (currentGender !== "All") parts.push(currentGender);
+            if (currentGrade !== "All") parts.push("Grade " + currentGrade);
+            if (currentSection !== "All") parts.push("Section " + currentSection);
+            if (currentCategory !== "All") parts.push(currentCategory);
+            if (currentStudentStatus !== "Active") parts.push(currentStudentStatus === "All" ? "Active + Archived" : currentStudentStatus);
+            if (currentStatus !== "All") parts.push(currentStatus);
+            if (currentItem !== "All") parts.push(currentItem);
+            if (currentEventType !== "All") parts.push(currentEventType === "TimeIn" ? "Time In" : "Time Out");
+            return parts.length ? parts.join(", ") : "All active students";
+        }
+
+        // The title Print/Export use for the report itself (see chat:
+        // "it should be wht i select in the filter" - the title was
+        // always "Laboratory Usage Report" no matter which checkbox was
+        // ticked). With exactly one extra section checked, the report is
+        // specifically about that section, so it's named for it; with
+        // none or several, it stays the general title since it covers
+        // more than one thing.
+        function reportTitleText(sections) {
+            return sections.length === 1 ? sections[0].title + " Report" : "Laboratory Usage Report";
+        }
+
+        // "November 4, 2026 to November 17, 2026 (14 days)" - shared by
+        // the Print meta line and the Excel letterhead so both describe
+        // the same selected range the same way.
+        function reportPeriodText() {
+            var periodStart = new Date(currentDateStart + "T00:00:00");
+            var periodEnd = new Date(currentDateEnd + "T00:00:00");
+            var spanDays = Math.round((periodEnd - periodStart) / 86400000) + 1;
+            var longDate = { year: "numeric", month: "long", day: "numeric" };
+            return periodStart.toLocaleDateString(undefined, longDate) + " to " +
+                periodEnd.toLocaleDateString(undefined, longDate) +
+                " (" + spanDays + (spanDays === 1 ? " day" : " days") + ")";
+        }
 
         function formatDateTime(iso) {
             if (!iso) return "";
@@ -191,29 +524,38 @@
         // Optional extra sections the user can tick to include full,
         // ungrouped data (not just the day-by-day totals above) in the
         // Excel export and the printable view - see chat.
+        // colWidths (Excel character widths, see chat: "where are the
+        // colunms") sized per column's actual content - a name/item
+        // column gets much more room than a short status or date column,
+        // same reasoning the print table's own columns already get from
+        // their content width.
         var SECTIONS = [
             {
                 key: "inventory", checkboxId: "repSecInventory", title: "Full Inventory",
                 endpoint: "/Report/InventoryList", ranged: false,
                 headers: ["Item Name", "Category", "Status"],
+                colWidths: [30, 18, 14],
                 row: function (r) { return [r.name, r.category, r.status]; }
             },
             {
                 key: "students", checkboxId: "repSecStudents", title: "Full Student List",
                 endpoint: "/Report/StudentList", ranged: false,
                 headers: ["Full Name", "LRN", "Grade Level", "Section", "Gender", "Class Category"],
+                colWidths: [26, 14, 12, 14, 10, 14],
                 row: function (r) { return [r.fullName, r.lrn, r.gradeLevel, r.section, r.gender, r.classCategory]; }
             },
             {
                 key: "attendance", checkboxId: "repSecAttendance", title: "Attendance Log (RFID)",
                 endpoint: "/Report/AttendanceLog", ranged: true,
                 headers: ["Student", "Event", "Method", "Occurred At"],
+                colWidths: [26, 12, 12, 22],
                 row: function (r) { return [r.studentName, r.eventType, r.method, formatDateTime(r.occurredAt)]; }
             },
             {
                 key: "borrow", checkboxId: "repSecBorrow", title: "Borrow / Return Log",
                 endpoint: "/Report/BorrowLog", ranged: true,
                 headers: ["Item", "Borrower", "Status", "Borrowed At", "Returned At"],
+                colWidths: [24, 22, 12, 22, 22],
                 row: function (r) { return [r.itemName, r.borrowerName, r.status, formatDateTime(r.borrowedAt), formatDateTime(r.returnedAt)]; }
             }
         ];
@@ -225,12 +567,110 @@
             });
         }
 
+        // Daily Summary is its own checkbox now too (see chat above) -
+        // not one of SECTIONS since its data is lastTableData, already
+        // in hand, rather than something fetched via fetchSectionRows.
+        function isSummaryChecked() {
+            var box = document.getElementById("repSecSummary");
+            return !!(box && box.checked);
+        }
+
         function fetchSectionRows(section) {
-            var url = section.endpoint + (section.ranged ? "?days=" + currentDays : "");
+            var url = section.endpoint + reportQueryString(null, section.ranged);
             return fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
                 .then(function (res) { return res.json(); })
                 .catch(function () { return []; });
         }
+
+        // The Section dropdown only offers sections that exist under the
+        // currently chosen Grade (or every distinct section, for "All
+        // grades") - same source Register Student's own Section field
+        // uses, just bucketed by grade alone since this filter has no
+        // Category axis of its own.
+        var sectionsByGrade = { All: [] };
+        fetch("/RegisterStudent/Sections", { headers: { "X-Requested-With": "XMLHttpRequest" } })
+            .then(function (res) { return res.json(); })
+            .then(function (rows) {
+                var seenOverall = {};
+                (rows || []).forEach(function (row) {
+                    var g = String(row.grade);
+                    var bucket = sectionsByGrade[g] || (sectionsByGrade[g] = []);
+                    if (bucket.indexOf(row.section) === -1) bucket.push(row.section);
+                    var key = row.section.toLowerCase();
+                    if (!seenOverall[key]) {
+                        seenOverall[key] = true;
+                        sectionsByGrade.All.push(row.section);
+                    }
+                });
+                Object.keys(sectionsByGrade).forEach(function (k) {
+                    sectionsByGrade[k].sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+                });
+                renderSectionOptions();
+            })
+            .catch(function () { /* Section stays "All"-only if this fails */ });
+
+        // Item dropdown options - reuses the existing Full Inventory
+        // endpoint instead of adding a new one, since it already returns
+        // every active item's name.
+        fetch("/Report/InventoryList", { headers: { "X-Requested-With": "XMLHttpRequest" } })
+            .then(function (res) { return res.json(); })
+            .then(function (rows) {
+                var names = [];
+                var seen = {};
+                (rows || []).forEach(function (row) {
+                    var key = (row.name || "").toLowerCase();
+                    if (key && !seen[key]) { seen[key] = true; names.push(row.name); }
+                });
+                names.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+                if (!itemSelect) return;
+                names.forEach(function (name) {
+                    var opt = document.createElement("option");
+                    opt.value = name;
+                    opt.textContent = name;
+                    itemSelect.appendChild(opt);
+                });
+            })
+            .catch(function () { /* Item stays "All"-only if this fails */ });
+
+        function renderSectionOptions() {
+            if (!sectionSelect) return;
+            var list = sectionsByGrade[currentGrade] || [];
+            var keep = list.indexOf(currentSection) !== -1 ? currentSection : "All";
+            sectionSelect.innerHTML = "<option value=\"All\">All</option>";
+            list.forEach(function (s) {
+                var opt = document.createElement("option");
+                opt.value = s;
+                opt.textContent = s;
+                sectionSelect.appendChild(opt);
+            });
+            sectionSelect.value = keep;
+            currentSection = keep;
+        }
+
+        function reloadForFilters() {
+            loadTable();
+            loadTopItems();
+            loadHours();
+        }
+
+        // Keeps the "Choose date" placeholder in sync, same as
+        // Attendance/Item Lending/Register Student's own date filters,
+        // and tracks the chosen value directly (see the comment on
+        // currentGender/currentGrade above for why).
+        [dateStartInput, dateEndInput].forEach(function (input) {
+            var container = input.parentElement;
+            function updatePlaceholder() { container.classList.toggle("has-value", Boolean(input.value)); }
+            input.addEventListener("input", updatePlaceholder);
+            updatePlaceholder();
+        });
+
+        function onDateChange() {
+            currentDateStart = dateStartInput.value || currentDateStart;
+            currentDateEnd = dateEndInput.value || currentDateEnd;
+            reloadForFilters();
+        }
+        dateStartInput.addEventListener("change", onDateChange);
+        dateEndInput.addEventListener("change", onDateChange);
 
         function loadOverview() {
             fetch("/Report/Overview", { headers: { "X-Requested-With": "XMLHttpRequest" } })
@@ -362,8 +802,8 @@
             wrap.appendChild(note);
         }
 
-        function loadTopItems(days) {
-            fetch("/Report/TopItems?limit=6&days=" + days, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+        function loadTopItems() {
+            fetch("/Report/TopItems" + reportQueryString({ limit: 6 }, true), { headers: { "X-Requested-With": "XMLHttpRequest" } })
                 .then(function (res) { return res.json(); })
                 .then(function (items) {
                     if (!items || items.length === 0) {
@@ -374,22 +814,30 @@
                 .catch(function () { showChartError("reportTopItemsChart"); });
         }
 
-        function loadHours(days) {
-            fetch("/Report/PeakHours?days=" + days, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+        function loadHours() {
+            fetch("/Report/PeakHours" + reportQueryString(null, true), { headers: { "X-Requested-With": "XMLHttpRequest" } })
                 .then(function (res) { return res.json(); })
                 .then(function (hours) { renderHoursChart(hours || []); })
                 .catch(function () { showChartError("reportHoursChart"); });
         }
 
         // The day-by-day table can hold up to 90 rows (one per day at the
-        // 90-day range) - too many to show at once (see chat: "make it
-        // only 20 row then it will have pagination"). The whole range is
-        // still fetched in one request (it's a tiny payload either way),
-        // this just slices it into pages of 20 for display. Export/Print
-        // still use the full lastTableData, not just the visible page.
+        // 90-day range) - too many to show at once, so it's paginated.
+        // The page size used to be a hardcoded 20 - prof's note (see
+        // chat): a tall screen should show more rows at once, a short one
+        // fewer, with 20 as the floor rather than a fixed number for
+        // everyone. window.CLabTapRowFit (admin.js) is the same utility
+        // Attendance/Register Student/Item Lending/Settings already use
+        // for this - it measures real leftover space under the table and
+        // recomputes on resize/zoom, so shrinking the window (or the
+        // browser's zoom level) upward moves rows per page up too. The
+        // whole range is still fetched in one request either way (a tiny
+        // payload), this just slices it for display; Export/Print still
+        // use the full lastTableData, not just the visible page.
         var TABLE_PAGE_SIZE = 20;
         var tablePage = 1;
         var tablePaginationEl = document.getElementById("reportTablePagination");
+        var tableRowFitController = null;
 
         function renderTablePage() {
             var totalPages = Math.max(1, Math.ceil(lastTableData.length / TABLE_PAGE_SIZE));
@@ -416,8 +864,8 @@
             }
         }
 
-        function loadTable(days) {
-            fetch("/Report/Table?days=" + days, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+        function loadTable() {
+            fetch("/Report/Table" + reportQueryString(null, true), { headers: { "X-Requested-With": "XMLHttpRequest" } })
                 .then(function (res) { return res.json(); })
                 .then(function (rows) {
                     lastTableData = rows || [];
@@ -428,50 +876,312 @@
                     tableEmpty.style.display = anyActivity ? "none" : "";
                     tablePage = 1;
                     renderTablePage();
+                    // Real rows are in the tbody now - recheck row-fit
+                    // against their genuine height instead of the
+                    // throwaway probe row CLabTapRowFit had to measure
+                    // against before any data had loaded.
+                    if (tableRowFitController) tableRowFitController.recheck();
                 })
                 .catch(function () {
                     // Leave whatever is already there.
                 });
         }
 
-        if (rangeGroup) {
-            rangeGroup.addEventListener("click", function (e) {
+        // Deferred to DOMContentLoaded (same reasoning as the toggle-group
+        // init above): on a hard page load this inline script can run
+        // before admin.js has, so window.CLabTapRowFit wouldn't exist yet
+        // and the page would silently stay stuck on the 20-row fallback.
+        // The AJAX nav-swap case (admin.js long since loaded) just runs
+        // this immediately since the document is already "complete".
+        function initTableRowFit() {
+            if (!window.CLabTapRowFit) return;
+            tableRowFitController = window.CLabTapRowFit.watch(reportTable, { minRows: 20, fallbackRows: 20 }, function (rows) {
+                TABLE_PAGE_SIZE = rows;
+                tablePage = 1;
+                renderTablePage();
+            });
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initTableRowFit);
+        } else {
+            initTableRowFit();
+        }
+
+        if (genderGroup) {
+            genderGroup.addEventListener("click", function (e) {
                 var opt = e.target.closest(".toggle-option");
                 if (!opt) return;
-                currentDays = parseInt(opt.dataset.value, 10) || 14;
-                loadTable(currentDays);
-                loadTopItems(currentDays);
-                loadHours(currentDays);
+                currentGender = opt.dataset.value || "All";
+                reloadForFilters();
             });
         }
 
-        // ---- Export to Excel (SheetJS/xlsx, loaded once in _AdminLayout) ----
+        if (gradeGroup) {
+            gradeGroup.addEventListener("click", function (e) {
+                var opt = e.target.closest(".toggle-option");
+                if (!opt) return;
+                currentGrade = opt.dataset.value || "All";
+                renderSectionOptions();
+                reloadForFilters();
+            });
+        }
+
+        if (sectionSelect) {
+            sectionSelect.addEventListener("change", function () {
+                currentSection = sectionSelect.value || "All";
+                reloadForFilters();
+            });
+        }
+
+        if (statusGroup) {
+            statusGroup.addEventListener("click", function (e) {
+                var opt = e.target.closest(".toggle-option");
+                if (!opt) return;
+                currentStatus = opt.dataset.value || "All";
+                reloadForFilters();
+            });
+        }
+
+        if (itemSelect) {
+            itemSelect.addEventListener("change", function () {
+                currentItem = itemSelect.value || "All";
+                reloadForFilters();
+            });
+        }
+
+        if (categoryGroup) {
+            categoryGroup.addEventListener("click", function (e) {
+                var opt = e.target.closest(".toggle-option");
+                if (!opt) return;
+                currentCategory = opt.dataset.value || "All";
+                reloadForFilters();
+            });
+        }
+
+        if (studentStatusGroup) {
+            studentStatusGroup.addEventListener("click", function (e) {
+                var opt = e.target.closest(".toggle-option");
+                if (!opt) return;
+                currentStudentStatus = opt.dataset.value || "Active";
+                reloadForFilters();
+            });
+        }
+
+        if (eventTypeGroup) {
+            eventTypeGroup.addEventListener("click", function (e) {
+                var opt = e.target.closest(".toggle-option");
+                if (!opt) return;
+                currentEventType = opt.dataset.value || "All";
+                reloadForFilters();
+            });
+        }
+
+        // Builds one worksheet with the same letterhead the printed report
+        // shows - logo, school name/unit/system, title, period/scope/
+        // generated/prepared-by - then a bordered, colored header row and
+        // the data (see chat: "design it like the doc, it has logo and
+        // stuff on the header"). This uses ExcelJS, not SheetJS/xlsx (see
+        // _AdminLayout) - SheetJS's free build can only size/merge cells,
+        // it can't embed an image or color/bold anything, which is the
+        // whole point of this request.
+        var BRAND_GREEN = "FF1F4D3C";
+        var HEADER_TEXT = "FFFFFFFF";
+        var ZEBRA_FILL = "FFF4F7F5";
+
+        function addReportSheet(workbook, logoImageId, sheetName, title, headers, colWidths, dataRows) {
+            var now = new Date();
+            var preparedBy = printArea.dataset.preparedBy || "";
+            var preparedRole = printArea.dataset.preparedRole || "";
+            var lastCol = Math.max(headers.length, 2);
+
+            var sheet = workbook.addWorksheet(sheetName);
+            sheet.columns = headers.map(function (h, i) { return { width: colWidths[i] || 16 }; });
+
+            // Letterhead: the logo floats over the top-left cell, the school
+            // name block starts at column B so the text never sits under it.
+            if (logoImageId !== null) {
+                // Bumped up from 50x50 (see chat: "make the logo a bit
+                // bigger") - row 4 sits blank right below the letterhead
+                // text, so the extra height has room to spill into it
+                // without overlapping the title row (row 5).
+                sheet.addImage(logoImageId, { tl: { col: 0.15, row: 0.15 }, ext: { width: 64, height: 64 } });
+            }
+            sheet.mergeCells(1, 2, 1, lastCol);
+            sheet.getCell(1, 2).value = "Aurelio Arago Memorial National High School";
+            sheet.getCell(1, 2).font = { bold: true, size: 13, color: { argb: BRAND_GREEN } };
+
+            sheet.mergeCells(2, 2, 2, lastCol);
+            sheet.getCell(2, 2).value = "Junior High School Computer Laboratory";
+            sheet.getCell(2, 2).font = { size: 10 };
+
+            sheet.mergeCells(3, 2, 3, lastCol);
+            sheet.getCell(3, 2).value = "C-LabTap Computer Laboratory Logbook System";
+            sheet.getCell(3, 2).font = { size: 9, italic: true, color: { argb: "FF666666" } };
+
+            sheet.mergeCells(5, 1, 5, lastCol);
+            var titleCell = sheet.getCell(5, 1);
+            titleCell.value = title;
+            titleCell.font = { bold: true, size: 14 };
+            titleCell.alignment = { horizontal: "center" };
+
+            var metaRows = [
+                ["Period covered", reportPeriodText()],
+                ["Scope", filterSummaryText()],
+                ["Date generated", now.toLocaleString(undefined, { year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })],
+                ["Prepared by", (preparedBy || "-") + (preparedRole ? ", " + preparedRole : "")]
+            ];
+            var metaStartRow = 6;
+            metaRows.forEach(function (pair, i) {
+                var r = metaStartRow + i;
+                sheet.getCell(r, 1).value = pair[0];
+                sheet.getCell(r, 1).font = { bold: true, size: 9 };
+                sheet.mergeCells(r, 2, r, lastCol);
+                sheet.getCell(r, 2).value = pair[1];
+                sheet.getCell(r, 2).font = { size: 9 };
+            });
+
+            var headerRowIndex = metaStartRow + metaRows.length + 1;
+            var headerRow = sheet.getRow(headerRowIndex);
+            headers.forEach(function (h, i) {
+                var cell = headerRow.getCell(i + 1);
+                cell.value = h;
+                cell.font = { bold: true, color: { argb: HEADER_TEXT } };
+                cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BRAND_GREEN } };
+                cell.alignment = { vertical: "middle" };
+                cell.border = { bottom: { style: "thin", color: { argb: "FFCCCCCC" } } };
+            });
+            headerRow.commit();
+
+            dataRows.forEach(function (row, rIdx) {
+                var excelRow = sheet.getRow(headerRowIndex + 1 + rIdx);
+                row.forEach(function (val, cIdx) {
+                    var cell = excelRow.getCell(cIdx + 1);
+                    cell.value = val === null || val === undefined ? "" : val;
+                    cell.border = { bottom: { style: "thin", color: { argb: "FFEEEEEE" } } };
+                    if (rIdx % 2 === 1) {
+                        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ZEBRA_FILL } };
+                    }
+                });
+                excelRow.commit();
+            });
+
+            return sheet;
+        }
+
+        function downloadWorkbookBuffer(buffer, fileName) {
+            var blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        // ---- Export to Excel (ExcelJS, loaded once in _AdminLayout) ----
         // Always includes the day-by-day summary; one extra sheet per
-        // ticked checkbox, fetched fresh so it reflects the current range.
+        // ticked checkbox, fetched fresh so it reflects the current
+        // range. The file's report title follows the same rule Print
+        // uses (reportTitleText) so a single-section export is named for
+        // that section instead of always saying "Laboratory Usage
+        // Report" (see chat). Confirms with the user first (see chat:
+        // "add confirmation if i want to export the exel") since it's a
+        // file download, not something to trigger by an accidental click.
+        // Pill buttons (Print/Export) hold an icon <svg> plus a <span>
+        // label (see markup) - setting .textContent on the button itself
+        // during the "Exporting..." state wiped out the icon and shrank
+        // the button (see chat: "export button bocomes small and icon
+        // disspaera"). Only the <span> gets touched now, same approach as
+        // setRegisterStatus et al. in Register Student use for their own
+        // busy-label buttons.
+        var exportBtnLabel = exportBtn ? exportBtn.querySelector("span") : null;
+
+        function runExport(sections, includeSummary, scope) {
+            var originalLabel = exportBtnLabel ? exportBtnLabel.textContent : "";
+            exportBtn.disabled = true;
+            if (exportBtnLabel) exportBtnLabel.textContent = "Exporting...";
+
+            Promise.all(sections.map(fetchSectionRows)).then(function (results) {
+                // Logo is same-origin (BrandingHelper always resolves to a
+                // local /images/... path), so this fetch never hits CORS;
+                // if it fails for any reason the sheets are still built,
+                // just without the image.
+                return fetch(printArea.dataset.logo || "")
+                    .then(function (res) { return res.ok ? res.arrayBuffer() : null; })
+                    .catch(function () { return null; })
+                    .then(function (logoBuffer) { return [results, logoBuffer]; });
+            }).then(function (pair) {
+                var results = pair[0];
+                var logoBuffer = pair[1];
+                var workbook = new ExcelJS.Workbook();
+                workbook.creator = "C-LabTap";
+                workbook.created = new Date();
+
+                var logoImageId = null;
+                if (logoBuffer) {
+                    var logoUrl = (printArea.dataset.logo || "").toLowerCase();
+                    var ext = (logoUrl.indexOf(".jpg") !== -1 || logoUrl.indexOf(".jpeg") !== -1) ? "jpeg" : "png";
+                    logoImageId = workbook.addImage({ buffer: logoBuffer, extension: ext });
+                }
+
+                var title = reportTitleText(sections);
+
+                if (includeSummary) {
+                    var summaryRows = lastTableData.map(function (r) { return [r.label, r.entries, r.borrowed, r.returned]; });
+                    addReportSheet(workbook, logoImageId, "Summary", title,
+                        ["Date", "Entries", "Items Borrowed", "Items Returned"], [14, 10, 16, 16], summaryRows);
+                }
+
+                sections.forEach(function (section, i) {
+                    var rows = results[i] || [];
+                    // Excel worksheet names can't contain \ / ? * [ ] : - but
+                    // one of the section titles is "Borrow / Return Log", so
+                    // without this, ticking that section threw inside
+                    // addWorksheet() and the whole export failed (see chat:
+                    // "why is my export failing in some cases" - this is
+                    // the case). The in-sheet heading still uses the real
+                    // title (section.title, passed separately below) - only
+                    // the tab name itself needs sanitizing.
+                    var sheetName = section.title.replace(/[\\/?*[\]:]/g, "-");
+                    if (sheetName.length > 31) sheetName = sheetName.slice(0, 31);
+                    addReportSheet(workbook, logoImageId, sheetName, section.title, section.headers, section.colWidths, rows.map(section.row));
+                });
+
+                var fileName = "C-LabTap Report " + new Date().toISOString().slice(0, 10) +
+                    (scope === "All active students" ? "" : " - " + scope) + ".xlsx";
+
+                return workbook.xlsx.writeBuffer().then(function (buffer) {
+                    downloadWorkbookBuffer(buffer, fileName);
+                });
+            }).catch(function () {
+                showNotice("Export failed", "Couldn't build the Excel file. Please try again.");
+            }).then(function () {
+                exportBtn.disabled = false;
+                if (exportBtnLabel) exportBtnLabel.textContent = originalLabel;
+            });
+        }
+
         if (exportBtn) {
             exportBtn.addEventListener("click", function () {
-                if (!window.XLSX || !lastTableData.length) return;
+                if (!window.ExcelJS) return;
                 var sections = getCheckedSections();
+                var includeSummary = isSummaryChecked();
+                // Nothing ticked at all (see chat above - every section,
+                // Daily Summary included, is opt-in now) means there's
+                // nothing to put in the file, so say so instead of
+                // silently doing nothing or handing back an empty book.
+                if (!includeSummary && sections.length === 0) {
+                    showNotice("Nothing to export", "Tick at least one box under \"Include in Print / Export\" first.");
+                    return;
+                }
 
-                Promise.all(sections.map(fetchSectionRows)).then(function (results) {
-                    var book = XLSX.utils.book_new();
-
-                    var aoa = [["Date", "Entries", "Items Borrowed", "Items Returned"]];
-                    lastTableData.forEach(function (r) {
-                        aoa.push([r.date, r.entries, r.borrowed, r.returned]);
-                    });
-                    XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(aoa), "Summary");
-
-                    sections.forEach(function (section, i) {
-                        var rows = results[i] || [];
-                        var sAoa = [section.headers];
-                        rows.forEach(function (r) { sAoa.push(section.row(r)); });
-                        var sheetName = section.title.length > 31 ? section.title.slice(0, 31) : section.title;
-                        XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(sAoa), sheetName);
-                    });
-
-                    XLSX.writeFile(book, "C-LabTap Report " + new Date().toISOString().slice(0, 10) + ".xlsx");
-                });
+                var sheetCount = (includeSummary ? 1 : 0) + sections.length;
+                var scope = filterSummaryText();
+                var message = "This will download " + sheetCount + (sheetCount === 1 ? " sheet" : " sheets") +
+                    " covering " + reportPeriodText() + ". Scope: " + scope + ".";
+                openExportConfirm(message, function () { runExport(sections, includeSummary, scope); });
             });
         }
 
@@ -522,11 +1232,13 @@
         if (printBtn) {
             printBtn.addEventListener("click", function () {
                 var sections = getCheckedSections();
+                if (!isSummaryChecked() && sections.length === 0) {
+                    showNotice("Nothing to print", "Tick at least one box under \"Include in Print / Export\" first.");
+                    return;
+                }
 
                 Promise.all(sections.map(fetchSectionRows)).then(function (results) {
                     var now = new Date();
-                    var start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (currentDays - 1));
-                    var longDate = { year: "numeric", month: "long", day: "numeric" };
                     var preparedBy = printArea.dataset.preparedBy || "";
                     var preparedRole = printArea.dataset.preparedRole || "";
 
@@ -539,12 +1251,10 @@
                                 "<p class=\"report-print-system\">C-LabTap Computer Laboratory Logbook System</p>" +
                             "</div>" +
                         "</header>" +
-                        "<h1 class=\"report-print-title\">Laboratory Usage Report</h1>" +
+                        "<h1 class=\"report-print-title\">" + escapeHtml(reportTitleText(sections)) + "</h1>" +
                         "<dl class=\"report-print-meta\">" +
-                            "<div><dt>Period covered</dt><dd>" +
-                                escapeHtml(start.toLocaleDateString(undefined, longDate)) + " to " +
-                                escapeHtml(now.toLocaleDateString(undefined, longDate)) +
-                                " (" + currentDays + " days)</dd></div>" +
+                            "<div><dt>Period covered</dt><dd>" + escapeHtml(reportPeriodText()) + "</dd></div>" +
+                            "<div><dt>Scope</dt><dd>" + escapeHtml(filterSummaryText()) + "</dd></div>" +
                             "<div><dt>Date generated</dt><dd>" + escapeHtml(now.toLocaleString(undefined, {
                                 year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "2-digit"
                             })) + "</dd></div>" +
@@ -552,9 +1262,11 @@
                                 (preparedRole ? ", " + escapeHtml(preparedRole) : "") + "</dd></div>" +
                         "</dl>";
 
-                    html += "<h2>Daily Summary</h2>" + buildPrintTable(
-                        ["Date", "Entries", "Items Borrowed", "Items Returned"],
-                        lastTableData.map(function (r) { return [r.label, r.entries, r.borrowed, r.returned]; }));
+                    if (isSummaryChecked()) {
+                        html += "<h2>Daily Summary</h2>" + buildPrintTable(
+                            ["Date", "Entries", "Items Borrowed", "Items Returned"],
+                            lastTableData.map(function (r) { return [r.label, r.entries, r.borrowed, r.returned]; }));
+                    }
 
                     sections.forEach(function (section, i) {
                         var rows = results[i] || [];
@@ -607,11 +1319,16 @@
         // case (admin.js already loaded) runs immediately either way.
         function initAll() {
             if (window.CLabTapToggleGroup) {
-                window.CLabTapToggleGroup.init(rangeGroup);
+                window.CLabTapToggleGroup.init(genderGroup);
+                window.CLabTapToggleGroup.init(gradeGroup);
+                window.CLabTapToggleGroup.init(categoryGroup);
+                window.CLabTapToggleGroup.init(studentStatusGroup);
+                window.CLabTapToggleGroup.init(statusGroup);
+                window.CLabTapToggleGroup.init(eventTypeGroup);
             }
-            loadTable(currentDays);
-            loadTopItems(currentDays);
-            loadHours(currentDays);
+            loadTable();
+            loadTopItems();
+            loadHours();
         }
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", initAll);

@@ -1078,7 +1078,7 @@
             }
             initLendingFilterBar();
             if (window.CLabTapRowFit) {
-                rowFitController = window.CLabTapRowFit.watch(lendingTable, { minRows: 3, fallbackRows: 6, averageRow: true }, function (rows) {
+                rowFitController = window.CLabTapRowFit.watch(lendingTable, { minRows: 20, fallbackRows: 20, averageRow: true }, function (rows) {
                     PAGE_SIZE = rows;
                     currentPage = 1;
                     loadLending();

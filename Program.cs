@@ -30,6 +30,16 @@ builder.Services.AddAntiforgery(options =>
     options.HeaderName = "X-CSRF-TOKEN";
 });
 
+// URLs render in lowercase everywhere (see chat: "prof said it should
+// be all in small letters" - localhost:5066/Attendance should read
+// localhost:5066/attendance). This also makes the router match an
+// incoming lowercase URL to the right controller/action, so nothing
+// about the controllers/links/routes themselves has to change.
+builder.Services.Configure<RouteOptions>(options =>
+{
+    options.LowercaseUrls = true;
+});
+
 // "External" is a short-lived cookie that only ever holds a Google
 // callback's raw claims for the few seconds between the redirect back
 // from Google and AccountController.GoogleResponse deciding what to do

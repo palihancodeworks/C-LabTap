@@ -423,7 +423,7 @@
         var rowFitController = null;
         function initRowFit() {
             if (window.CLabTapRowFit) {
-                rowFitController = window.CLabTapRowFit.watch(attendanceTable, { minRows: 4, fallbackRows: 8 }, function (rows) {
+                rowFitController = window.CLabTapRowFit.watch(attendanceTable, { minRows: 20, fallbackRows: 20 }, function (rows) {
                     PAGE_SIZE = rows;
                     currentPage = 1;
                     loadAttendance();

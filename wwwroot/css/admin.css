@@ -200,7 +200,11 @@ button { font-family: inherit; }
   right: 0;
   top: 0;
   height: 0;
-  background: #ffffff;
+  /* Gradient from white (sidebar side) to the page's own background
+     color (content side) instead of flat white (see chat: "make this
+     gradient, white to the color of the page") - so the pill eases
+     into the main content area rather than cutting off sharply. */
+  background: linear-gradient(to right, #ffffff, var(--page-bg));
   border-radius: var(--nav-radius) 0 0 var(--nav-radius);
   z-index: 1;
   opacity: 0;
@@ -224,14 +228,18 @@ button { font-family: inherit; }
   z-index: -1;
 }
 
+/* The scoop's cast "shadow" has to match whatever color the pill
+   actually is at this right-hand edge, or the curve seam shows - and
+   now that the pill is a gradient, that's the page-bg end, not white
+   (see chat: same request above). */
 .nav-indicator::before {
   top: calc(-1 * var(--nav-scoop));
-  box-shadow: calc(var(--nav-scoop) / 2) calc(var(--nav-scoop) / 2) 0 0 #ffffff;
+  box-shadow: calc(var(--nav-scoop) / 2) calc(var(--nav-scoop) / 2) 0 0 var(--page-bg);
 }
 
 .nav-indicator::after {
   bottom: calc(-1 * var(--nav-scoop));
-  box-shadow: calc(var(--nav-scoop) / 2) calc(-1 * var(--nav-scoop) / 2) 0 0 #ffffff;
+  box-shadow: calc(var(--nav-scoop) / 2) calc(-1 * var(--nav-scoop) / 2) 0 0 var(--page-bg);
 }
 
 .sidebar-footer {
@@ -1157,7 +1165,12 @@ select.input-outline {
      justify-content: center) so it still reads fine when the box is
      tall. */
   align-items: stretch;
-  margin: 5px 0px 16px;
+  /* Bottom margin trimmed from 16px (see chat: "too much blnk space
+     wasted ... i want to make the add buttons and data table to move
+     up a lil bit") - this stacks with .registry-section's own
+     margin-top right below it, so the two together were leaving a
+     much bigger gap above the Add button/table than either alone. */
+  margin: 5px 0px 8px;
 }
 
 .stat-filter-row .filter-bar {
@@ -1389,11 +1402,87 @@ select.input-outline {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  margin-top: -5px; /* matches the 10px margin on Attendance's table-scroll
+                    (see below) so the two pages have the same spacing
+                    between their filter bar and table, even though
+                    Attendance doesn't wrap its table in a .registry-section */
 }
 .registry-section:has(#lendingRows) .data-table thead th {
   position: sticky;
   top: 0;
   z-index: 1;
+}
+
+/* Register Student, Register Item (both use #registryRows) and
+   Attendance all got the same "prof said my pagination is wrong...
+   scroll bar should be inside the data table, and the column head will
+   follow when i scroll" fix Report and Item Lending already have (see
+   chat) - CLabTapRowFit.watch's own minRows now floors each of these
+   at 20 instead of 3-4, and this is the same flex-fill trick (not a
+   fixed max-height, which could cap the box under what CLabTapRowFit
+   actually measured as available and force a scrollbar even when the
+   rows genuinely fit) that keeps that 20-row floor - or however many
+   more actually fit a taller screen - scrolling inside the table's own
+   box with a pinned header. Register Student/Item wrap their table in
+   .registry-section like Lending does; Attendance doesn't, so
+   .table-scroll there flexes directly under #main-content instead. */
+#main-content:has(#registryRows) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+#main-content:has(#registryRows) > .registry-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.registry-section:has(#registryRows) > .table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: -5px;
+}
+.registry-section:has(#registryRows) .data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+#main-content:has(#attendanceRows) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+#main-content:has(#attendanceRows) > .table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: 10px;
+}
+#main-content:has(#attendanceRows) .data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* Settings' Login History card sits beside the Accounts card in a
+   two-column grid, not alone filling the page, so the flex-fill trick
+   above doesn't apply here - there's no single "remaining page height"
+   to hand it. A fixed cap is the right tool for a card like this. */
+.settings-table-scroll:has(#loginHistoryRows) {
+  max-height: 64vh;
+  overflow-y: auto;
+}
+.settings-table-scroll:has(#loginHistoryRows) .settings-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  /* Unlike .data-table's header, .settings-table's header has no
+     background of its own (just the card's white showing through) -
+     needed explicitly here so scrolled rows don't show through the
+     pinned header as they pass under it. */
+  background: #ffffff;
 }
 
 /* The Registered/Archived tabs sit directly on this corner (see chat -
@@ -1892,34 +1981,122 @@ select.input-outline {
 }
 
 .registry-section {
-  margin-top: 20px;
+  /* Trimmed from 20px alongside .stat-filter-row's own bottom margin
+     above (see chat) - moves the Add button/table up without the two
+     margins touching. */
+  margin-top: 10px;
 }
 
-/* Report page: the Range toggle field sits next to Export instead of
-   stretching full width like a normal filter field. */
-.report-range-field {
-  max-width: 280px;
+/* Exactly two rows (see chat: "the filters should only be in 2 lines...
+   first line right side is the print and below tht is export") instead
+   of .registry-toolbar's usual single side-by-side row - stacks its two
+   .report-toolbar-line rows instead. Doubled-up selector (not just
+   .report-toolbar) so this reliably beats .registry-toolbar's own
+   align-items/justify-content further down this file regardless of
+   source order - a single-class override lost that fight last time,
+   which is why Print/Export ended up floating between the two rows
+   instead of each sitting flush with its own (see chat: "the buttonsd
+   for print and export is not allight on the firts filter row"). */
+.registry-toolbar.report-toolbar {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+/* Each line is its own space-between row: that line's filter group on
+   the left, that line's own action button flush to the right - Print
+   ends line 1, Export ends line 2, each sized to its own fields instead
+   of both buttons grouped at the end of one long combined row. */
+.report-toolbar-line {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* The filter fields within one line (see chat comment above) - sit
+   together as one wrapping group, so the line's own space-between still
+   just pushes its button away from the whole group instead of from one
+   field alone. */
+.report-filters-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Every field sizes to its own content's natural width and never
+   shrinks below it (see chat: "i cant read whts inside its all ...") -
+   a shared fixed max-width was forcing the browser to squeeze every
+   toggle-group's buttons down until their labels had to ellipsis, even
+   short ones like "7". Flex-wrap on the row above is what keeps the
+   line count sane instead - a field that doesn't fit moves to the next
+   line rather than shrinking into illegible text. */
+.report-filters-row .filter-field {
+  flex: 0 0 auto;
+}
+
+/* Report page: each date field sits next to the others instead of
+   stretching full width like a normal filter field (same reasoning
+   the old preset Range toggle used). */
+.report-date-field {
+  max-width: 170px;
+}
+
+.report-section-field {
+  max-width: 190px;
 }
 
 /* Every other sliding toggle-group already drops the base
    .toggle-option divider line (see e.g. .lending-filter-fields,
-   #newAccountRole above) - #reportRange was the one left over still
-   showing a vertical line between "7 days"/"14 days"/etc (see chat:
-   "remove the division in the range"). */
-#reportRange .toggle-option {
+   #newAccountRole above) - Gender/Grade get it from the start instead
+   of picking it up later. */
+#reportGender .toggle-option,
+#reportGrade .toggle-option,
+#reportCategory .toggle-option,
+#reportStudentStatus .toggle-option,
+#reportStatus .toggle-option,
+#reportEventType .toggle-option {
   border-right: none;
 }
 
-/* Print + Export are a pair of actions, not two independent toolbar
-   items - .registry-toolbar's space-between was spreading them across
-   the full width with Range on the left. Group them so they sit right
-   next to each other, with space-between now just pushing this one
-   group away from Range (see chat: "make the export and print
-   closer"). */
-.report-toolbar-actions {
+/* Print and Export are no longer grouped together - each now sits at
+   the end of its own line (see .report-toolbar-line above and chat:
+   "first line right side is the print and below tht is export"). */
+
+/* The day-by-day table's own box, not the whole page, is what should
+   scroll (see chat: "the scroll bar should be inside the data table,
+   and the column head will follow when i scroll"). Same flex-fill
+   trick Item Lending's own table uses further up this file (search
+   #lendingRows) - rather than an arbitrary fixed max-height, which
+   could cap the box well under what CLabTapRowFit actually measured as
+   available and force a scrollbar even when the rows genuinely fit.
+   .registry-section here holds the filter toolbar and the four charts
+   too, not just the table, but only .table-scroll gets flex: 1 - the
+   toolbar and charts above it keep their natural height, and the table
+   box absorbs whatever's left. */
+#main-content:has(#reportTableRows) {
   display: flex;
-  align-items: flex-end;
-  gap: 10px;
+  flex-direction: column;
+  min-height: 0;
+}
+#main-content:has(#reportTableRows) > .registry-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.registry-section:has(#reportTableRows) > .report-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.registry-section:has(#reportTableRows) .data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 /* Two chart cards side by side, each a plain white bordered box in the

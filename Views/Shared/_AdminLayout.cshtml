@@ -372,7 +372,11 @@
          and both libraries are already on window by the time Report's
          own inline script runs, on a direct load or a nav-swap alike. -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- ExcelJS (not SheetJS/xlsx - see chat: "design it like the doc, it
+         has logo and stuff on the header"). SheetJS's free build can only
+         size/merge cells, not embed the logo or color/bold anything, so
+         the Report page's Excel export switched to ExcelJS, which can. -->
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

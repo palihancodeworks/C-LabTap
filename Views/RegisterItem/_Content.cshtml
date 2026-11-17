@@ -861,7 +861,7 @@
         function initRowFit() {
             initFilters();
             if (window.CLabTapRowFit) {
-                rowFitController = window.CLabTapRowFit.watch(registryTable, { minRows: 3, fallbackRows: 6 }, function (rows) {
+                rowFitController = window.CLabTapRowFit.watch(registryTable, { minRows: 20, fallbackRows: 20 }, function (rows) {
                     PAGE_SIZE = rows;
                     currentPage = 1;
                     loadRegistry();

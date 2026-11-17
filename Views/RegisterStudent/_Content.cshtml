@@ -1867,7 +1867,7 @@
         var hasRecheckedRowFit = false;
         function initRowFit() {
             if (window.CLabTapRowFit) {
-                rowFitController = window.CLabTapRowFit.watch(registryTable, { minRows: 3, fallbackRows: 7 }, function (rows) {
+                rowFitController = window.CLabTapRowFit.watch(registryTable, { minRows: 20, fallbackRows: 20 }, function (rows) {
                     // Was "rows + 3" - that requested 3 MORE rows than
                     // CLabTapRowFit measured would actually fit, which
                     // guaranteed .main-col would overflow (a real
