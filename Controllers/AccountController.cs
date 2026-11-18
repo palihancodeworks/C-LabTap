@@ -284,6 +284,20 @@ public class AccountController : Controller
             return Json(new { error = "New password must be at least 8 characters." });
         }
 
+        // Same brute-force lockout as Login - without this, the 6-digit
+        // code itself (only ~1,000,000 possibilities) could just be
+        // guessed over and over within its 10-minute window instead of
+        // actually being read from the account's email (see chat: "try
+        // hacking again outside and inside the system"). Keyed on the
+        // username, same as Login, so this locks out before the account
+        // lookup below even runs.
+        var resetAttemptKey = username.ToLowerInvariant();
+        var lockedFor = await LoginAttemptGuard.GetLockoutSecondsAsync(_supabase, "password_reset_otp", resetAttemptKey);
+        if (lockedFor != null)
+        {
+            return Json(new { error = $"Too many failed attempts. {LoginAttemptGuard.FormatWait(lockedFor.Value)}" });
+        }
+
         var rows = await _supabase.GetAsync(
             "staff_accounts",
             $"select=id&username=eq.{Uri.EscapeDataString(username)}&is_active=eq.true&limit=1");
@@ -291,7 +305,10 @@ public class AccountController : Controller
         if (rows.Count == 0)
         {
             // Same message a wrong code would get - don't confirm whether
-            // the username itself was the problem.
+            // the username itself was the problem. Still counts as a
+            // failed attempt against this username key, same as Login
+            // does for an unknown username.
+            await LoginAttemptGuard.RecordFailureAsync(_supabase, "password_reset_otp", resetAttemptKey);
             return Json(new { error = "Invalid code or username." });
         }
 
@@ -299,8 +316,16 @@ public class AccountController : Controller
 
         if (!await TryConsumeOtpAsync(staffId, "password_reset", otp))
         {
-            return Json(new { error = "Invalid or expired code. Request a new one and try again." });
+            var justLockedFor = await LoginAttemptGuard.RecordFailureAsync(_supabase, "password_reset_otp", resetAttemptKey);
+            return Json(new
+            {
+                error = justLockedFor != null
+                    ? $"Too many failed attempts. {LoginAttemptGuard.FormatWait(justLockedFor.Value)}"
+                    : "Invalid or expired code. Request a new one and try again."
+            });
         }
+
+        await LoginAttemptGuard.RecordSuccessAsync(_supabase, "password_reset_otp", resetAttemptKey);
 
         // The code just consumed was emailed to this account's address,
         // so the mailbox is proven too - no separate verification needed.
