@@ -38,24 +38,6 @@ public static class NtfyNotifier
         }
     }
 
-    // Same as SendAsync, but for AccountController.NtfyDiagnostic - the
-    // whole point here is to NOT swallow the error, since SendAsync's
-    // silent-failure design is exactly why the real alert went missing
-    // with no clue why (see chat: "nop" after the live lockout test).
-    public static async Task<(bool Success, string? Error)> TestAsync()
-    {
-        if (_http == null) return (false, "Ntfy is not configured (no Topic set in appsettings).");
-        try
-        {
-            await PostAsync("C-LabTap diagnostic test", "Manual test from the admin NtfyDiagnostic endpoint.");
-            return (true, null);
-        }
-        catch (Exception ex)
-        {
-            return (false, ex.ToString());
-        }
-    }
-
     private static async Task PostAsync(string title, string message)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, _topic)
