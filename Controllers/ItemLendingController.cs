@@ -203,7 +203,15 @@ public class ItemLendingController : Controller
             var term = Uri.EscapeDataString(PostgrestFilterHelper.StripReservedChars(search!.Trim()));
             query += studentIdFilter.Count > 0
                 ? $"&or=(borrower_name.ilike.*{term}*,student_id.in.({string.Join(",", studentIdFilter)}))"
-                : $"&borrower_name.ilike.*{term}*";
+                // This standalone filter needs "column=operator.value" - unlike the
+                // or=(...) branch above, where the bare "column.operator.value" form
+                // is correct because it's an argument *inside* or=(...), not a
+                // top-level query param. Missing the "=" here made this an
+                // unrecognized, empty-valued param that PostgREST silently ignored,
+                // so every search with zero matching students (any genuine non-match)
+                // returned every row instead of none (see chat: "banana" showing
+                // everyone, found via the actual Network response - not the code read).
+                : $"&borrower_name=ilike.*{term}*";
         }
 
         query += "&order=time_out.desc";

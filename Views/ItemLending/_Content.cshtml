@@ -759,6 +759,14 @@
         var statCurrentlyBorrowedEl = document.getElementById("statCurrentlyBorrowed");
         var PAGE_SIZE = 6;
         var currentPage = 1;
+        // Guards against an older, slower-resolving request overwriting a
+        // newer one's result - e.g. the RowFit-triggered initial unfiltered
+        // load (see CLabTapRowFit.watch below) racing against a search typed
+        // right after page load: whichever response arrived first used to
+        // win, even if it wasn't the latest request (see chat: "still not
+        // fixed" on a fresh local run - the controller's filter was already
+        // correct, this race was the real remaining bug).
+        var lendingRequestSeq = 0;
 
         function stackedCell(lines) {
             var wrap = document.createElement("div");
@@ -1005,6 +1013,7 @@
         }
 
         function loadLending() {
+            var mySeq = ++lendingRequestSeq;
             var params = new URLSearchParams();
             params.append("page", currentPage);
             params.append("pageSize", PAGE_SIZE);
@@ -1024,6 +1033,7 @@
             return fetch("/ItemLending/List?" + params.toString(), { headers: { "X-Requested-With": "XMLHttpRequest" } })
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
+                    if (mySeq !== lendingRequestSeq) return data; // a newer request already won - don't render this stale one
                     currentPage = data.page || 1;
                     var sessions = data.rows || [];
                     sessionsById = {};
