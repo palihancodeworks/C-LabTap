@@ -121,6 +121,8 @@ public class ItemLendingController : Controller
     [HttpGet]
     public async Task<IActionResult> List(string? search, string? category, string? grade, string? status, string? method, string? dateStart, string? dateEnd, int page = 1, int pageSize = 6)
     {
+        try
+        {
         // See SuspiciousInputDetector - flags SQL-looking text typed
         // into this search box and pings ntfy (see chat).
         await SuspiciousInputDetector.CheckAndAlertAsync(search, "Item Lending search");
@@ -151,7 +153,7 @@ public class ItemLendingController : Controller
             }
             if (searchActive)
             {
-                studentQuery += $"&full_name=ilike.*{Uri.EscapeDataString(search!.Trim())}*";
+                studentQuery += $"&full_name=ilike.*{Uri.EscapeDataString(PostgrestFilterHelper.StripReservedChars(search!.Trim()))}*";
             }
 
             var matches = await _supabase.GetAsync("students", studentQuery);
@@ -198,7 +200,7 @@ public class ItemLendingController : Controller
         }
         else if (searchActive)
         {
-            var term = Uri.EscapeDataString(search!.Trim());
+            var term = Uri.EscapeDataString(PostgrestFilterHelper.StripReservedChars(search!.Trim()));
             query += studentIdFilter.Count > 0
                 ? $"&or=(borrower_name.ilike.*{term}*,student_id.in.({string.Join(",", studentIdFilter)}))"
                 : $"&borrower_name.ilike.*{term}*";
@@ -239,6 +241,15 @@ public class ItemLendingController : Controller
         if (totalPages < 1) totalPages = 1;
 
         return Json(new { rows = sessions, total, page, pageSize, totalPages });
+        }
+        catch (HttpRequestException)
+        {
+            // Same reasoning as LogbookController.LookupStudent - a malformed
+            // or rejected search value should look like "no results", not
+            // crash with a generic error page (see chat: "serach for more
+            // before i commit").
+            return Json(new { rows = Array.Empty<object>(), total = 0, page, pageSize, totalPages = 1 });
+        }
     }
 
     // Powers the stat cards. "Borrowed Today" counts individual items

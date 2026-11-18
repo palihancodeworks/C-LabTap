@@ -48,6 +48,8 @@ public class RegisterStudentController : Controller
     [HttpGet]
     public async Task<IActionResult> List(string? search, string? dateStart, string? dateEnd, string? grade, string? section, string? rfid, string? view, string? removedDate, string? gender, string? category, int page = 1, int pageSize = 6)
     {
+        try
+        {
         // See SuspiciousInputDetector - flags SQL-looking text typed
         // into this search box and pings ntfy (see chat).
         await SuspiciousInputDetector.CheckAndAlertAsync(search, "Register Student search");
@@ -115,7 +117,7 @@ public class RegisterStudentController : Controller
         }
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var term = Uri.EscapeDataString(search.Trim());
+            var term = Uri.EscapeDataString(PostgrestFilterHelper.StripReservedChars(search.Trim()));
             query += $"&or=(full_name.ilike.*{term}*,lrn.ilike.*{term}*)";
         }
 
@@ -187,6 +189,15 @@ public class RegisterStudentController : Controller
         if (totalPages < 1) totalPages = 1;
 
         return Json(new { rows = students, total, page, pageSize, totalPages });
+        }
+        catch (HttpRequestException)
+        {
+            // Same reasoning as LogbookController.LookupStudent - a malformed
+            // or rejected search value should look like "no results", not
+            // crash with a generic error page (see chat: "serach for more
+            // before i commit").
+            return Json(new { rows = Array.Empty<object>(), total = 0, page, pageSize, totalPages = 1 });
+        }
     }
 
     // Powers the "Students Not Linked" stat card: active students with

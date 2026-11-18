@@ -63,6 +63,8 @@ public class RegisterItemController : Controller
     [HttpGet]
     public async Task<IActionResult> List(string? search, string? category, string? product, string? status, string? dateStart, string? dateEnd, int page = 1, int pageSize = 6)
     {
+        try
+        {
         // See SuspiciousInputDetector - flags SQL-looking text typed
         // into this search box and pings ntfy (see chat).
         await SuspiciousInputDetector.CheckAndAlertAsync(search, "Item Inventory search");
@@ -98,7 +100,7 @@ public class RegisterItemController : Controller
         }
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var term = Uri.EscapeDataString(search.Trim());
+            var term = Uri.EscapeDataString(PostgrestFilterHelper.StripReservedChars(search.Trim()));
             query += $"&or=(name.ilike.*{term}*,item_code.ilike.*{term}*)";
         }
 
@@ -138,6 +140,15 @@ public class RegisterItemController : Controller
         if (totalPages < 1) totalPages = 1;
 
         return Json(new { rows = items, total, page, pageSize, totalPages });
+        }
+        catch (HttpRequestException)
+        {
+            // Same reasoning as LogbookController.LookupStudent - a malformed
+            // or rejected search value should look like "no results", not
+            // crash with a generic error page (see chat: "serach for more
+            // before i commit").
+            return Json(new { rows = Array.Empty<object>(), total = 0, page, pageSize, totalPages = 1 });
+        }
     }
 
     // Powers the stat cards: how many active units exist right now, and

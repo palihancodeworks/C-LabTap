@@ -190,7 +190,22 @@ public class LogbookController : Controller
             return Json(new { found = false });
         }
 
-        var rows = await _supabase.GetAsync("students", query);
+        List<Dictionary<string, object?>> rows;
+        try
+        {
+            rows = await _supabase.GetAsync("students", query);
+        }
+        catch (HttpRequestException)
+        {
+            // A malformed/odd value (e.g. something getting rejected
+            // further upstream before it even reaches our own filter
+            // logic) should look exactly like "not found" to the
+            // kiosk, not crash with a generic error page (see chat -
+            // found while testing the RFID field with SQL-looking
+            // text).
+            await LoginAttemptGuard.RecordFailureAsync(_supabase, "kiosk_identify", kioskKey);
+            return Json(new { found = false });
+        }
 
         if (rows.Count == 0)
         {
@@ -246,21 +261,30 @@ public class LogbookController : Controller
         }
 
         List<Dictionary<string, object?>> studentRows;
-
-        if (!string.IsNullOrWhiteSpace(request.RfidTag))
+        try
         {
-            studentRows = await _supabase.GetAsync(
-                "students",
-                $"select=id,full_name,is_active&rfid_tag=eq.{Uri.EscapeDataString(request.RfidTag.Trim())}&limit=1");
+            if (!string.IsNullOrWhiteSpace(request.RfidTag))
+            {
+                studentRows = await _supabase.GetAsync(
+                    "students",
+                    $"select=id,full_name,is_active&rfid_tag=eq.{Uri.EscapeDataString(request.RfidTag.Trim())}&limit=1");
+            }
+            else if (!string.IsNullOrWhiteSpace(request.Lrn))
+            {
+                studentRows = await _supabase.GetAsync(
+                    "students",
+                    $"select=id,full_name,is_active&lrn=eq.{Uri.EscapeDataString(request.Lrn.Trim())}&limit=1");
+            }
+            else
+            {
+                return Json(new { recognized = false });
+            }
         }
-        else if (!string.IsNullOrWhiteSpace(request.Lrn))
+        catch (HttpRequestException)
         {
-            studentRows = await _supabase.GetAsync(
-                "students",
-                $"select=id,full_name,is_active&lrn=eq.{Uri.EscapeDataString(request.Lrn.Trim())}&limit=1");
-        }
-        else
-        {
+            // Same reasoning as LookupStudent above - never crash the
+            // kiosk's attendance tap over a malformed/odd value.
+            await LoginAttemptGuard.RecordFailureAsync(_supabase, "kiosk_identify", kioskKey);
             return Json(new { recognized = false });
         }
 
