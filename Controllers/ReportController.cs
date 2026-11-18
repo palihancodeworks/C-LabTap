@@ -312,6 +312,21 @@ public class ReportController : Controller
     // the "Borrow/Return Log" checkbox. Borrower is either a student
     // (via the session's student_id) or a staff/teacher name entered at
     // the kiosk (borrower_name, method = Staff) - never both.
+    //
+    // Grouped by (session, item, status, returned at) before being
+    // returned, each with a quantity - see chat: "a person borrowed 80
+    // chairs and those chairs are putted in the report one by one".
+    // borrow_session_items has one row per physical unit (80 chairs
+    // borrowed together is 80 rows, one per chair), which used to go
+    // straight into the report as 80 near-identical lines. Grouping by
+    // session_id rather than by the borrowed timestamp itself is
+    // deliberate: create_borrow inserts those 80 rows one at a time, so
+    // their created_at values land a second or so apart even though
+    // they're clearly the same borrow - session_id is the one thing
+    // every row from that same borrow actually shares exactly. Rows
+    // split into separate groups the moment they stop being identical in
+    // every other way too (e.g. 60 chairs already returned, 20 still
+    // out), which is correct - those really are two different lines.
     [HttpGet]
     public async Task<IActionResult> BorrowLog(string? dateStart = null, string? dateEnd = null, string? gender = null, string? grade = null, string? section = null, string? status = null, string? item = null)
     {
@@ -325,13 +340,13 @@ public class ReportController : Controller
         var startUtc = rangeStart.ToUniversalTime().ToString("o");
         var endUtc = rangeEndExclusive.ToUniversalTime().ToString("o");
 
-        var borrowLogQuery = $"select=status,created_at,time_in,items(name),borrow_sessions(borrower_name,students(full_name,gender,grade_level,section))&created_at=gte.{Uri.EscapeDataString(startUtc)}&created_at=lt.{Uri.EscapeDataString(endUtc)}&order=created_at.desc&limit=10000";
+        var borrowLogQuery = $"select=session_id,status,created_at,time_in,items(name),borrow_sessions(borrower_name,students(full_name,gender,grade_level,section))&created_at=gte.{Uri.EscapeDataString(startUtc)}&created_at=lt.{Uri.EscapeDataString(endUtc)}&order=created_at.desc&limit=10000";
         if (statusFilter != null) borrowLogQuery += $"&status=eq.{statusFilter}";
         var rows = (await _supabase.GetAsync("borrow_session_items", borrowLogQuery))
             .Where(r => MatchesDemographic(GetSessionStudent(r), genderFilter, gradeFilter, sectionFilter))
             .Where(r => MatchesItem(GetEmbeddedObject(r, "items"), itemFilter));
 
-        var list = rows.Select(r =>
+        var expanded = rows.Select(r =>
         {
             var session = r.TryGetValue("borrow_sessions", out var sVal) && sVal is JsonElement sEl && sEl.ValueKind == JsonValueKind.Object ? sEl : (JsonElement?)null;
             string? borrowerName = null;
@@ -351,6 +366,7 @@ public class ReportController : Controller
 
             return new
             {
+                sessionId = r.TryGetValue("session_id", out var sid) && sid is JsonElement sidEl && sidEl.ValueKind == JsonValueKind.Number ? sidEl.GetInt64() : 0,
                 itemName = GetNestedString(r, "items", "name"),
                 borrowerName = borrowerName ?? "",
                 status = GetString(r, "status"),
@@ -358,6 +374,23 @@ public class ReportController : Controller
                 returnedAt = GetString(r, "time_in")
             };
         });
+
+        var list = expanded
+            .GroupBy(r => (r.sessionId, r.itemName, r.borrowerName, r.status, r.returnedAt))
+            .Select(g => new
+            {
+                itemName = g.Key.itemName,
+                borrowerName = g.Key.borrowerName,
+                status = g.Key.status,
+                // Earliest unit in the group, not just "the first row
+                // seen" - the 80-row insert loop above means these can
+                // differ by a second or two, and the earliest one is the
+                // moment the borrow actually started.
+                borrowedAt = g.Min(x => x.borrowedAt),
+                returnedAt = g.Key.returnedAt,
+                quantity = g.Count()
+            })
+            .OrderByDescending(r => r.borrowedAt);
 
         return Json(list);
     }

@@ -3,9 +3,13 @@
 // Unlike Attendance (tap = instant record), Equipment needs an item
 // picked before anything is submitted, so identifying a student here
 // only confirms who they are - RFID tap and manual LRN entry both just
-// resolve to a student id/name via LogbookController.LookupStudent
-// (same endpoint Attendance uses, extended with an rfidTag param and an
-// id field - see chat) and then the right panel takes over.
+// resolve to a student name/token via LogbookController.LookupStudent
+// (same endpoint Attendance uses, extended with an rfidTag param and a
+// one-time token - see chat and the "why a token, not the raw id" note
+// on LookupStudent in LogbookController.cs) and then the right panel
+// takes over. The token (not the real student id) is what gets sent
+// back on every later call, so nothing here can be used to act as a
+// student who never actually identified at the kiosk.
 //
 // The right panel used to be a separate Borrow/Return nav sub-page (see
 // chat - dropped for being a lot of fragile nav CSS over a small
@@ -53,9 +57,9 @@
     var mode = "idle"; // "idle" (RFID-ready) | "manual"
     var inputLocked = false;
     var lastLookedUpLrn = null;
-    var pendingStudentId = null;
+    var pendingStudentToken = null;
     var pendingStudentName = null;
-    var confirmedStudentId = null;
+    var confirmedStudentToken = null;
     var confirmedStudentName = null;
 
     var borrowedItems = [];  // this student's currently-out items (sessionItemId, name, itemCode)
@@ -74,7 +78,7 @@
     }
 
     function focusCatcher() {
-        if (mode === "idle" && !inputLocked && confirmedStudentId == null) rfidCatcher.focus();
+        if (mode === "idle" && !inputLocked && confirmedStudentToken == null) rfidCatcher.focus();
     }
 
     function showIdentifyError(message) {
@@ -95,7 +99,7 @@
         lrnInput.value = "";
         confirmBox.style.display = "none";
         lastLookedUpLrn = null;
-        pendingStudentId = null;
+        pendingStudentToken = null;
         pendingStudentName = null;
         focusCatcher();
     }
@@ -118,7 +122,7 @@
     }
 
     function startOver() {
-        confirmedStudentId = null;
+        confirmedStudentToken = null;
         confirmedStudentName = null;
         borrowQty = {};
         returnQty = {};
@@ -160,7 +164,7 @@
             e.preventDefault();
             var tag = rfidCatcher.value.trim();
             rfidCatcher.value = "";
-            if (inputLocked || confirmedStudentId != null || !tag) return;
+            if (inputLocked || confirmedStudentToken != null || !tag) return;
             identify({ rfidTag: tag });
         }
     });
@@ -184,8 +188,8 @@
     });
 
     confirmBtn.addEventListener("click", function () {
-        if (inputLocked || pendingStudentId == null) return;
-        confirmedStudentId = pendingStudentId;
+        if (inputLocked || pendingStudentToken == null) return;
+        confirmedStudentToken = pendingStudentToken;
         confirmedStudentName = pendingStudentName;
         showIdentified(confirmedStudentName);
         loadEquipPanel();
@@ -209,12 +213,12 @@
                 if (opts.rfidTag) {
                     // RFID tap identifies immediately - no separate confirm
                     // click, same trust level as an Attendance tap.
-                    confirmedStudentId = data.id;
+                    confirmedStudentToken = data.token;
                     confirmedStudentName = data.name;
                     showIdentified(confirmedStudentName);
                     loadEquipPanel();
                 } else {
-                    pendingStudentId = data.id;
+                    pendingStudentToken = data.token;
                     pendingStudentName = data.name;
                     confirmName.textContent = data.name;
                     confirmBox.style.display = "flex";
@@ -432,7 +436,7 @@
         equipRoot.innerHTML = '<p class="logbook-equip-hint">Loading...</p>';
 
         Promise.all([
-            fetch("/Logbook/EquipmentBorrowed?studentId=" + confirmedStudentId).then(function (res) { return res.json(); }),
+            fetch("/Logbook/EquipmentBorrowed?token=" + encodeURIComponent(confirmedStudentToken)).then(function (res) { return res.json(); }),
             fetch("/Logbook/EquipmentAvailable").then(function (res) { return res.json(); })
         ])
             .then(function (results) {
@@ -454,7 +458,7 @@
     function submitBorrow(itemIds, summary) {
         if (!itemIds.length) return;
         var body = new URLSearchParams();
-        body.append("studentId", confirmedStudentId);
+        body.append("token", confirmedStudentToken);
         itemIds.forEach(function (id) { body.append("itemIds", id); });
         body.append("method", mode === "idle" ? "RFID" : "Manual");
 

@@ -552,11 +552,16 @@
                 row: function (r) { return [r.studentName, r.eventType, r.method, formatDateTime(r.occurredAt)]; }
             },
             {
+                // Qty added (see chat: "a person borrowed 80 chairs and
+                // those chairs are putted in the print report one by
+                // one") - /Report/BorrowLog now groups identical units
+                // from the same borrow into one row with a count,
+                // instead of each physical chair getting its own line.
                 key: "borrow", checkboxId: "repSecBorrow", title: "Borrow / Return Log",
                 endpoint: "/Report/BorrowLog", ranged: true,
-                headers: ["Item", "Borrower", "Status", "Borrowed At", "Returned At"],
-                colWidths: [24, 22, 12, 22, 22],
-                row: function (r) { return [r.itemName, r.borrowerName, r.status, formatDateTime(r.borrowedAt), formatDateTime(r.returnedAt)]; }
+                headers: ["Borrower", "Item", "Qty", "Status", "Borrowed At", "Returned At"],
+                colWidths: [22, 24, 8, 12, 22, 22],
+                row: function (r) { return [r.borrowerName, r.itemName, r.quantity, r.status, formatDateTime(r.borrowedAt), formatDateTime(r.returnedAt)]; }
             }
         ];
 

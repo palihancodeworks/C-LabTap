@@ -146,14 +146,31 @@ public class LogbookController : Controller
     // RecordAttendance's RFID path, which logs a time in/out immediately
     // on tap. Equipment needs to know *who* tapped before anything is
     // recorded (an item still has to be picked), so it can't reuse that
-    // recording endpoint. Returns the student's id too, now, so the
-    // Equipment screen has something to pass to EquipmentBorrowed/
-    // CreateEquipmentBorrow afterward - Attendance's own JS only reads
-    // "found"/"name" and ignores the new field, so this stays backward
-    // compatible.
+    // recording endpoint. Returns a one-time KioskIdentityToken, not the
+    // student's real id, so the Equipment screen has something to pass
+    // to EquipmentBorrowed/CreateEquipmentBorrow afterward - those two
+    // used to just trust a raw posted id with no proof the caller ever
+    // identified (see chat - "run a hacking simulation" / SEC-1: this
+    // controller is [AllowAnonymous], and ids are small sequential
+    // numbers, so anyone could've guessed one and borrowed items or read
+    // another student's borrowed list without ever tapping a card).
+    // Attendance's own JS only reads "found"/"name" and ignores this
+    // field, so it's unaffected by the change.
+    //
+    // Also rate-limited now (LoginAttemptGuard, same lockout the kiosk
+    // PIN checks use, keyed on this terminal's IP) - a miss here used to
+    // cost nothing, so a script could cycle through LRNs/RFID tags with
+    // no limit (SEC-2).
     [HttpGet]
     public async Task<IActionResult> LookupStudent(string? lrn, string? rfidTag)
     {
+        var kioskKey = KioskIdentifier();
+        var lockedFor = await LoginAttemptGuard.GetLockoutSecondsAsync(_supabase, "kiosk_identify", kioskKey);
+        if (lockedFor != null)
+        {
+            return Json(new { found = false, message = $"Too many failed attempts. {LoginAttemptGuard.FormatWait(lockedFor.Value)}" });
+        }
+
         string query;
         if (!string.IsNullOrWhiteSpace(rfidTag))
         {
@@ -172,6 +189,7 @@ public class LogbookController : Controller
 
         if (rows.Count == 0)
         {
+            await LoginAttemptGuard.RecordFailureAsync(_supabase, "kiosk_identify", kioskKey);
             return Json(new { found = false });
         }
 
@@ -184,11 +202,15 @@ public class LogbookController : Controller
         }
         if (!isActive)
         {
+            await LoginAttemptGuard.RecordFailureAsync(_supabase, "kiosk_identify", kioskKey);
             return Json(new { found = false });
         }
 
+        await LoginAttemptGuard.RecordSuccessAsync(_supabase, "kiosk_identify", kioskKey);
+
         var id = ((JsonElement)rows[0]["id"]!).GetInt64();
-        return Json(new { found = true, id, name = rows[0]["full_name"]?.ToString() });
+        var token = KioskIdentityToken.Issue(id);
+        return Json(new { found = true, token, name = rows[0]["full_name"]?.ToString() });
     }
 
     // Fires on an RFID tap (immediately) or a manual Confirm click.
@@ -202,6 +224,17 @@ public class LogbookController : Controller
     [HttpPost]
     public async Task<IActionResult> RecordAttendance([FromForm] AttendanceRecordRequest request)
     {
+        // Same lockout/scope as LookupStudent (SEC-2) - an RFID tap goes
+        // straight here without ever calling LookupStudent first, so
+        // that endpoint's own rate limit alone wouldn't have covered
+        // this path.
+        var kioskKey = KioskIdentifier();
+        var lockedFor = await LoginAttemptGuard.GetLockoutSecondsAsync(_supabase, "kiosk_identify", kioskKey);
+        if (lockedFor != null)
+        {
+            return Json(new { recognized = false, message = $"Too many failed attempts. {LoginAttemptGuard.FormatWait(lockedFor.Value)}" });
+        }
+
         List<Dictionary<string, object?>> studentRows;
 
         if (!string.IsNullOrWhiteSpace(request.RfidTag))
@@ -223,6 +256,7 @@ public class LogbookController : Controller
 
         if (studentRows.Count == 0)
         {
+            await LoginAttemptGuard.RecordFailureAsync(_supabase, "kiosk_identify", kioskKey);
             return Json(new { recognized = false });
         }
 
@@ -242,8 +276,11 @@ public class LogbookController : Controller
             // Archived = transferred out. Their card/LRN no longer works
             // at the kiosk; an admin has to retrieve them from the
             // Archived tab on purpose for them to be able to tap in again.
+            await LoginAttemptGuard.RecordFailureAsync(_supabase, "kiosk_identify", kioskKey);
             return Json(new { recognized = false, reason = "archived" });
         }
+
+        await LoginAttemptGuard.RecordSuccessAsync(_supabase, "kiosk_identify", kioskKey);
 
         // "Today" in the kiosk's own local time (the server's local clock -
         // this machine sits in the lab, so its local time is the school's
@@ -310,17 +347,22 @@ public class LogbookController : Controller
     // borrow_session_items under borrow_sessions, but filtering the
     // embedded rows by status would also hide any OTHER item in that
     // same session this call still needs to see returned state for.
+    // Takes the one-time token LookupStudent issued, not a raw student
+    // id (see chat - SEC-1: a raw id here used to let anyone enumerate
+    // every student's currently-borrowed items with no identification
+    // at all).
     [HttpGet]
-    public async Task<IActionResult> EquipmentBorrowed(long studentId)
+    public async Task<IActionResult> EquipmentBorrowed(string? token)
     {
-        if (studentId <= 0)
+        var studentId = KioskIdentityToken.Resolve(token);
+        if (studentId is null)
         {
             return Json(Array.Empty<object>());
         }
 
         var rows = await _supabase.GetAsync(
             "borrow_sessions",
-            $"select=id,borrow_session_items(id,status,items(name,item_code))&student_id=eq.{studentId}&order=time_out.desc");
+            $"select=id,borrow_session_items(id,status,items(name,item_code))&student_id=eq.{studentId.Value}&order=time_out.desc");
 
         var borrowed = new List<object>();
         foreach (var row in rows)
@@ -354,10 +396,15 @@ public class LogbookController : Controller
     // ItemLendingController.CreateManual, just always tied to a real
     // student_id (no staff/teacher borrower option at the kiosk) and
     // identified by RFID tap or LRN instead of a staff member typing it.
+    // Takes the one-time token LookupStudent issued, not a raw student
+    // id (see chat - SEC-1: a raw posted id here used to let anyone
+    // borrow items under any student's name with no RFID tap/LRN at
+    // all - just a guessed, sequential database id).
     [HttpPost]
-    public async Task<IActionResult> CreateEquipmentBorrow([FromForm] long studentId, [FromForm] List<long> itemIds, [FromForm] string? method)
+    public async Task<IActionResult> CreateEquipmentBorrow([FromForm] string? token, [FromForm] List<long> itemIds, [FromForm] string? method)
     {
-        if (studentId <= 0)
+        var studentId = KioskIdentityToken.Resolve(token);
+        if (studentId is null)
         {
             return BadRequest(new { error = "Identify yourself first." });
         }
@@ -367,7 +414,7 @@ public class LogbookController : Controller
         }
 
         var students = await _supabase.GetAsync(
-            "students", $"select=id,is_active&id=eq.{studentId}&limit=1");
+            "students", $"select=id,is_active&id=eq.{studentId.Value}&limit=1");
         var isActive = students.Count > 0 && students[0]["is_active"] is JsonElement activeEl
             && activeEl.ValueKind == JsonValueKind.True;
         if (!isActive)
@@ -401,7 +448,7 @@ public class LogbookController : Controller
         {
             await _supabase.RpcAsync("create_borrow", new
             {
-                p_student_id = studentId,
+                p_student_id = studentId.Value,
                 p_borrower_name = (string?)null,
                 p_method = method == "RFID" ? "RFID" : "Manual",
                 p_item_ids = itemIds
