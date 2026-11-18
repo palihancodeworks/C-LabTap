@@ -164,6 +164,11 @@ public class LogbookController : Controller
     [HttpGet]
     public async Task<IActionResult> LookupStudent(string? lrn, string? rfidTag)
     {
+        // See SuspiciousInputDetector - flags SQL-looking text typed
+        // into the kiosk's own LRN/RFID fields and pings ntfy (see chat).
+        await SuspiciousInputDetector.CheckAndAlertAsync(lrn, "Kiosk LRN field");
+        await SuspiciousInputDetector.CheckAndAlertAsync(rfidTag, "Kiosk RFID field");
+
         var kioskKey = KioskIdentifier();
         var lockedFor = await LoginAttemptGuard.GetLockoutSecondsAsync(_supabase, "kiosk_identify", kioskKey);
         if (lockedFor != null)
@@ -224,6 +229,11 @@ public class LogbookController : Controller
     [HttpPost]
     public async Task<IActionResult> RecordAttendance([FromForm] AttendanceRecordRequest request)
     {
+        // See SuspiciousInputDetector - flags SQL-looking text typed
+        // into the kiosk's own LRN/RFID fields and pings ntfy (see chat).
+        await SuspiciousInputDetector.CheckAndAlertAsync(request.Lrn, "Kiosk LRN field (attendance)");
+        await SuspiciousInputDetector.CheckAndAlertAsync(request.RfidTag, "Kiosk RFID field (attendance)");
+
         // Same lockout/scope as LookupStudent (SEC-2) - an RFID tap goes
         // straight here without ever calling LookupStudent first, so
         // that endpoint's own rate limit alone wouldn't have covered

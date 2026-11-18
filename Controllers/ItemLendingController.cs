@@ -121,6 +121,10 @@ public class ItemLendingController : Controller
     [HttpGet]
     public async Task<IActionResult> List(string? search, string? category, string? grade, string? status, string? method, string? dateStart, string? dateEnd, int page = 1, int pageSize = 6)
     {
+        // See SuspiciousInputDetector - flags SQL-looking text typed
+        // into this search box and pings ntfy (see chat).
+        await SuspiciousInputDetector.CheckAndAlertAsync(search, "Item Lending search");
+
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 6;
 

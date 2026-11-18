@@ -60,6 +60,12 @@ public class AccountController : Controller
     [HttpPost]
     public async Task<IActionResult> Login([FromForm] string username, [FromForm] string password)
     {
+        // See SuspiciousInputDetector - flags SQL-looking text typed
+        // into the login form and pings ntfy (see chat: "wht about the
+        // login text boxedsd"). Password value itself is never echoed.
+        await SuspiciousInputDetector.CheckAndAlertAsync(username, "Login username field");
+        await SuspiciousInputDetector.CheckAndAlertAsync(password, "Login password field", includeValue: false);
+
         username = (username ?? "").Trim();
         password = password ?? "";
 
@@ -561,6 +567,25 @@ public class AccountController : Controller
 
         await LoginAttemptGuard.RecordSuccessAsync(_supabase, "change_pin", lockAttemptKey);
         return Json(new { success = true });
+    }
+
+    // TEMPORARY diagnostic (see chat: the live lockout test fired no
+    // ntfy alert, and SendAsync swallows its own errors on purpose, so
+    // this is the only way to see WHY without digging through
+    // MonsterASP's server logs). Admin-only, like ChangePassword above -
+    // same [AllowAnonymous]-on-the-controller reason for checking
+    // IsAuthenticated by hand instead of [Authorize]. Safe to delete
+    // once the real alert is confirmed working.
+    [HttpGet]
+    public async Task<IActionResult> NtfyDiagnostic()
+    {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            return Json(new { error = "Your session has expired - please log in again." });
+        }
+
+        var (success, error) = await NtfyNotifier.TestAsync();
+        return Json(new { success, error });
     }
 
     // sidebar profile menu - checks the CURRENT password against

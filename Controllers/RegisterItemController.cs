@@ -63,6 +63,10 @@ public class RegisterItemController : Controller
     [HttpGet]
     public async Task<IActionResult> List(string? search, string? category, string? product, string? status, string? dateStart, string? dateEnd, int page = 1, int pageSize = 6)
     {
+        // See SuspiciousInputDetector - flags SQL-looking text typed
+        // into this search box and pings ntfy (see chat).
+        await SuspiciousInputDetector.CheckAndAlertAsync(search, "Item Inventory search");
+
         var query = "select=id,name,category,item_code,status,created_at&is_active=eq.true";
 
         if (!string.IsNullOrWhiteSpace(category) && category != "All")

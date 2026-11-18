@@ -28,24 +28,47 @@ public static class NtfyNotifier
     public static async Task SendAsync(string title, string message)
     {
         if (_http == null || string.IsNullOrWhiteSpace(_topic)) return;
-
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, _topic)
-            {
-                Content = new StringContent(message)
-            };
-            // ntfy's own headers for the notification title/importance -
-            // see https://docs.ntfy.sh/publish/. Title must stay plain
-            // ASCII (no emoji/accents) since it's sent as an HTTP header.
-            request.Headers.Add("Title", title);
-            request.Headers.Add("Priority", "high");
-            request.Headers.Add("Tags", "warning");
-            await _http.SendAsync(request);
+            await PostAsync(title, message);
         }
         catch
         {
             // Swallowed on purpose - see comment above SendAsync.
         }
+    }
+
+    // Same as SendAsync, but for AccountController.NtfyDiagnostic - the
+    // whole point here is to NOT swallow the error, since SendAsync's
+    // silent-failure design is exactly why the real alert went missing
+    // with no clue why (see chat: "nop" after the live lockout test).
+    public static async Task<(bool Success, string? Error)> TestAsync()
+    {
+        if (_http == null) return (false, "Ntfy is not configured (no Topic set in appsettings).");
+        try
+        {
+            await PostAsync("C-LabTap diagnostic test", "Manual test from the admin NtfyDiagnostic endpoint.");
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.ToString());
+        }
+    }
+
+    private static async Task PostAsync(string title, string message)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, _topic)
+        {
+            Content = new StringContent(message)
+        };
+        // ntfy's own headers for the notification title/importance -
+        // see https://docs.ntfy.sh/publish/. Title must stay plain
+        // ASCII (no emoji/accents) since it's sent as an HTTP header.
+        request.Headers.Add("Title", title);
+        request.Headers.Add("Priority", "high");
+        request.Headers.Add("Tags", "warning");
+        var response = await _http!.SendAsync(request);
+        response.EnsureSuccessStatusCode();
     }
 }

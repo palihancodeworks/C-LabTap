@@ -48,6 +48,10 @@ public class RegisterStudentController : Controller
     [HttpGet]
     public async Task<IActionResult> List(string? search, string? dateStart, string? dateEnd, string? grade, string? section, string? rfid, string? view, string? removedDate, string? gender, string? category, int page = 1, int pageSize = 6)
     {
+        // See SuspiciousInputDetector - flags SQL-looking text typed
+        // into this search box and pings ntfy (see chat).
+        await SuspiciousInputDetector.CheckAndAlertAsync(search, "Register Student search");
+
         // "registered" (default) lists active students; "archived" lists
         // soft-deleted ones (is_active = false) so they can be found by
         // name/LRN and reactivated via Activate below (see chat - this is
