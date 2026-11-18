@@ -72,6 +72,17 @@ public static class LoginAttemptGuard
                 locked_until = lockedUntil,
                 updated_at = nowUtc
             });
+
+            // Phone alert the moment a lockout actually triggers - not on
+            // every single wrong attempt, so normal typos never spam the
+            // phone (see chat: "everytime someone attakcs my site...
+            // i get notified"). NtfyNotifier itself swallows any error,
+            // so a slow/unreachable ntfy server can never break the
+            // lockout response below.
+            await NtfyNotifier.SendAsync(
+                "C-LabTap security alert",
+                $"Too many failed attempts on '{scope}' (identifier: {identifier}). Locked for {(int)LockoutDuration.TotalMinutes} minutes.");
+
             return (int)LockoutDuration.TotalSeconds;
         }
 

@@ -82,6 +82,14 @@ builder.Services.Configure<SupabaseOptions>(builder.Configuration.GetSection("Su
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddSingleton<EmailService>();
 
+// Ntfy: config comes from the "Ntfy" section of
+// appsettings.Development.json (Topic, optional ServerUrl) - pushes a
+// phone notification through the ntfy app whenever LoginAttemptGuard
+// triggers a lockout (see chat: "everytime someone attakcs my site
+// in anyways i get notified"). Wired up for real further down, once
+// the app (and its configuration) actually exists.
+builder.Services.Configure<NtfyOptions>(builder.Configuration.GetSection("Ntfy"));
+
 builder.Services.AddHttpClient<SupabaseService>((sp, client) =>
 {
     var options = sp.GetRequiredService<IOptions<SupabaseOptions>>().Value;
@@ -92,6 +100,22 @@ builder.Services.AddHttpClient<SupabaseService>((sp, client) =>
 });
 
 var app = builder.Build();
+
+// NtfyNotifier is a static helper (see its own comment for why), so it
+// needs a one-time Configure() call here instead of normal DI - this
+// is the one place in the app that happens. Left disabled (no alerts
+// sent) if no Topic is set in appsettings, so the app still runs fine
+// without ntfy configured.
+var ntfyOptions = app.Services.GetRequiredService<IOptions<NtfyOptions>>().Value;
+if (!string.IsNullOrWhiteSpace(ntfyOptions.Topic))
+{
+    var ntfyHttp = new HttpClient
+    {
+        BaseAddress = new Uri(ntfyOptions.ServerUrl.TrimEnd('/') + "/"),
+        Timeout = TimeSpan.FromSeconds(5)
+    };
+    NtfyNotifier.Configure(ntfyHttp, ntfyOptions.Topic);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

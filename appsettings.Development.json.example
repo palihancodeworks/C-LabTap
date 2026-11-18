@@ -16,5 +16,9 @@
   "Email": {
     "GmailAddress": "your-sender@gmail.com",
     "AppPassword": "YOUR_GMAIL_APP_PASSWORD"
+  },
+  "Ntfy": {
+    "ServerUrl": "https://ntfy.sh",
+    "Topic": "YOUR_NTFY_TOPIC"
   }
 }
